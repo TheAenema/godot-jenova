@@ -448,38 +448,6 @@ public:
 	FUNC3(decal_set_fade, RID, float, float)
 	FUNC2(decal_set_normal_fade, RID, float)
 
-	/* BAKED LIGHT API */
-
-//from now on, calls forwarded to this singleton
-#undef ServerName
-#undef server_name
-
-#define ServerName RendererGI
-#define server_name RSG::gi
-
-	FUNCRIDSPLIT(voxel_gi)
-
-	FUNC8(voxel_gi_allocate_data, RID, const Transform3D &, const AABB &, const Vector3i &, const Vector<uint8_t> &, const Vector<uint8_t> &, const Vector<uint8_t> &, const Vector<int> &)
-
-	FUNC1RC(AABB, voxel_gi_get_bounds, RID)
-	FUNC1RC(Vector3i, voxel_gi_get_octree_size, RID)
-	FUNC1RC(Vector<uint8_t>, voxel_gi_get_octree_cells, RID)
-	FUNC1RC(Vector<uint8_t>, voxel_gi_get_data_cells, RID)
-	FUNC1RC(Vector<uint8_t>, voxel_gi_get_distance_field, RID)
-	FUNC1RC(Vector<int>, voxel_gi_get_level_counts, RID)
-	FUNC1RC(Transform3D, voxel_gi_get_to_cell_xform, RID)
-
-	FUNC2(voxel_gi_set_dynamic_range, RID, float)
-	FUNC2(voxel_gi_set_propagation, RID, float)
-	FUNC2(voxel_gi_set_energy, RID, float)
-	FUNC2(voxel_gi_set_baked_exposure_normalization, RID, float)
-	FUNC2(voxel_gi_set_bias, RID, float)
-	FUNC2(voxel_gi_set_normal_bias, RID, float)
-	FUNC2(voxel_gi_set_interior, RID, bool)
-	FUNC2(voxel_gi_set_use_two_bounces, RID, bool)
-
-	FUNC0(sdfgi_reset)
-
 	/* PARTICLES */
 
 #undef ServerName
@@ -543,20 +511,6 @@ public:
 	FUNC2(particles_collision_set_field_texture, RID, RID)
 	FUNC1(particles_collision_height_field_update, RID)
 	FUNC2(particles_collision_set_height_field_resolution, RID, ParticlesCollisionHeightfieldResolution)
-
-	/* FOG VOLUME */
-
-#undef ServerName
-#undef server_name
-
-#define ServerName RendererFog
-#define server_name RSG::fog
-
-	FUNCRIDSPLIT(fog_volume)
-
-	FUNC2(fog_volume_set_shape, RID, FogVolumeShape)
-	FUNC2(fog_volume_set_size, RID, const Vector3 &)
-	FUNC2(fog_volume_set_material, RID, RID)
 
 	/* VISIBILITY_NOTIFIER */
 
