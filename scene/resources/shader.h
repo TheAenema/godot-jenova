@@ -43,17 +43,14 @@ class Shader : public Resource {
 
 public:
 	enum Mode {
-		MODE_SPATIAL,
 		MODE_CANVAS_ITEM,
 		MODE_PARTICLES,
-		MODE_SKY,
-		MODE_FOG,
 		MODE_MAX
 	};
 
 private:
 	RID shader;
-	Mode mode = MODE_SPATIAL;
+	Mode mode = MODE_CANVAS_ITEM;
 	HashSet<Ref<ShaderInclude>> include_dependencies;
 	String code;
 	String include_path;

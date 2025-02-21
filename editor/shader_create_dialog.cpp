@@ -30,17 +30,16 @@
 
 #include "shader_create_dialog.h"
 
+#include "core/string/string_builder.h"
 #include "core/config/project_settings.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/gui/editor_validation_panel.h"
 #include "editor/themes/editor_scale.h"
 #include "scene/resources/shader_include.h"
-#include "scene/resources/visual_shader.h"
 #include "servers/rendering/shader_types.h"
 
 enum ShaderType {
 	SHADER_TYPE_TEXT,
-	SHADER_TYPE_VISUAL,
 	SHADER_TYPE_INC,
 	SHADER_TYPE_MAX,
 };
@@ -86,11 +85,11 @@ void ShaderCreateDialog::_update_language_info() {
 		ShaderTypeData shader_type_data;
 		if (i == int(SHADER_TYPE_TEXT)) {
 			shader_type_data.use_templates = true;
-			shader_type_data.extensions.push_back("gdshader");
-			shader_type_data.default_extension = "gdshader";
+			shader_type_data.extensions.push_back("uishader");
+			shader_type_data.default_extension = "uishader";
 		} else if (i == int(SHADER_TYPE_INC)) {
-			shader_type_data.extensions.push_back("gdshaderinc");
-			shader_type_data.default_extension = "gdshaderinc";
+			shader_type_data.extensions.push_back("uishaderinc");
+			shader_type_data.default_extension = "uishaderinc";
 		} else {
 			shader_type_data.default_extension = "tres";
 		}
@@ -152,22 +151,6 @@ void ShaderCreateDialog::_create_new() {
 
 			if (current_template == 0) { // Default template.
 				switch (current_mode) {
-					case Shader::MODE_SPATIAL:
-						code += R"(
-void vertex() {
-	// Called for every vertex the material is visible on.
-}
-
-void fragment() {
-	// Called for every pixel the material is visible on.
-}
-
-//void light() {
-	// Called for every pixel for every light affecting the material.
-	// Uncomment to replace the default light processing function with this one.
-//}
-)";
-						break;
 					case Shader::MODE_CANVAS_ITEM:
 						code += R"(
 void vertex() {
@@ -195,31 +178,9 @@ void process() {
 }
 )";
 						break;
-					case Shader::MODE_SKY:
-						code += R"(
-void sky() {
-	// Called for every visible pixel in the sky background, as well as all pixels
-	// in the radiance cubemap.
-}
-)";
-						break;
-					case Shader::MODE_FOG:
-						code += R"(
-void fog() {
-	// Called once for every froxel that is touched by an axis-aligned bounding box
-	// of the associated FogVolume. This means that froxels that just barely touch
-	// a given FogVolume will still be used.
-}
-)";
 				}
 			}
 			text_shader->set_code(code.as_string());
-		} break;
-		case SHADER_TYPE_VISUAL: {
-			Ref<VisualShader> visual_shader;
-			visual_shader.instantiate();
-			shader = visual_shader;
-			visual_shader->set_mode(Shader::Mode(current_mode));
 		} break;
 		case SHADER_TYPE_INC: {
 			Ref<ShaderInclude> include;
@@ -229,6 +190,7 @@ void fog() {
 		default: {
 		} break;
 	}
+
 
 	if (shader.is_null()) {
 		String lpath = ProjectSettings::get_singleton()->localize_path(file_path->get_text());
@@ -583,9 +545,6 @@ ShaderCreateDialog::ShaderCreateDialog() {
 			case SHADER_TYPE_TEXT:
 				type = "Shader";
 				default_type = i;
-				break;
-			case SHADER_TYPE_VISUAL:
-				type = "VisualShader";
 				break;
 			case SHADER_TYPE_INC:
 				type = "ShaderInclude";

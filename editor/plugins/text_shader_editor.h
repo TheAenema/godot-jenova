@@ -37,8 +37,8 @@
 #include "scene/gui/rich_text_label.h"
 #include "servers/rendering/shader_warnings.h"
 
-class GDShaderSyntaxHighlighter : public CodeHighlighter {
-	GDCLASS(GDShaderSyntaxHighlighter, CodeHighlighter)
+class uishaderSyntaxHighlighter : public CodeHighlighter {
+	GDCLASS(uishaderSyntaxHighlighter, CodeHighlighter)
 
 private:
 	Vector<Point2i> disabled_branch_regions;
@@ -61,7 +61,7 @@ class ShaderTextEditor : public CodeTextEditor {
 		_ALWAYS_INLINE_ bool operator()(const ShaderWarning &p_a, const ShaderWarning &p_b) const { return (p_a.get_line() < p_b.get_line()); }
 	};
 
-	Ref<GDShaderSyntaxHighlighter> syntax_highlighter;
+	Ref<uishaderSyntaxHighlighter> syntax_highlighter;
 	RichTextLabel *warnings_panel = nullptr;
 	Ref<Shader> shader;
 	Ref<ShaderInclude> shader_inc;

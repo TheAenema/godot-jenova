@@ -489,18 +489,18 @@ void ShaderMaterial::get_argument_options(const StringName &p_function, int p_id
 #endif
 
 bool ShaderMaterial::_can_do_next_pass() const {
-	return shader.is_valid() && shader->get_mode() == Shader::MODE_SPATIAL;
+	return false;
 }
 
 bool ShaderMaterial::_can_use_render_priority() const {
-	return shader.is_valid() && shader->get_mode() == Shader::MODE_SPATIAL;
+	return false;
 }
 
 Shader::Mode ShaderMaterial::get_shader_mode() const {
 	if (shader.is_valid()) {
 		return shader->get_mode();
 	} else {
-		return Shader::MODE_SPATIAL;
+		return Shader::MODE_CANVAS_ITEM;
 	}
 }
 RID ShaderMaterial::get_shader_rid() const {
@@ -2845,7 +2845,7 @@ RID BaseMaterial3D::get_shader_rid() const {
 }
 
 Shader::Mode BaseMaterial3D::get_shader_mode() const {
-	return Shader::MODE_SPATIAL;
+	return Shader::MODE_CANVAS_ITEM;
 }
 
 void BaseMaterial3D::_bind_methods() {

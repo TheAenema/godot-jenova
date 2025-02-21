@@ -97,7 +97,7 @@
 #include "editor/plugins/texture_region_editor_plugin.h"
 #include "editor/plugins/theme_editor_plugin.h"
 #include "editor/plugins/version_control_editor_plugin.h"
-#include "editor/plugins/visual_shader_editor_plugin.h"
+#include "editor/plugins/editor_resource_conversion_plugin.h"
 #include "editor/register_exporters.h"
 
 void register_editor_types() {

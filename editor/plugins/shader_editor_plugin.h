@@ -39,7 +39,6 @@ class MenuButton;
 class ShaderCreateDialog;
 class TabContainer;
 class TextShaderEditor;
-class VisualShaderEditor;
 class WindowWrapper;
 
 #ifdef MINGW_ENABLED
@@ -53,7 +52,6 @@ class ShaderEditorPlugin : public EditorPlugin {
 		Ref<Shader> shader;
 		Ref<ShaderInclude> shader_inc;
 		TextShaderEditor *shader_editor = nullptr;
-		VisualShaderEditor *visual_shader_editor = nullptr;
 		String path;
 		String name;
 	};
@@ -122,7 +120,6 @@ public:
 	virtual void selected_notify() override;
 
 	TextShaderEditor *get_shader_editor(const Ref<Shader> &p_for_shader);
-	VisualShaderEditor *get_visual_shader_editor(const Ref<Shader> &p_for_shader);
 
 	virtual void set_window_layout(Ref<ConfigFile> p_layout) override;
 	virtual void get_window_layout(Ref<ConfigFile> p_layout) override;

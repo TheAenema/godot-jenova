@@ -1494,7 +1494,7 @@ ProjectSettings::ProjectSettings() {
 	if (ClassDB::class_exists("CSharpScript")) {
 		extensions.push_back("cs");
 	}
-	extensions.push_back("gdshader");
+	extensions.push_back("uishader");
 
 	GLOBAL_DEF(PropertyInfo(Variant::PACKED_STRING_ARRAY, "editor/script/search_in_file_extensions"), extensions);
 

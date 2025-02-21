@@ -101,12 +101,8 @@ void Shader::set_code(const String &p_code) {
 		mode = MODE_CANVAS_ITEM;
 	} else if (type == "particles") {
 		mode = MODE_PARTICLES;
-	} else if (type == "sky") {
-		mode = MODE_SKY;
-	} else if (type == "fog") {
-		mode = MODE_FOG;
 	} else {
-		mode = MODE_SPATIAL;
+		/* For Future Shader Types */
 	}
 
 	for (const Ref<ShaderInclude> &E : include_dependencies) {
@@ -249,11 +245,8 @@ void Shader::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "code", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_code", "get_code");
 
-	BIND_ENUM_CONSTANT(MODE_SPATIAL);
 	BIND_ENUM_CONSTANT(MODE_CANVAS_ITEM);
 	BIND_ENUM_CONSTANT(MODE_PARTICLES);
-	BIND_ENUM_CONSTANT(MODE_SKY);
-	BIND_ENUM_CONSTANT(MODE_FOG);
 }
 
 Shader::Shader() {
@@ -296,7 +289,7 @@ Ref<Resource> ResourceFormatLoaderShader::load(const String &p_path, const Strin
 }
 
 void ResourceFormatLoaderShader::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("gdshader");
+	p_extensions->push_back("uishader");
 }
 
 bool ResourceFormatLoaderShader::handles_type(const String &p_type) const {
@@ -305,7 +298,7 @@ bool ResourceFormatLoaderShader::handles_type(const String &p_type) const {
 
 String ResourceFormatLoaderShader::get_resource_type(const String &p_path) const {
 	String el = p_path.get_extension().to_lower();
-	if (el == "gdshader") {
+	if (el == "uishader") {
 		return "Shader";
 	}
 	return "";
@@ -333,7 +326,7 @@ Error ResourceFormatSaverShader::save(const Ref<Resource> &p_resource, const Str
 void ResourceFormatSaverShader::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const {
 	if (const Shader *shader = Object::cast_to<Shader>(*p_resource)) {
 		if (shader->is_text_shader()) {
-			p_extensions->push_back("gdshader");
+			p_extensions->push_back("uishader");
 		}
 	}
 }

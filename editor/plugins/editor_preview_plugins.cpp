@@ -304,24 +304,6 @@ bool EditorMaterialPreviewPlugin::generate_small_preview_automatically() const {
 Ref<Texture2D> EditorMaterialPreviewPlugin::generate(const Ref<Resource> &p_from, const Size2 &p_size, Dictionary &p_metadata) const {
 	Ref<Material> material = p_from;
 	ERR_FAIL_COND_V(material.is_null(), Ref<Texture2D>());
-
-	if (material->get_shader_mode() == Shader::MODE_SPATIAL) {
-		RS::get_singleton()->mesh_surface_set_material(sphere, 0, material->get_rid());
-
-		draw_requester.request_and_wait(viewport);
-
-		Ref<Image> img = RS::get_singleton()->texture_2d_get(viewport_texture);
-		RS::get_singleton()->mesh_surface_set_material(sphere, 0, RID());
-
-		ERR_FAIL_COND_V(!img.is_valid(), Ref<ImageTexture>());
-
-		img->convert(Image::FORMAT_RGBA8);
-		int thumbnail_size = MAX(p_size.x, p_size.y);
-		img->resize(thumbnail_size, thumbnail_size, Image::INTERPOLATE_CUBIC);
-		post_process_preview(img);
-		return ImageTexture::create_from_image(img);
-	}
-
 	return Ref<Texture2D>();
 }
 
