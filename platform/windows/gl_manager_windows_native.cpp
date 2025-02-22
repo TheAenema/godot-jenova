@@ -318,32 +318,31 @@ static Error _configure_pixel_format(HDC hDC) {
 		1,
 		PFD_DRAW_TO_WINDOW | // Format Must Support Window
 				PFD_SUPPORT_OPENGL | // Format Must Support OpenGL
-				PFD_DOUBLEBUFFER,
-		(BYTE)PFD_TYPE_RGBA,
-		(BYTE)(OS::get_singleton()->is_layered_allowed() ? 32 : 24),
-		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Color Bits Ignored
-		(BYTE)(OS::get_singleton()->is_layered_allowed() ? 8 : 0), // Alpha Buffer
-		(BYTE)0, // Shift Bit Ignored
-		(BYTE)0, // No Accumulation Buffer
-		(BYTE)0, (BYTE)0, (BYTE)0, (BYTE)0, // Accumulation Bits Ignored
-		(BYTE)24, // 24Bit Z-Buffer (Depth Buffer)
-		(BYTE)0, // No Stencil Buffer
-		(BYTE)0, // No Auxiliary Buffer
-		(BYTE)PFD_MAIN_PLANE, // Main Drawing Layer
-		(BYTE)0, // Reserved
+				PFD_DOUBLEBUFFER, // Double Buffering
+		PFD_TYPE_RGBA, // RGBA Type
+		32, // 32-bit Color Depth (including 8-bit alpha)
+		0, 0, 0, 0, 0, 0, // Color Bits Ignored
+		8, // 8-bit Alpha Buffer
+		0, // Shift Bit Ignored
+		0, // No Accumulation Buffer
+		0, 0, 0, 0, // Accumulation Bits Ignored
+		24, // 24-bit Z-Buffer (Depth Buffer)
+		8, // 8-bit Stencil Buffer
+		0, // No Auxiliary Buffer
+		PFD_MAIN_PLANE, // Main Drawing Layer
+		0, // Reserved
 		0, 0, 0 // Layer Masks Ignored
 	};
 
+	// Choose a pixel format that matches the descriptor
 	int pixel_format = ChoosePixelFormat(hDC, &pfd);
-	if (!pixel_format) // Did Windows Find A Matching Pixel Format?
-	{
-		return ERR_CANT_CREATE; // Return FALSE
+	if (!pixel_format) {
+		return ERR_CANT_CREATE; // Return error if no matching format is found
 	}
 
-	BOOL ret = SetPixelFormat(hDC, pixel_format, &pfd);
-	if (!ret) // Are We Able To Set The Pixel Format?
-	{
-		return ERR_CANT_CREATE; // Return FALSE
+	// Set the pixel format
+	if (!SetPixelFormat(hDC, pixel_format, &pfd)) {
+		return ERR_CANT_CREATE; // Return error if pixel format cannot be set
 	}
 
 	return OK;

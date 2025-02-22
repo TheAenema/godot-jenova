@@ -74,6 +74,9 @@
 #define GetProcAddress (void *)GetProcAddress
 #endif
 
+// Lithium Theme
+static bool use_glass_effect = true;
+
 static String format_error_message(DWORD id) {
 	LPWSTR messageBuffer = nullptr;
 	size_t size = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -5446,6 +5449,40 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 			::DwmSetWindowAttribute(wd.hWnd, use_legacy_dark_mode_before_20H1 ? DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 : DWMWA_USE_IMMERSIVE_DARK_MODE, &value, sizeof(value));
 		}
 
+		if (use_glass_effect) {
+			// Structs
+			#define WCA_ACCENT_POLICY 19
+			struct WindowCompositionAttributeData {
+				int Attribute;
+				intptr_t Data;
+				int SizeOfData;
+			};
+			enum AccentState {
+				ACCENT_DISABLED = 1,
+				ACCENT_ENABLE_GRADIENT = 0,
+				ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+				ACCENT_ENABLE_BLURBEHIND = 3,
+				ACCENT_INVALID_STATE = 4
+			};
+			struct AccentPolicy {
+				AccentState AccentState;
+				int AccentFlags;
+				int GradientColor;
+				int AnimationId;
+			};
+			typedef int (*SetWindowCompositionAttributeFunc)(HWND, WindowCompositionAttributeData);
+			SetWindowCompositionAttributeFunc SetWindowCompositionAttribute = (SetWindowCompositionAttributeFunc)GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetWindowCompositionAttribute");
+			AccentPolicy accent;
+			accent.AccentState = AccentState::ACCENT_ENABLE_BLURBEHIND;
+			int accentStructSize = sizeof(accent);
+			WindowCompositionAttributeData data;
+			data.Attribute = WCA_ACCENT_POLICY;
+			data.SizeOfData = accentStructSize;
+			data.Data = (intptr_t)&accent;
+			SetWindowCompositionAttribute(wd.hWnd, data);
+			SetLayeredWindowAttributes(wd.hWnd, NULL, 140, LWA_ALPHA);
+		}
+
 		RECT real_client_rect;
 		GetClientRect(wd.hWnd, &real_client_rect);
 
@@ -5611,6 +5648,7 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 
 	return id;
 }
+
 
 // WinTab API.
 bool DisplayServerWindows::wintab_available = false;
