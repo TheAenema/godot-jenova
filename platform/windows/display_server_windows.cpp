@@ -5480,7 +5480,7 @@ DisplayServer::WindowID DisplayServerWindows::_create_window(WindowMode p_mode, 
 			data.SizeOfData = accentStructSize;
 			data.Data = (intptr_t)&accent;
 			SetWindowCompositionAttribute(wd.hWnd, data);
-			SetLayeredWindowAttributes(wd.hWnd, NULL, 140, LWA_ALPHA);
+			SetLayeredWindowAttributes(wd.hWnd, NULL, 160, LWA_ALPHA);
 		}
 
 		RECT real_client_rect;
