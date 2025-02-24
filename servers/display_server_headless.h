@@ -194,7 +194,7 @@ public:
 	void status_indicator_set_callback(IndicatorID p_id, const Callable &p_callback) override {}
 	void delete_status_indicator(IndicatorID p_id) override {}
 
-	void set_glass_effect(bool effectEnabled, bool advancedLayering) override {}
+	void set_glass_effect(bool effectEnabled, bool advancedLayering, void *window) override {}
 
 	DisplayServerHeadless() {
 		native_menu = memnew(NativeMenu);

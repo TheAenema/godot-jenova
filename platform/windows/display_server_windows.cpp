@@ -41,6 +41,7 @@
 #include "core/version.h"
 #include "drivers/png/png_driver_common.h"
 #include "main/main.h"
+#include "scene/main/window.h"
 #include "scene/resources/texture.h"
 
 #if defined(VULKAN_ENABLED)
@@ -3468,14 +3469,20 @@ bool DisplayServerWindows::is_window_transparency_available() const {
 }
 
 // Glass/Blur Effect
-void DisplayServerWindows::set_glass_effect(bool effectEnabled, bool advancedLayering) {
+void DisplayServerWindows::set_glass_effect(bool effectEnabled, bool advancedLayering, void *window) {
 	// Validate
 	if (!effectEnabled)
 		return;
 
 	// Get Main Window Handle
-	HWND mainWindowHandle = HWND(DisplayServer::get_singleton()->window_get_native_handle(DisplayServer::HandleType::WINDOW_HANDLE));
-
+	HWND windowHandle = nullptr;
+	if (window == nullptr) {
+		windowHandle = HWND(DisplayServer::get_singleton()->window_get_native_handle(DisplayServer::HandleType::WINDOW_HANDLE));
+	} else {
+		WindowID windowID = reinterpret_cast<Window *>(window)->get_window_id();
+		windowHandle = HWND(DisplayServer::get_singleton()->window_get_native_handle(DisplayServer::HandleType::WINDOW_HANDLE, windowID));
+	}
+	
 	// Solve User32 and SetWindowCompositionAttribute
 	struct WindowCompositionAttributeData {
 		int Attribute;
@@ -3513,8 +3520,8 @@ void DisplayServerWindows::set_glass_effect(bool effectEnabled, bool advancedLay
 		data.Attribute = 19 /* WCA_ACCENT_POLICY */;
 		data.SizeOfData = accentStructSize;
 		data.Data = (intptr_t)&accent;
-		SetWindowCompositionAttribute(mainWindowHandle, data);
-		SetLayeredWindowAttributes(mainWindowHandle, NULL, 60, LWA_ALPHA);
+		SetWindowCompositionAttribute(windowHandle, data);
+		SetLayeredWindowAttributes(windowHandle, NULL, 60, LWA_ALPHA);
 	} else {
 		// Advanced Layering
 		AccentPolicy accent = { };
@@ -3524,11 +3531,11 @@ void DisplayServerWindows::set_glass_effect(bool effectEnabled, bool advancedLay
 		data.Attribute = 19 /* WCA_ACCENT_POLICY */;
 		data.SizeOfData = accentStructSize;
 		data.Data = (intptr_t)&accent;
-		SetWindowCompositionAttribute(mainWindowHandle, data);
+		SetWindowCompositionAttribute(windowHandle, data);
 	}
 
 	// Invalidate Window
-	UpdateWindow(mainWindowHandle);
+	UpdateWindow(windowHandle);
 }
 
 // Glass Effect [Only Works With D3D]

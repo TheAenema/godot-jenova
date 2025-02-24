@@ -7417,7 +7417,7 @@ EditorNode::EditorNode() {
 	if (bool(EDITOR_GET("interface/theme/glass_effect"))) {
 		OS::get_singleton()->yield();
 		w->set_transparent_background(true);
-		DisplayServer::get_singleton()->set_glass_effect(true, bool(EDITOR_GET("interface/theme/acrylic_layering")));
+		DisplayServer::get_singleton()->set_glass_effect(true, bool(EDITOR_GET("interface/theme/acrylic_layering")), nullptr);
 	}
 }
 

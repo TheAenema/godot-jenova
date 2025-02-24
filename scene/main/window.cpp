@@ -40,6 +40,10 @@
 #include "scene/theme/theme_db.h"
 #include "scene/theme/theme_owner.h"
 
+#if defined(TOOLS_ENABLED)
+#include "editor/editor_settings.h"
+#endif
+
 // Editor integration.
 
 int Window::root_layout_direction = 0;
@@ -1879,6 +1883,15 @@ void Window::popup(const Rect2i &p_screen_rect) {
 		set_position(new_rect.position);
 		set_size(new_rect.size);
 	}
+
+	// Apply Glass Effect
+	#if defined(TOOLS_ENABLED)
+		if (bool(EDITOR_GET("interface/theme/glass_effect")) && bool(EDITOR_GET("interface/theme/use_glass_everywhere"))) {
+			OS::get_singleton()->yield();
+			this->set_transparent_background(true);
+			DisplayServer::get_singleton()->set_glass_effect(true, bool(EDITOR_GET("interface/theme/acrylic_layering")), this);
+		}
+	#endif
 
 	_post_popup();
 	notification(NOTIFICATION_POST_POPUP);
