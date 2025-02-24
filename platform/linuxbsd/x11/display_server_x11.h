@@ -539,6 +539,8 @@ public:
 
 	static void register_x11_driver();
 
+	void set_glass_effect(bool effectEnabled, bool advancedLayering) override {}
+
 	DisplayServerX11(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, Error &r_error);
 	~DisplayServerX11();
 };

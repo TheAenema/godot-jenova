@@ -295,6 +295,8 @@ public:
 
 	static void register_wayland_driver();
 
+	void set_glass_effect(bool effectEnabled, bool advancedLayering) override {}
+
 	DisplayServerWayland(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i &p_resolution, Context p_context, Error &r_error);
 	~DisplayServerWayland();
 };
