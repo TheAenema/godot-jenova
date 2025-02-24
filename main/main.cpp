@@ -2890,7 +2890,6 @@ int Main::start() {
 	String _export_preset;
 	bool export_debug = false;
 	bool export_pack_only = false;
-	bool install_android_build_template = false;
 #ifdef MODULE_GDSCRIPT_ENABLED
 	String gdscript_docs_path;
 #endif
@@ -2926,8 +2925,6 @@ int Main::start() {
 			editor = true;
 		} else if (E->get() == "-p" || E->get() == "--project-manager") {
 			project_manager = true;
-		} else if (E->get() == "--install-android-build-template") {
-			install_android_build_template = true;
 #endif // TOOLS_ENABLED
 		} else if (E->get().length() && E->get()[0] != '-' && positional_arg.is_empty()) {
 			positional_arg = E->get();

@@ -289,6 +289,7 @@ public:
 	virtual void set_context(Context p_context) override;
 
 	virtual bool is_window_transparency_available() const override;
+	void set_glass_effect(bool effectEnabled, bool advancedLayering, void *window) override {}
 
 	static DisplayServer *create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Point2i *p_position, const Size2i &p_resolution, int p_screen, Context p_context, Error &r_error);
 	static Vector<String> get_rendering_drivers_func();
