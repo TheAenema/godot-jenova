@@ -48,9 +48,6 @@
 
 /*** SCRIPT EDITOR ******/
 
-void ShaderFileEditor::_update_version(const StringName &p_version_txt, const RD::ShaderStage p_stage) {
-}
-
 void ShaderFileEditor::_version_selected(int p_option) {
 	int c = versions->get_current();
 	StringName version_txt = versions->get_item_metadata(c);

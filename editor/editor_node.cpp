@@ -61,8 +61,8 @@
 #include "scene/gui/tab_container.h"
 #include "scene/main/window.h"
 #include "scene/property_utils.h"
-#include "scene/resources/image_texture.h"
 #include "scene/resources/component.h"
+#include "scene/resources/image_texture.h"
 #include "scene/resources/portable_compressed_texture.h"
 #include "scene/theme/theme_db.h"
 #include "servers/display_server.h"
@@ -126,14 +126,14 @@
 #include "editor/multi_node_edit.h"
 #include "editor/node_dock.h"
 #include "editor/plugins/animation_player_editor_plugin.h"
-#include "editor/plugins/element_editor_plugin.h"
+#include "editor/plugins/component_translation_parser_plugin.h"
 #include "editor/plugins/debugger_editor_plugin.h"
 #include "editor/plugins/dedicated_server_export_plugin.h"
 #include "editor/plugins/editor_plugin.h"
 #include "editor/plugins/editor_preview_plugins.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
+#include "editor/plugins/element_editor_plugin.h"
 #include "editor/plugins/gdextension_export_plugin.h"
-#include "editor/plugins/component_translation_parser_plugin.h"
 #include "editor/plugins/particle_process_material_editor_plugin.h"
 #include "editor/plugins/plugin_config_dialog.h"
 #include "editor/plugins/root_motion_editor_plugin.h"
@@ -472,7 +472,6 @@ void EditorNode::_update_theme(bool p_skip_creation) {
 
 	// Update styles.
 	{
-		
 		auto backgroundStyleBox = Object::cast_to<StyleBoxFlat>(theme->get_stylebox(SNAME("Background"), EditorStringName(EditorStyles)).ptr());
 		if (bool(EDITOR_GET("interface/theme/glass_effect")) && backgroundStyleBox) {
 			auto originalColor = backgroundStyleBox->get_bg_color();
@@ -2131,8 +2130,6 @@ void EditorNode::_dialog_action(String p_file) {
 		} break;
 	}
 }
-
-
 
 void EditorNode::edit_item(Object *p_object, Object *p_editing_owner) {
 	ERR_FAIL_NULL(p_editing_owner);
@@ -4745,26 +4742,6 @@ String EditorNode::_get_system_info() const {
 
 	const String rendering_device_name = RenderingServer::get_singleton()->get_video_adapter_name();
 
-	RenderingDevice::DeviceType device_type = RenderingServer::get_singleton()->get_video_adapter_type();
-	String device_type_string;
-	switch (device_type) {
-		case RenderingDevice::DeviceType::DEVICE_TYPE_INTEGRATED_GPU:
-			device_type_string = "integrated";
-			break;
-		case RenderingDevice::DeviceType::DEVICE_TYPE_DISCRETE_GPU:
-			device_type_string = "dedicated";
-			break;
-		case RenderingDevice::DeviceType::DEVICE_TYPE_VIRTUAL_GPU:
-			device_type_string = "virtual";
-			break;
-		case RenderingDevice::DeviceType::DEVICE_TYPE_CPU:
-			device_type_string = "(software emulation on CPU)";
-			break;
-		case RenderingDevice::DeviceType::DEVICE_TYPE_OTHER:
-		case RenderingDevice::DeviceType::DEVICE_TYPE_MAX:
-			break; // Can't happen, but silences warning for DEVICE_TYPE_MAX
-	}
-
 	const Vector<String> video_adapter_driver_info = OS::get_singleton()->get_video_adapter_driver_info();
 
 	const String processor_name = OS::get_singleton()->get_processor_name();
@@ -4801,9 +4778,6 @@ String EditorNode::_get_system_info() const {
 	info.push_back(vformat("%s (%s)", driver_name, rendering_method));
 
 	String graphics;
-	if (!device_type_string.is_empty()) {
-		graphics = device_type_string + " ";
-	}
 	graphics += rendering_device_name;
 	if (video_adapter_driver_info.size() == 2) { // This vector is always either of length 0 or 2.
 		const String &vad_name = video_adapter_driver_info[0];

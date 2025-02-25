@@ -61,7 +61,7 @@ void RasterizerSceneGLES3::GeometryInstanceGLES3::pair_reflection_probe_instance
 }
 
 void RasterizerSceneGLES3::geometry_instance_free(RenderGeometryInstance *p_geometry_instance) {
-	GeometryInstanceGLES3* ginstance = static_cast<GeometryInstanceGLES3 *>(p_geometry_instance);
+	GeometryInstanceGLES3 *ginstance = static_cast<GeometryInstanceGLES3 *>(p_geometry_instance);
 	geometry_instance_alloc.free(ginstance);
 }
 
@@ -196,11 +196,6 @@ void RasterizerSceneGLES3::voxel_gi_update(RID p_probe, bool p_update_light_inst
 void RasterizerSceneGLES3::voxel_gi_set_quality(RS::VoxelGIQuality) {
 }
 
-_FORCE_INLINE_ static uint32_t _indices_to_primitives(RS::PrimitiveType p_primitive, uint32_t p_indices) {
-	static const uint32_t divisor[RS::PRIMITIVE_MAX] = { 1, 2, 1, 3, 1 };
-	static const uint32_t subtractor[RS::PRIMITIVE_MAX] = { 0, 0, 1, 0, 1 };
-	return (p_indices - subtractor[p_primitive]) / divisor[p_primitive];
-}
 void RasterizerSceneGLES3::_fill_render_list(RenderListType p_render_list, const RenderDataGLES3 *p_render_data, PassMode p_pass_mode, bool p_append) {
 }
 

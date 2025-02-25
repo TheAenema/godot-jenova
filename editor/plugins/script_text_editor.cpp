@@ -575,10 +575,10 @@ void ScriptTextEditor::_update_warnings() {
 	int warning_nb = warnings.size();
 	warnings_panel->clear();
 
-	bool has_connections_table = false;
+	// bool has_connections_table = false;
 	Node *base = get_tree()->get_edited_scene_root();
 	if (base && missing_connections.size() > 0) {
-		has_connections_table = true;
+		// has_connections_table = true;
 		warnings_panel->push_table(1);
 		for (const Connection &connection : missing_connections) {
 			String base_path = base->get_name();

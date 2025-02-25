@@ -51,9 +51,9 @@
 #include "scene/2d/gpu_particles_2d.h"
 #include "scene/gui/color_picker.h"
 #include "scene/main/window.h"
+#include "scene/resources/component.h"
 #include "scene/resources/font.h"
 #include "scene/resources/mesh.h"
-#include "scene/resources/component.h"
 
 ///////////////////// Nil /////////////////////////
 
@@ -3190,7 +3190,7 @@ void EditorPropertyResource::_update_preferred_shader() {
 	if (parent_property) {
 		EditorShaderPicker *shader_picker = Object::cast_to<EditorShaderPicker>(resource_picker);
 		Object *ed_object = parent_property->get_edited_object();
-		const StringName &ed_property = parent_property->get_edited_property();
+		// const StringName &ed_property = parent_property->get_edited_property();
 
 		// Set preferred shader based on edited parent type.
 		if (Object::cast_to<Element>(ed_object)) {
