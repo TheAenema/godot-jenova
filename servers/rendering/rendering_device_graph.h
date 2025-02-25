@@ -39,7 +39,7 @@
 // even detrimental to performance. However, there are currently some known
 // cases where using them can solve problems that using singular memory
 // barriers does not, probably due to driver issues (see comment on PR #84976
-// https://github.com/godotengine/godot/pull/84976#issuecomment-1878566830).
+// https://github.com/Jenova-Framework/Lithium-IDE/pull/84976#issuecomment-1878566830).
 
 #define USE_BUFFER_BARRIERS 1
 

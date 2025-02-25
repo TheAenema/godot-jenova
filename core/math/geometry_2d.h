@@ -151,7 +151,7 @@ public:
 	}
 
 // Disable False Positives in MSVC compiler; we correctly check for 0 here to prevent a division by 0.
-// See: https://github.com/godotengine/godot/pull/44274
+// See: https://github.com/Jenova-Framework/Lithium-IDE/pull/44274
 #ifdef _MSC_VER
 #pragma warning(disable : 4723)
 #endif

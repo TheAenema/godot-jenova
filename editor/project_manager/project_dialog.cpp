@@ -179,7 +179,7 @@ void ProjectDialog::_validate_path() {
 		return;
 	}
 
-	// TODO: The following 5 lines could be simplified if OS.get_user_home_dir() or SYSTEM_DIR_HOME is implemented. See: https://github.com/godotengine/godot-proposals/issues/4851.
+	// TODO: The following 5 lines could be simplified if OS.get_user_home_dir() or SYSTEM_DIR_HOME is implemented. See: https://github.com/Jenova-Framework/Lithium-IDE-proposals/issues/4851.
 #ifdef WINDOWS_ENABLED
 	String home_dir = OS::get_singleton()->get_environment("USERPROFILE");
 #else

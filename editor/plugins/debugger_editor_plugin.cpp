@@ -75,12 +75,6 @@ DebuggerEditorPlugin::DebuggerEditorPlugin(PopupMenu *p_debug_menu) {
 	debug_menu->add_check_shortcut(ED_SHORTCUT("editor/visible_paths", TTR("Visible Paths")), RUN_DEBUG_PATHS);
 	debug_menu->set_item_tooltip(-1,
 			TTR("When this option is enabled, curve resources used by path nodes will be visible in the running project."));
-	debug_menu->add_check_shortcut(ED_SHORTCUT("editor/visible_navigation", TTR("Visible Navigation")), RUN_DEBUG_NAVIGATION);
-	debug_menu->set_item_tooltip(-1,
-			TTR("When this option is enabled, navigation meshes, and polygons will be visible in the running project."));
-	debug_menu->add_check_shortcut(ED_SHORTCUT("editor/visible_avoidance", TTR("Visible Avoidance")), RUN_DEBUG_AVOIDANCE);
-	debug_menu->set_item_tooltip(-1,
-			TTR("When this option is enabled, avoidance object shapes, radiuses, and velocities will be visible in the running project."));
 	debug_menu->add_separator();
 	debug_menu->add_check_shortcut(ED_SHORTCUT("editor/visible_canvas_redraw", TTR("Debug Element Redraws")), RUN_DEBUG_CANVAS_REDRAW);
 	debug_menu->set_item_tooltip(-1,
@@ -163,22 +157,6 @@ void DebuggerEditorPlugin::_menu_option(int p_option) {
 			}
 
 		} break;
-		case RUN_DEBUG_NAVIGATION: {
-			bool ischecked = debug_menu->is_item_checked(debug_menu->get_item_index(RUN_DEBUG_NAVIGATION));
-			debug_menu->set_item_checked(debug_menu->get_item_index(RUN_DEBUG_NAVIGATION), !ischecked);
-			if (!initializing) {
-				EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_navigation", !ischecked);
-			}
-
-		} break;
-		case RUN_DEBUG_AVOIDANCE: {
-			bool ischecked = debug_menu->is_item_checked(debug_menu->get_item_index(RUN_DEBUG_AVOIDANCE));
-			debug_menu->set_item_checked(debug_menu->get_item_index(RUN_DEBUG_AVOIDANCE), !ischecked);
-			if (!initializing) {
-				EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_avoidance", !ischecked);
-			}
-
-		} break;
 		case RUN_DEBUG_CANVAS_REDRAW: {
 			bool ischecked = debug_menu->is_item_checked(debug_menu->get_item_index(RUN_DEBUG_CANVAS_REDRAW));
 			debug_menu->set_item_checked(debug_menu->get_item_index(RUN_DEBUG_CANVAS_REDRAW), !ischecked);
@@ -250,12 +228,6 @@ void DebuggerEditorPlugin::_update_debug_options() {
 	}
 	if (check_debug_paths) {
 		_menu_option(RUN_DEBUG_PATHS);
-	}
-	if (check_debug_navigation) {
-		_menu_option(RUN_DEBUG_NAVIGATION);
-	}
-	if (check_debug_avoidance) {
-		_menu_option(RUN_DEBUG_AVOIDANCE);
 	}
 	if (check_debug_canvas_redraw) {
 		_menu_option(RUN_DEBUG_CANVAS_REDRAW);

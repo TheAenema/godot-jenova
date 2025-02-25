@@ -145,7 +145,7 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 
 	// The following initialization is parsed by the l10n extraction script with a regex.
 	// The map name and value definition format should be kept synced with the regex.
-	// https://github.com/godotengine/godot-editor-l10n/blob/main/scripts/common.py
+	// https://github.com/Jenova-Framework/Lithium-IDE-editor-l10n/blob/main/scripts/common.py
 	capitalize_string_remaps["2d"] = "2D";
 	capitalize_string_remaps["3d"] = "3D";
 	capitalize_string_remaps["aa"] = "AA";
@@ -192,7 +192,7 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 	capitalize_string_remaps["fs"] = "FS";
 	capitalize_string_remaps["fsr"] = "FSR";
 	capitalize_string_remaps["fxaa"] = "FXAA";
-	capitalize_string_remaps["gdscript"] = "GDScript";
+	capitalize_string_remaps["cpp"] = "C++";
 	capitalize_string_remaps["ggx"] = "GGX";
 	capitalize_string_remaps["gi"] = "GI";
 	capitalize_string_remaps["gl"] = "GL";

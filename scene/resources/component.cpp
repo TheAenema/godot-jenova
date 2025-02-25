@@ -332,7 +332,7 @@ Node *SceneState::instantiate(GenEditState p_edit_state) const {
 
 					if (snames[nprops[j].name] == CoreStringName(script)) {
 						//work around to avoid old script variables from disappearing, should be the proper fix to:
-						//https://github.com/godotengine/godot/issues/2958
+						//https://github.com/Jenova-Framework/Lithium-IDE/issues/2958
 
 						//store old state
 						List<Pair<StringName, Variant>> old_state;

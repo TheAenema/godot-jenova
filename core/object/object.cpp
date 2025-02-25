@@ -1131,7 +1131,7 @@ Error Object::emit_signalp(const StringName &p_name, const Variant **p_args, int
 	}
 
 	// If this is a ref-counted object, prevent it from being destroyed during signal emission,
-	// which is needed in certain edge cases; e.g., https://github.com/godotengine/godot/issues/73889.
+	// which is needed in certain edge cases; e.g., https://github.com/Jenova-Framework/Lithium-IDE/issues/73889.
 	Ref<RefCounted> rc = Ref<RefCounted>(Object::cast_to<RefCounted>(this));
 
 	// Ensure that disconnecting the signal or even deleting the object

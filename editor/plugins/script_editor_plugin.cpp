@@ -1483,7 +1483,7 @@ void ScriptEditor::_menu_option(int p_option) {
 				if (!scr->is_tool()) {
 					is_runnable = false;
 
-					if (scr->get_class() == "GDScript") {
+					if (scr->get_class() == "CPPScript") {
 						EditorToaster::get_singleton()->popup_str(TTR("Cannot run the script because it's not a tool script (add the @tool annotation at the top)."), EditorToaster::SEVERITY_WARNING);
 					} else {
 						EditorToaster::get_singleton()->popup_str(TTR("Cannot run the script because it's not a tool script."), EditorToaster::SEVERITY_WARNING);

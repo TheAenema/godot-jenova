@@ -215,7 +215,7 @@ Config::Config() {
 			flip_xy_workaround = false;
 
 			//TODO: also 'GPUParticles'?
-			//https://github.com/godotengine/godot/issues/92662#issuecomment-2161199477
+			//https://github.com/Jenova-Framework/Lithium-IDE/issues/92662#issuecomment-2161199477
 			//disable_particles_workaround = false;
 		}
 	}

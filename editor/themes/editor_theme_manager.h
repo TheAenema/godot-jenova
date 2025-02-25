@@ -58,6 +58,12 @@ class EditorThemeManager {
 		float contrast = 1.0;
 		float icon_saturation = 1.0;
 
+		// Glass Effect Properties
+		bool glass_effect = false;
+		float glass_base_opacity = 0.2f;
+		bool use_glass_everywhere = false;
+		bool acrylic_layering = false;
+
 		// Extra properties.
 
 		int base_spacing = 4;

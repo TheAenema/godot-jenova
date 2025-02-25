@@ -916,6 +916,8 @@ public:
 	Vector<Ref<EditorResourceConversionPlugin>> find_resource_conversion_plugin(const Ref<Resource> &p_for_resource);
 
 	bool ensure_main_scene(bool p_from_native);
+
+	EditorSettingsDialog *get_editor_settings_dialog() { return editor_settings_dialog; }
 };
 
 struct EditorProgress {

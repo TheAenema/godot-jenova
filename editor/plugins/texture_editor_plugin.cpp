@@ -52,7 +52,7 @@ void TexturePreview::_notification(int p_what) {
 				// TODO: This is a workaround because `NOTIFICATION_THEME_CHANGED`
 				// is getting called for some reason when the `TexturePreview` is
 				// getting destroyed, which causes `get_theme_font()` to return `nullptr`.
-				// See https://github.com/godotengine/godot/issues/50743.
+				// See https://github.com/Jenova-Framework/Lithium-IDE/issues/50743.
 				break;
 			}
 

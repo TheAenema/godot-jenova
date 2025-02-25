@@ -124,6 +124,7 @@ protected:
 
 public:
 	void popup_edit_settings();
+	void editor_restart_request() { _editor_restart_request(); }
 
 	EditorSettingsDialog();
 	~EditorSettingsDialog();

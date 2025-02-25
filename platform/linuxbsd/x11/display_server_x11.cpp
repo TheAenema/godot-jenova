@@ -2598,7 +2598,7 @@ void DisplayServerX11::_set_wm_maximized(WindowID p_window, bool p_enabled) {
 	if (p_enabled && window_is_maximize_allowed(p_window)) {
 		// Wait for effective resizing (so the GLX context is too).
 		// Give up after 0.5s, it's not going to happen on this WM.
-		// https://github.com/godotengine/godot/issues/19978
+		// https://github.com/Jenova-Framework/Lithium-IDE/issues/19978
 		for (int attempt = 0; window_get_mode(p_window) != WINDOW_MODE_MAXIMIZED && attempt < 50; attempt++) {
 			OS::get_singleton()->delay_usec(10'000);
 		}

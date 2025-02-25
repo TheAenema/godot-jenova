@@ -291,7 +291,7 @@ PluginConfigDialog::PluginConfigDialog() {
 	for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 		ScriptLanguage *lang = ScriptServer::get_language(i);
 		script_option_edit->add_item(lang->get_name());
-		if (lang->get_name() == "GDScript") {
+		if (lang->get_name() == "C++ Script") {
 			default_lang = i;
 		}
 	}
@@ -305,8 +305,8 @@ PluginConfigDialog::PluginConfigDialog() {
 	grid->add_child(script_name_label);
 
 	script_edit = memnew(LineEdit);
-	script_edit->set_tooltip_text(TTR("Optional. The path to the script (relative to the add-on folder). If left empty, will default to \"plugin.gd\"."));
-	script_edit->set_placeholder("\"plugin.gd\" -> res://addons/my_plugin/plugin.gd");
+	script_edit->set_tooltip_text(TTR("Optional. The path to the script (relative to the add-on folder). If left empty, will default to \"plugin.cpp\"."));
+	script_edit->set_placeholder("\"plugin.cpp\" -> res://addons/my_plugin/plugin.cpp");
 	script_edit->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	grid->add_child(script_edit);
 
