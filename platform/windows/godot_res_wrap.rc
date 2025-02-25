@@ -1,3 +1,4 @@
+#pragma code_page(65001)
 #include "core/version.h"
 
 GODOT_ICON ICON platform/windows/godot_console.ico
@@ -12,14 +13,14 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName",            "MemarDesign� LLC."
-            VALUE "FileDescription",        VERSION_NAME
+            VALUE "CompanyName",            "MemarDesign™ LLC. (Hamid.Memar)"
+            VALUE "FileDescription",        "Lightweight yet Powerful C++ Integrated Development Environment for Desktop Application Development"
             VALUE "FileVersion",            VERSION_NUMBER
-            VALUE "ProductName",            "Godot Engine :: Jenova Edition"
+            VALUE "ProductName",            VERSION_NAME
             VALUE "Licence",                "MIT"
-            VALUE "LegalCopyright",         "(c) 2007-present Hamid.Memar, Juan Linietsky, Ariel Manzur and Godot Engine Contributors"
-            VALUE "Info",                   "https://godotengine.org"
-            VALUE "ProductVersion",         VERSION_FULL_BUILD
+            VALUE "LegalCopyright",         "Copyright MemarDesign™ LLC. (©) 2024-2025, All Rights Reserved."
+            VALUE "Info",                   "https://lithium-ide.com"
+            VALUE "ProductVersion",         VERSION_FULL_BUILD "(" VERSION_STATUS ")"
         END
     END
     BLOCK "VarFileInfo"
