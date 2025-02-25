@@ -288,7 +288,12 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 				preset_base_color = Color(0.0378f, 0.03854f, 0.06f);
 				preset_accent_color = Color(0.179542f, 0.735295f, 0.468908f);
 				preset_contrast = -0.6f;
-			} else { // Default
+			} else if (config.preset == "Lithium (Glass)") {
+				preset_accent_color = Color::html("#f4837e");
+				preset_base_color = Color::html("#26262666");
+				preset_contrast = -0.8f;
+				config.icon_saturation = 0.8f;
+			} else { // Default : Lithium
 				preset_accent_color = Color::html("#f4837e");
 				preset_base_color = Color::html("#111111");
 				preset_contrast = -0.4f;
