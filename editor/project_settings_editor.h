@@ -38,7 +38,6 @@
 #include "editor/editor_sectioned_inspector.h"
 #include "editor/group_settings_editor.h"
 #include "editor/import_defaults_editor.h"
-#include "editor/localization_editor.h"
 #include "editor/plugins/editor_plugin_settings.h"
 #include "editor/shader_globals_editor.h"
 #include "scene/gui/tab_container.h"
@@ -56,7 +55,6 @@ class ProjectSettingsEditor : public AcceptDialog {
 	VBoxContainer *general_editor = nullptr;
 	SectionedInspector *general_settings_inspector = nullptr;
 	ActionMapEditor *action_map_editor = nullptr;
-	LocalizationEditor *localization_editor = nullptr;
 	EditorAutoloadSettings *autoload_settings = nullptr;
 	ShaderGlobalsEditor *shaders_global_shader_uniforms_editor = nullptr;
 	GroupSettingsEditor *group_settings = nullptr;

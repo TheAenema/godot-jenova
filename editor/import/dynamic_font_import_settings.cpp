@@ -33,7 +33,6 @@
 #include "core/config/project_settings.h"
 #include "editor/editor_file_system.h"
 #include "editor/editor_inspector.h"
-#include "editor/editor_locale_dialog.h"
 #include "editor/editor_node.h"
 #include "editor/editor_property_name_processor.h"
 #include "editor/editor_settings.h"
@@ -538,10 +537,8 @@ void DynamicFontImportSettingsDialog::_variation_selected() {
 		_change_text_opts();
 
 		btn_fill->set_disabled(false);
-		btn_fill_locales->set_disabled(false);
 	} else {
 		btn_fill->set_disabled(true);
-		btn_fill_locales->set_disabled(true);
 	}
 }
 
@@ -569,10 +566,8 @@ void DynamicFontImportSettingsDialog::_variation_remove(Object *p_item, int p_co
 	vars_item = vars_list->get_selected();
 	if (vars_item) {
 		btn_fill->set_disabled(false);
-		btn_fill_locales->set_disabled(false);
 	} else {
 		btn_fill->set_disabled(true);
-		btn_fill_locales->set_disabled(true);
 	}
 }
 
@@ -1002,72 +997,9 @@ void DynamicFontImportSettingsDialog::_re_import() {
 	EditorFileSystem::get_singleton()->reimport_file_with_custom_parameters(base_path, "font_data_dynamic", main_settings);
 }
 
-void DynamicFontImportSettingsDialog::_locale_edited() {
-	TreeItem *item = locale_tree->get_selected();
-	ERR_FAIL_NULL(item);
-	item->set_checked(0, !item->is_checked(0));
-}
-
-void DynamicFontImportSettingsDialog::_process_locales() {
-	Ref<DynamicFontImportSettingsData> import_variation_data;
-
-	TreeItem *vars_item = vars_list->get_selected();
-	if (vars_item) {
-		import_variation_data = vars_item->get_metadata(0);
-	}
-	if (import_variation_data.is_null()) {
-		return;
-	}
-
-	for (int i = 0; i < locale_root->get_child_count(); i++) {
-		TreeItem *item = locale_root->get_child(i);
-		if (item) {
-			if (item->is_checked(0)) {
-				String locale = item->get_text(0);
-				Ref<Translation> tr = ResourceLoader::load(locale);
-				if (tr.is_valid()) {
-					Vector<String> messages = tr->get_translated_message_list();
-					for (const String &E : messages) {
-						RID text_rid = TS->create_shaped_text();
-						if (text_rid.is_valid()) {
-							TS->shaped_text_add_string(text_rid, E, font_main->get_rids(), 16, Dictionary(), tr->get_locale());
-							TS->shaped_text_shape(text_rid);
-							const Glyph *gl = TS->shaped_text_get_glyphs(text_rid);
-							const int gl_size = TS->shaped_text_get_glyph_count(text_rid);
-
-							for (int j = 0; j < gl_size; j++) {
-								if (gl[j].font_rid.is_valid() && gl[j].index != 0) {
-									import_variation_data->selected_glyphs.insert(gl[j].index);
-								}
-							}
-							TS->free_rid(text_rid);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	_glyph_update_lbl();
-	_range_selected();
-}
-
 void DynamicFontImportSettingsDialog::open_settings(const String &p_path) {
 	// Load base font data.
 	Vector<uint8_t> font_data = FileAccess::get_file_as_bytes(p_path);
-
-	// Load project locale list.
-	locale_tree->clear();
-	locale_root = locale_tree->create_item();
-	ERR_FAIL_NULL(locale_root);
-
-	Vector<String> translations = GLOBAL_GET("internationalization/locale/translations");
-	for (const String &E : translations) {
-		TreeItem *item = locale_tree->create_item(locale_root);
-		ERR_FAIL_NULL(item);
-		item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
-		item->set_text(0, E);
-	}
 
 	// Load font for preview.
 	font_preview.instantiate();
@@ -1270,7 +1202,6 @@ DynamicFontImportSettingsDialog::DynamicFontImportSettingsDialog() {
 	options_general.push_back(ResourceImporter::ImportOption(PropertyInfo(Variant::BOOL, "compress", PROPERTY_HINT_NONE, ""), false));
 
 	options_text.push_back(ResourceImporter::ImportOption(PropertyInfo(Variant::DICTIONARY, "opentype_features"), Dictionary()));
-	options_text.push_back(ResourceImporter::ImportOption(PropertyInfo(Variant::STRING, "language", PROPERTY_HINT_LOCALE_ID, ""), ""));
 
 	options_variations.push_back(ResourceImporter::ImportOption(PropertyInfo(Variant::INT, "size", PROPERTY_HINT_RANGE, "0,127,1"), 16));
 	options_variations.push_back(ResourceImporter::ImportOption(PropertyInfo(Variant::INT, "outline_size", PROPERTY_HINT_RANGE, "0,127,1"), 0));
@@ -1419,34 +1350,6 @@ DynamicFontImportSettingsDialog::DynamicFontImportSettingsDialog() {
 	VBoxContainer *page2_0_vb = memnew(VBoxContainer);
 	page2_0_vb->set_name(TTR("Glyphs from the Translations"));
 	preload_pages->add_child(page2_0_vb);
-
-	page2_0_description = memnew(Label);
-	page2_0_description->set_text(TTR("Select translations to add all required glyphs to pre-render list:"));
-	page2_0_description->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	page2_0_description->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
-	page2_0_description->set_custom_minimum_size(Size2(300 * EDSCALE, 1));
-	page2_0_vb->add_child(page2_0_description);
-
-	locale_tree = memnew(Tree);
-	locale_tree->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
-	locale_tree->set_columns(1);
-	locale_tree->set_hide_root(true);
-	locale_tree->set_column_expand(0, true);
-	locale_tree->set_column_custom_minimum_width(0, 120 * EDSCALE);
-	locale_tree->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-	page2_0_vb->add_child(locale_tree);
-	locale_tree->connect("item_activated", callable_mp(this, &DynamicFontImportSettingsDialog::_locale_edited));
-
-	locale_root = locale_tree->create_item();
-
-	HBoxContainer *locale_hb = memnew(HBoxContainer);
-	locale_hb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
-	page2_0_vb->add_child(locale_hb);
-
-	btn_fill_locales = memnew(Button);
-	btn_fill_locales->set_text(TTR("Shape all Strings in the Translations and Add Glyphs"));
-	locale_hb->add_child(btn_fill_locales);
-	btn_fill_locales->connect(SceneStringName(pressed), callable_mp(this, &DynamicFontImportSettingsDialog::_process_locales));
 
 	// Page 2.1 layout: Text to select glyphs
 	VBoxContainer *page2_1_vb = memnew(VBoxContainer);

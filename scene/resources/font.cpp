@@ -33,7 +33,7 @@
 
 #include "core/io/image_loader.h"
 #include "core/io/resource_loader.h"
-#include "core/string/translation.h"
+
 #include "core/templates/hash_map.h"
 #include "core/templates/hashfuncs.h"
 #include "scene/resources/image_texture.h"

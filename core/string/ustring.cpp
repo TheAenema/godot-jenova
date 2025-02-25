@@ -36,7 +36,7 @@
 #include "core/os/memory.h"
 #include "core/string/print_string.h"
 #include "core/string/string_name.h"
-#include "core/string/translation.h"
+
 #include "core/string/ucaps.h"
 #include "core/variant/variant.h"
 #include "core/version_generated.gen.h"
@@ -5793,10 +5793,6 @@ Vector<uint8_t> String::to_wchar_buffer() const {
  * For translations that can be supplied by exported projects, use `RTR()` instead.
  */
 String TTR(const String &p_text, const String &p_context) {
-	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->tool_translate(p_text, p_context);
-	}
-
 	return p_text;
 }
 
@@ -5813,14 +5809,6 @@ String TTR(const String &p_text, const String &p_context) {
  * For translations that can be supplied by exported projects, use `RTRN()` instead.
  */
 String TTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
-	if (TranslationServer::get_singleton()) {
-		return TranslationServer::get_singleton()->tool_translate_plural(p_text, p_text_plural, p_n, p_context);
-	}
-
-	// Return message based on English plural rule if translation is not possible.
-	if (p_n == 1) {
-		return p_text;
-	}
 	return p_text_plural;
 }
 
@@ -5831,14 +5819,7 @@ String TTRN(const String &p_text, const String &p_text_plural, int p_n, const St
  * to allow dehardcoding it in the XML and doing proper substitutions everywhere.
  */
 String DTR(const String &p_text, const String &p_context) {
-	// Comes straight from the XML, so remove indentation and any trailing whitespace.
-	const String text = p_text.dedent().strip_edges();
-
-	if (TranslationServer::get_singleton()) {
-		return String(TranslationServer::get_singleton()->doc_translate(text, p_context)).replace("$DOCS_URL", VERSION_DOCS_URL);
-	}
-
-	return text.replace("$DOCS_URL", VERSION_DOCS_URL);
+	return p_text;
 }
 
 /**
@@ -5850,10 +5831,6 @@ String DTR(const String &p_text, const String &p_context) {
 String DTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
 	const String text = p_text.dedent().strip_edges();
 	const String text_plural = p_text_plural.dedent().strip_edges();
-
-	if (TranslationServer::get_singleton()) {
-		return String(TranslationServer::get_singleton()->doc_translate_plural(text, text_plural, p_n, p_context)).replace("$DOCS_URL", VERSION_DOCS_URL);
-	}
 
 	// Return message based on English plural rule if translation is not possible.
 	if (p_n == 1) {
@@ -5875,14 +5852,6 @@ String DTRN(const String &p_text, const String &p_text_plural, int p_n, const St
  * folder). For editor translations, use `TTR()` instead.
  */
 String RTR(const String &p_text, const String &p_context) {
-	if (TranslationServer::get_singleton()) {
-		String rtr = TranslationServer::get_singleton()->tool_translate(p_text, p_context);
-		if (rtr.is_empty() || rtr == p_text) {
-			return TranslationServer::get_singleton()->translate(p_text, p_context);
-		}
-		return rtr;
-	}
-
 	return p_text;
 }
 
@@ -5898,17 +5867,5 @@ String RTR(const String &p_text, const String &p_context) {
  * folder). For editor translations, use `TTRN()` instead.
  */
 String RTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context) {
-	if (TranslationServer::get_singleton()) {
-		String rtr = TranslationServer::get_singleton()->tool_translate_plural(p_text, p_text_plural, p_n, p_context);
-		if (rtr.is_empty() || rtr == p_text || rtr == p_text_plural) {
-			return TranslationServer::get_singleton()->translate_plural(p_text, p_text_plural, p_n, p_context);
-		}
-		return rtr;
-	}
-
-	// Return message based on English plural rule if translation is not possible.
-	if (p_n == 1) {
-		return p_text;
-	}
-	return p_text_plural;
+	return p_text;
 }

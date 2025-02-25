@@ -43,12 +43,10 @@
 #include "core/object/class_db.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
-#include "core/string/translation.h"
 #include "core/version.h"
 #include "editor/editor_node.h"
 #include "editor/editor_paths.h"
 #include "editor/editor_property_name_processor.h"
-#include "editor/editor_translation.h"
 #include "editor/engine_update_label.h"
 #include "scene/gui/color_picker.h"
 #include "scene/main/node.h"
@@ -342,59 +340,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	hints[m_name] = PropertyInfo(m_type, m_name, m_property_hint, m_hint_string, m_usage);
 
 	/* Languages */
-
-	{
-		String lang_hint = "en";
-		String host_lang = OS::get_singleton()->get_locale();
-
-		// Skip locales if Text server lack required features.
-		Vector<String> locales_to_skip;
-		if (!TS->has_feature(TextServer::FEATURE_BIDI_LAYOUT) || !TS->has_feature(TextServer::FEATURE_SHAPING)) {
-			locales_to_skip.push_back("ar"); // Arabic
-			locales_to_skip.push_back("fa"); // Persian
-			locales_to_skip.push_back("ur"); // Urdu
-		}
-		if (!TS->has_feature(TextServer::FEATURE_BIDI_LAYOUT)) {
-			locales_to_skip.push_back("he"); // Hebrew
-		}
-		if (!TS->has_feature(TextServer::FEATURE_SHAPING)) {
-			locales_to_skip.push_back("bn"); // Bengali
-			locales_to_skip.push_back("hi"); // Hindi
-			locales_to_skip.push_back("ml"); // Malayalam
-			locales_to_skip.push_back("si"); // Sinhala
-			locales_to_skip.push_back("ta"); // Tamil
-			locales_to_skip.push_back("te"); // Telugu
-		}
-
-		/*if (!locales_to_skip.is_empty()) {
-			WARN_PRINT("Some locales are not properly supported by selected Text Server and are disabled.");
-		}*/
-
-		String best;
-		int best_score = 0;
-		for (const String &locale : get_editor_locales()) {
-			// Skip locales which we can't render properly (see above comment).
-			// Test against language code without regional variants (e.g. ur_PK).
-			String lang_code = locale.get_slice("_", 0);
-			if (locales_to_skip.has(lang_code)) {
-				continue;
-			}
-
-			lang_hint += ",";
-			lang_hint += locale;
-
-			int score = TranslationServer::get_singleton()->compare_locales(host_lang, locale);
-			if (score > 0 && score >= best_score) {
-				best = locale;
-				best_score = score;
-			}
-		}
-		if (best_score == 0) {
-			best = "en";
-		}
-
-		EDITOR_SETTING_USAGE(Variant::STRING, PROPERTY_HINT_ENUM, "interface/editor/editor_language", best, lang_hint, PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
-	}
+	EDITOR_SETTING_USAGE(Variant::STRING, PROPERTY_HINT_ENUM, "interface/editor/editor_language", 0, "Worldwide Accepted Language", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
 
 	/* Interface */
 
@@ -1085,7 +1031,6 @@ void EditorSettings::create() {
 
 		print_verbose("EditorSettings: Load OK!");
 
-		singleton->setup_language();
 		singleton->setup_network();
 		singleton->load_favorites_and_recent_dirs();
 		singleton->list_text_editor_themes();
@@ -1112,25 +1057,8 @@ fail:
 	singleton->set_path(config_file_path, true);
 	singleton->save_changed_setting = true;
 	singleton->_load_defaults(extra_config);
-	singleton->setup_language();
 	singleton->setup_network();
 	singleton->list_text_editor_themes();
-}
-
-void EditorSettings::setup_language() {
-	String lang = get("interface/editor/editor_language");
-	if (lang == "en") {
-		return; // Default, nothing to do.
-	}
-	// Load editor translation for configured/detected locale.
-	load_editor_translations(lang);
-	load_property_translations(lang);
-
-	// Load class reference translation.
-	load_doc_translations(lang);
-
-	// Load extractable translation for projects.
-	load_extractable_translations(lang);
 }
 
 void EditorSettings::setup_network() {

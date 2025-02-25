@@ -403,67 +403,6 @@ EditorPropertyTextEnum::EditorPropertyTextEnum() {
 	add_focusable(cancel_button);
 }
 
-//////////////////// LOCALE ////////////////////////
-
-void EditorPropertyLocale::_locale_selected(const String &p_locale) {
-	emit_changed(get_edited_property(), p_locale);
-	update_property();
-}
-
-void EditorPropertyLocale::_locale_pressed() {
-	if (!dialog) {
-		dialog = memnew(EditorLocaleDialog);
-		dialog->connect("locale_selected", callable_mp(this, &EditorPropertyLocale::_locale_selected));
-		add_child(dialog);
-	}
-
-	String locale_code = get_edited_property_value();
-	dialog->set_locale(locale_code);
-	dialog->popup_locale_dialog();
-}
-
-void EditorPropertyLocale::update_property() {
-	String locale_code = get_edited_property_value();
-	locale->set_text(locale_code);
-	locale->set_tooltip_text(locale_code);
-}
-
-void EditorPropertyLocale::setup(const String &p_hint_text) {
-}
-
-void EditorPropertyLocale::_notification(int p_what) {
-	switch (p_what) {
-		case NOTIFICATION_ENTER_TREE:
-		case NOTIFICATION_THEME_CHANGED: {
-			locale_edit->set_icon(get_editor_theme_icon(SNAME("Translation")));
-		} break;
-	}
-}
-
-void EditorPropertyLocale::_locale_focus_exited() {
-	_locale_selected(locale->get_text());
-}
-
-void EditorPropertyLocale::_bind_methods() {
-}
-
-EditorPropertyLocale::EditorPropertyLocale() {
-	HBoxContainer *locale_hb = memnew(HBoxContainer);
-	add_child(locale_hb);
-	locale = memnew(LineEdit);
-	locale_hb->add_child(locale);
-	locale->connect("text_submitted", callable_mp(this, &EditorPropertyLocale::_locale_selected));
-	locale->connect(SceneStringName(focus_exited), callable_mp(this, &EditorPropertyLocale::_locale_focus_exited));
-	locale->set_h_size_flags(SIZE_EXPAND_FILL);
-
-	locale_edit = memnew(Button);
-	locale_edit->set_clip_text(true);
-	locale_hb->add_child(locale_edit);
-	add_focusable(locale);
-	dialog = nullptr;
-	locale_edit->connect(SceneStringName(pressed), callable_mp(this, &EditorPropertyLocale::_locale_pressed));
-}
-
 ///////////////////// PATH /////////////////////////
 
 void EditorPropertyPath::_set_read_only(bool p_read_only) {
@@ -3570,10 +3509,6 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 				EditorPropertyClassName *editor = memnew(EditorPropertyClassName);
 				editor->setup(p_hint_text, p_hint_text);
 				return editor;
-			} else if (p_hint == PROPERTY_HINT_LOCALE_ID) {
-				EditorPropertyLocale *editor = memnew(EditorPropertyLocale);
-				editor->setup(p_hint_text);
-				return editor;
 			} else if (p_hint == PROPERTY_HINT_DIR || p_hint == PROPERTY_HINT_FILE || p_hint == PROPERTY_HINT_SAVE_FILE || p_hint == PROPERTY_HINT_GLOBAL_SAVE_FILE || p_hint == PROPERTY_HINT_GLOBAL_DIR || p_hint == PROPERTY_HINT_GLOBAL_FILE) {
 				Vector<String> extensions = p_hint_text.split(",");
 				bool global = p_hint == PROPERTY_HINT_GLOBAL_DIR || p_hint == PROPERTY_HINT_GLOBAL_FILE || p_hint == PROPERTY_HINT_GLOBAL_SAVE_FILE;
@@ -3775,14 +3710,9 @@ EditorProperty *EditorInspectorDefaultPlugin::get_editor_for_property(Object *p_
 			return editor;
 		} break;
 		case Variant::DICTIONARY: {
-			if (p_hint == PROPERTY_HINT_LOCALIZABLE_STRING) {
-				EditorPropertyLocalizableString *editor = memnew(EditorPropertyLocalizableString);
-				return editor;
-			} else {
-				EditorPropertyDictionary *editor = memnew(EditorPropertyDictionary);
-				editor->setup(p_hint);
-				return editor;
-			}
+			EditorPropertyDictionary *editor = memnew(EditorPropertyDictionary);
+			editor->setup(p_hint);
+			return editor;
 		} break;
 		case Variant::ARRAY: {
 			EditorPropertyArray *editor = memnew(EditorPropertyArray);

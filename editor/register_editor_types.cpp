@@ -43,7 +43,6 @@
 #include "editor/editor_script.h"
 #include "editor/editor_settings.h"
 #include "editor/editor_string_names.h"
-#include "editor/editor_translation_parser.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/export/editor_export_platform.h"
 #include "editor/export/editor_export_platform_pc.h"
@@ -54,7 +53,6 @@
 #include "editor/import/editor_import_plugin.h"
 #include "editor/import/resource_importer_bitmask.h"
 #include "editor/import/resource_importer_bmfont.h"
-#include "editor/import/resource_importer_csv_translation.h"
 #include "editor/import/resource_importer_dynamic_font.h"
 #include "editor/import/resource_importer_image.h"
 #include "editor/import/resource_importer_imagefont.h"
@@ -110,7 +108,6 @@ void register_editor_types() {
 
 	GDREGISTER_CLASS(EditorPaths);
 	GDREGISTER_CLASS(EditorPlugin);
-	GDREGISTER_CLASS(EditorTranslationParserPlugin);
 	GDREGISTER_CLASS(EditorImportPlugin);
 	GDREGISTER_CLASS(EditorScript);
 	GDREGISTER_CLASS(EditorSelection);
@@ -152,7 +149,6 @@ void register_editor_types() {
 	// Required to document import options in the class reference.
 	GDREGISTER_CLASS(ResourceImporterBitMap);
 	GDREGISTER_CLASS(ResourceImporterBMFont);
-	GDREGISTER_CLASS(ResourceImporterCSVTranslation);
 	GDREGISTER_CLASS(ResourceImporterDynamicFont);
 	GDREGISTER_CLASS(ResourceImporterImage);
 	GDREGISTER_CLASS(ResourceImporterImageFont);

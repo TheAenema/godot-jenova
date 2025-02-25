@@ -37,7 +37,6 @@ class CheckBox;
 class ColorPickerButton;
 class CreateDialog;
 class EditorFileDialog;
-class EditorLocaleDialog;
 class EditorResourcePicker;
 class EditorSpinSlider;
 class MenuButton;
@@ -161,26 +160,6 @@ public:
 	void set_save_mode();
 	virtual void update_property() override;
 	EditorPropertyPath();
-};
-
-class EditorPropertyLocale : public EditorProperty {
-	GDCLASS(EditorPropertyLocale, EditorProperty);
-	EditorLocaleDialog *dialog = nullptr;
-	LineEdit *locale = nullptr;
-	Button *locale_edit = nullptr;
-
-	void _locale_selected(const String &p_locale);
-	void _locale_pressed();
-	void _locale_focus_exited();
-
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
-
-public:
-	void setup(const String &p_hit_string);
-	virtual void update_property() override;
-	EditorPropertyLocale();
 };
 
 class EditorPropertyClassName : public EditorProperty {

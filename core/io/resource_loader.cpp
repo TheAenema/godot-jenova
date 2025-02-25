@@ -38,7 +38,7 @@
 #include "core/os/os.h"
 #include "core/os/safe_binary_mutex.h"
 #include "core/string/print_string.h"
-#include "core/string/translation.h"
+
 #include "core/variant/variant_parser.h"
 #include "servers/rendering_server.h"
 
@@ -1014,39 +1014,8 @@ ResourceUID::ID ResourceLoader::get_resource_uid(const String &p_path) {
 String ResourceLoader::_path_remap(const String &p_path, bool *r_translation_remapped) {
 	String new_path = p_path;
 
-	if (translation_remaps.has(p_path)) {
-		// translation_remaps has the following format:
-		//   { "res://path.png": PackedStringArray( "res://path-ru.png:ru", "res://path-de.png:de" ) }
-
-		// To find the path of the remapped resource, we extract the locale name after
-		// the last ':' to match the project locale.
-
-		// An extra remap may still be necessary afterwards due to the text -> binary converter on export.
-
-		String locale = TranslationServer::get_singleton()->get_locale();
-		ERR_FAIL_COND_V_MSG(locale.length() < 2, p_path, "Could not remap path '" + p_path + "' for translation as configured locale '" + locale + "' is invalid.");
-
-		Vector<String> &res_remaps = *translation_remaps.getptr(new_path);
-
-		int best_score = 0;
-		for (int i = 0; i < res_remaps.size(); i++) {
-			int split = res_remaps[i].rfind(":");
-			if (split == -1) {
-				continue;
-			}
-			String l = res_remaps[i].substr(split + 1).strip_edges();
-			int score = TranslationServer::get_singleton()->compare_locales(locale, l);
-			if (score > 0 && score >= best_score) {
-				new_path = res_remaps[i].left(split);
-				best_score = score;
-				if (score == 10) {
-					break; // Exact match, skip the rest.
-				}
-			}
-		}
-
 		if (r_translation_remapped) {
-			*r_translation_remapped = true;
+			*r_translation_remapped = false;
 		}
 
 		// Fallback to p_path if new_path does not exist.
@@ -1054,7 +1023,6 @@ String ResourceLoader::_path_remap(const String &p_path, bool *r_translation_rem
 			WARN_PRINT(vformat("Translation remap '%s' does not exist. Falling back to '%s'.", new_path, p_path));
 			new_path = p_path;
 		}
-	}
 
 	if (path_remaps.has(new_path)) {
 		new_path = path_remaps[new_path];
@@ -1108,54 +1076,6 @@ String ResourceLoader::import_remap(const String &p_path) {
 
 String ResourceLoader::path_remap(const String &p_path) {
 	return _path_remap(p_path);
-}
-
-void ResourceLoader::reload_translation_remaps() {
-	ResourceCache::lock.lock();
-
-	List<Resource *> to_reload;
-	SelfList<Resource> *E = remapped_list.first();
-
-	while (E) {
-		to_reload.push_back(E->self());
-		E = E->next();
-	}
-
-	ResourceCache::lock.unlock();
-
-	//now just make sure to not delete any of these resources while changing locale..
-	while (to_reload.front()) {
-		to_reload.front()->get()->reload_from_file();
-		to_reload.pop_front();
-	}
-}
-
-void ResourceLoader::load_translation_remaps() {
-	if (!ProjectSettings::get_singleton()->has_setting("internationalization/locale/translation_remaps")) {
-		return;
-	}
-
-	Dictionary remaps = GLOBAL_GET("internationalization/locale/translation_remaps");
-	List<Variant> keys;
-	remaps.get_key_list(&keys);
-	for (const Variant &E : keys) {
-		Array langs = remaps[E];
-		Vector<String> lang_remaps;
-		lang_remaps.resize(langs.size());
-		String *lang_remaps_ptrw = lang_remaps.ptrw();
-		for (const Variant &lang : langs) {
-			*lang_remaps_ptrw++ = lang;
-		}
-
-		translation_remaps[String(E)] = lang_remaps;
-	}
-}
-
-void ResourceLoader::clear_translation_remaps() {
-	translation_remaps.clear();
-	while (remapped_list.first() != nullptr) {
-		remapped_list.remove(remapped_list.first());
-	}
 }
 
 void ResourceLoader::clear_thread_load_tasks() {
@@ -1321,7 +1241,6 @@ bool ResourceLoader::cleaning_tasks = false;
 HashMap<String, ResourceLoader::LoadToken *> ResourceLoader::user_load_tokens;
 
 SelfList<Resource>::List ResourceLoader::remapped_list;
-HashMap<String, Vector<String>> ResourceLoader::translation_remaps;
 HashMap<String, String> ResourceLoader::path_remaps;
 
 ResourceLoaderImport ResourceLoader::import = nullptr;

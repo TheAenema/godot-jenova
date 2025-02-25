@@ -71,7 +71,6 @@ public:
 
 class EditorFileDialog;
 class EditorInspector;
-class EditorLocaleDialog;
 
 class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 	GDCLASS(DynamicFontImportSettingsDialog, ConfirmationDialog)
@@ -121,15 +120,6 @@ class DynamicFontImportSettingsDialog : public ConfirmationDialog {
 	Label *label_glyphs = nullptr;
 	void _glyph_clear();
 	void _glyph_update_lbl();
-
-	// Page 2.0 layout: Translations
-	Label *page2_0_description = nullptr;
-	Tree *locale_tree = nullptr;
-	TreeItem *locale_root = nullptr;
-	Button *btn_fill_locales = nullptr;
-
-	void _locale_edited();
-	void _process_locales();
 
 	// Page 2.1 layout: Text to select glyphs
 	Label *page2_1_description = nullptr;

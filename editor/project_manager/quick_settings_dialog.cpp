@@ -31,7 +31,6 @@
 #include "quick_settings_dialog.h"
 
 #include "core/config/project_settings.h"
-#include "core/string/translation.h"
 #include "editor/editor_settings.h"
 #include "editor/editor_string_names.h"
 #include "editor/themes/editor_scale.h"
@@ -256,7 +255,7 @@ QuickSettingsDialog::QuickSettingsDialog() {
 
 			for (int i = 0; i < editor_languages.size(); i++) {
 				const String &lang_value = editor_languages[i];
-				String lang_name = TranslationServer::get_singleton()->get_locale_name(lang_value);
+				String lang_name = lang_value;
 				language_option_button->add_item(vformat("[%s] %s", lang_value, lang_name), i);
 				language_option_button->set_item_metadata(i, lang_value);
 			}

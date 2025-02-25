@@ -37,7 +37,6 @@
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "core/string/translation.h"
 #include "scene/gui/label.h"
 #include "scene/gui/panel.h"
 #include "scene/main/canvas_layer.h"
@@ -3060,8 +3059,7 @@ bool Control::is_layout_rtl() const {
 						String locale = OS::get_singleton()->get_locale();
 						const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
 					} else {
-						String locale = TranslationServer::get_singleton()->get_tool_locale();
-						const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
+						const_cast<Control *>(this)->data.is_rtl = false;
 					}
 					return data.is_rtl;
 				}
@@ -3096,15 +3094,13 @@ bool Control::is_layout_rtl() const {
 				String locale = OS::get_singleton()->get_locale();
 				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
 			} else {
-				String locale = TranslationServer::get_singleton()->get_tool_locale();
-				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
+				const_cast<Control *>(this)->data.is_rtl = false;
 			}
 		} else if (data.layout_dir == LAYOUT_DIRECTION_LOCALE) {
 			if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
 				const_cast<Control *>(this)->data.is_rtl = true;
 			} else {
-				String locale = TranslationServer::get_singleton()->get_tool_locale();
-				const_cast<Control *>(this)->data.is_rtl = TS->is_locale_right_to_left(locale);
+				const_cast<Control *>(this)->data.is_rtl = false;
 			}
 		} else {
 			const_cast<Control *>(this)->data.is_rtl = (data.layout_dir == LAYOUT_DIRECTION_RTL);

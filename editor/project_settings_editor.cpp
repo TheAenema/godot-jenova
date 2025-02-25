@@ -43,7 +43,6 @@
 ProjectSettingsEditor *ProjectSettingsEditor::singleton = nullptr;
 
 void ProjectSettingsEditor::connect_filesystem_dock_signals(FileSystemDock *p_fs_dock) {
-	localization_editor->connect_filesystem_dock_signals(p_fs_dock);
 	group_settings->connect_filesystem_dock_signals(p_fs_dock);
 }
 
@@ -60,7 +59,6 @@ void ProjectSettingsEditor::popup_project_settings(bool p_clear_filter) {
 	general_settings_inspector->update_category_list();
 	set_process_shortcut_input(true);
 
-	localization_editor->update_translations();
 	autoload_settings->update_autoload();
 	group_settings->update_groups();
 	plugin_settings->update_plugins();
@@ -728,11 +726,6 @@ ProjectSettingsEditor::ProjectSettingsEditor(EditorData *p_data) {
 	action_map_editor->connect(SNAME("filter_focused"), callable_mp((AcceptDialog *)this, &AcceptDialog::set_close_on_escape).bind(false));
 	action_map_editor->connect(SNAME("filter_unfocused"), callable_mp((AcceptDialog *)this, &AcceptDialog::set_close_on_escape).bind(true));
 	tab_container->add_child(action_map_editor);
-
-	localization_editor = memnew(LocalizationEditor);
-	localization_editor->set_name(TTR("Localization"));
-	localization_editor->connect("localization_changed", callable_mp(this, &ProjectSettingsEditor::queue_save));
-	tab_container->add_child(localization_editor);
 
 	TabContainer *globals_container = memnew(TabContainer);
 	globals_container->set_name(TTR("Globals"));

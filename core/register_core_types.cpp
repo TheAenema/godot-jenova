@@ -61,7 +61,6 @@
 #include "core/io/stream_peer_gzip.h"
 #include "core/io/stream_peer_tls.h"
 #include "core/io/tcp_server.h"
-#include "core/io/translation_loader_po.h"
 #include "core/io/udp_server.h"
 #include "core/io/xml_parser.h"
 #include "core/math/a_star.h"
@@ -77,15 +76,13 @@
 #include "core/object/worker_thread_pool.h"
 #include "core/os/main_loop.h"
 #include "core/os/time.h"
-#include "core/string/optimized_translation.h"
-#include "core/string/translation.h"
+
 
 static Ref<ResourceFormatSaverBinary> resource_saver_binary;
 static Ref<ResourceFormatLoaderBinary> resource_loader_binary;
 static Ref<ResourceFormatImporter> resource_format_importer;
 static Ref<ResourceFormatImporterSaver> resource_format_importer_saver;
 static Ref<ResourceFormatLoaderImage> resource_format_image;
-static Ref<TranslationLoaderPO> resource_format_po;
 static Ref<ResourceFormatSaverCrypto> resource_format_saver_crypto;
 static Ref<ResourceFormatLoaderCrypto> resource_format_loader_crypto;
 static Ref<GDExtensionResourceLoader> resource_loader_gdextension;
@@ -136,9 +133,6 @@ void register_core_types() {
 	Variant::register_types();
 
 	CoreStringNames::create();
-
-	resource_format_po.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_format_po);
 
 	resource_saver_binary.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_saver_binary);
@@ -231,8 +225,6 @@ void register_core_types() {
 	ResourceSaver::add_resource_format_saver(resource_saver_json);
 
 	GDREGISTER_CLASS(MainLoop);
-	GDREGISTER_CLASS(Translation);
-	GDREGISTER_CLASS(OptimizedTranslation);
 	GDREGISTER_CLASS(UndoRedo);
 	GDREGISTER_CLASS(TriangleMesh);
 
@@ -324,7 +316,6 @@ void register_core_singletons() {
 	GDREGISTER_CLASS(core_bind::Engine);
 	GDREGISTER_CLASS(core_bind::special::ClassDB);
 	GDREGISTER_CLASS(core_bind::Marshalls);
-	GDREGISTER_CLASS(TranslationServer);
 	GDREGISTER_ABSTRACT_CLASS(Input);
 	GDREGISTER_CLASS(InputMap);
 	GDREGISTER_CLASS(Expression);
@@ -341,7 +332,6 @@ void register_core_singletons() {
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Engine", core_bind::Engine::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("ClassDB", _classdb));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Marshalls", core_bind::Marshalls::get_singleton()));
-	Engine::get_singleton()->add_singleton(Engine::Singleton("TranslationServer", TranslationServer::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("Input", Input::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("InputMap", InputMap::get_singleton()));
 	Engine::get_singleton()->add_singleton(Engine::Singleton("EngineDebugger", core_bind::EngineDebugger::get_singleton()));
@@ -416,9 +406,6 @@ void unregister_core_types() {
 
 	ResourceSaver::remove_resource_format_saver(resource_format_importer_saver);
 	resource_format_importer_saver.unref();
-
-	ResourceLoader::remove_resource_format_loader(resource_format_po);
-	resource_format_po.unref();
 
 	ResourceSaver::remove_resource_format_saver(resource_format_saver_crypto);
 	resource_format_saver_crypto.unref();

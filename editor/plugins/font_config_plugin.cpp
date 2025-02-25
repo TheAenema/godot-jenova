@@ -194,8 +194,6 @@ void EditorPropertyFontMetaOverride::_add_menu() {
 		menu->set_position(get_screen_position() + Size2(0, size.height * get_global_transform().get_scale().y));
 		menu->reset_size();
 		menu->popup();
-	} else {
-		locale_select->popup_locale_dialog();
 	}
 }
 
@@ -288,9 +286,7 @@ void EditorPropertyFontMetaOverride::update_property() {
 			prop->set_object_and_property(object.ptr(), "keys/" + name);
 
 			if (script_editor) {
-				prop->set_label(TranslationServer::get_singleton()->get_script_name(name));
-			} else {
-				prop->set_label(TranslationServer::get_singleton()->get_locale_name(name));
+				prop->set_label(name);
 			}
 			prop->set_tooltip_text(name);
 			prop->set_selectable(false);
@@ -365,18 +361,8 @@ EditorPropertyFontMetaOverride::EditorPropertyFontMetaOverride(bool p_script) {
 	add_focusable(edit);
 
 	menu = memnew(PopupMenu);
-	if (script_editor) {
-		script_codes = TranslationServer::get_singleton()->get_all_scripts();
-		for (int i = 0; i < script_codes.size(); i++) {
-			menu->add_item(TranslationServer::get_singleton()->get_script_name(script_codes[i]) + " (" + script_codes[i] + ")", i);
-		}
-	}
 	add_child(menu);
 	menu->connect(SceneStringName(id_pressed), callable_mp(this, &EditorPropertyFontMetaOverride::_add_script));
-
-	locale_select = memnew(EditorLocaleDialog);
-	locale_select->connect("locale_selected", callable_mp(this, &EditorPropertyFontMetaOverride::_add_lang));
-	add_child(locale_select);
 }
 
 /*************************************************************************/

@@ -49,7 +49,6 @@
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/register_core_types.h"
-#include "core/string/translation.h"
 #include "core/version.h"
 #include "drivers/register_driver_types.h"
 #include "main/app_icon.gen.h"
@@ -85,7 +84,6 @@
 #include "editor/editor_node.h"
 #include "editor/editor_paths.h"
 #include "editor/editor_settings.h"
-#include "editor/editor_translation.h"
 #include "editor/progress_dialog.h"
 #include "editor/project_manager.h"
 #include "editor/register_editor_types.h"
@@ -125,7 +123,6 @@ static Engine *engine = nullptr;
 static ProjectSettings *globals = nullptr;
 static Input *input = nullptr;
 static InputMap *input_map = nullptr;
-static TranslationServer *translation_server = nullptr;
 static Performance *performance = nullptr;
 static PackedData *packed_data = nullptr;
 #ifdef MINIZIP_ENABLED
@@ -653,7 +650,6 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	register_core_settings(); //here globals are present
 
-	translation_server = memnew(TranslationServer);
 	performance = memnew(Performance);
 	GDREGISTER_CLASS(Performance);
 	engine->add_singleton(Engine::Singleton("Performance", performance));
@@ -2153,9 +2149,6 @@ error:
 	if (input_map) {
 		memdelete(input_map);
 	}
-	if (translation_server) {
-		memdelete(translation_server);
-	}
 	if (globals) {
 		memdelete(globals);
 	}
@@ -2596,13 +2589,6 @@ Error Main::setup2(bool p_show_boot_logo) {
 	{
 		OS::get_singleton()->benchmark_begin_measure("Startup", "Translations and Remaps");
 
-		translation_server->setup(); //register translations, load them, etc.
-		if (!locale.is_empty()) {
-			translation_server->set_locale(locale);
-		}
-		translation_server->load_translations();
-		ResourceLoader::load_translation_remaps(); //load remaps for resources
-
 		ResourceLoader::load_path_remaps();
 
 		OS::get_singleton()->benchmark_end_measure("Startup", "Translations and Remaps");
@@ -3005,11 +2991,6 @@ int Main::start() {
 #endif
 		// Needed to instance editor-only classes for their default values
 		Engine::get_singleton()->set_editor_hint(true);
-
-		// Translate the class reference only when `-l LOCALE` parameter is given.
-		if (!locale.is_empty() && locale != "en") {
-			load_doc_translations(locale);
-		}
 
 		{
 			Ref<DirAccess> da = DirAccess::open(doc_tool_path);
@@ -3416,7 +3397,6 @@ int Main::start() {
 			sml->set_auto_accept_quit(GLOBAL_GET("application/config/auto_accept_quit"));
 			sml->set_quit_on_go_back(GLOBAL_GET("application/config/quit_on_go_back"));
 			String appname = GLOBAL_GET("application/config/name");
-			appname = TranslationServer::get_singleton()->translate(appname);
 #ifdef DEBUG_ENABLED
 			// Append a suffix to the window title to denote that the project is running
 			// from a debug build (including the editor). Since this results in lower performance,
@@ -3864,7 +3844,6 @@ void Main::cleanup(bool p_force) {
 	OS::get_singleton()->_execpath = "";
 	OS::get_singleton()->_local_clipboard = "";
 
-	ResourceLoader::clear_translation_remaps();
 	ResourceLoader::clear_path_remaps();
 
 	ScriptServer::finish_languages();
@@ -3924,9 +3903,6 @@ void Main::cleanup(bool p_force) {
 	}
 	if (input_map) {
 		memdelete(input_map);
-	}
-	if (translation_server) {
-		memdelete(translation_server);
 	}
 	if (tsman) {
 		memdelete(tsman);

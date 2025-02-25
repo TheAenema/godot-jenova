@@ -206,9 +206,6 @@ public:
 	void make_bottom_panel_item_visible(Control *p_item);
 	void hide_bottom_panel();
 
-	void add_translation_parser_plugin(const Ref<EditorTranslationParserPlugin> &p_parser);
-	void remove_translation_parser_plugin(const Ref<EditorTranslationParserPlugin> &p_parser);
-
 	void add_import_plugin(const Ref<EditorImportPlugin> &p_importer, bool p_first_priority = false);
 	void remove_import_plugin(const Ref<EditorImportPlugin> &p_importer);
 

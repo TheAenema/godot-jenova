@@ -32,7 +32,6 @@
 #define EDITOR_PROPERTIES_ARRAY_DICT_H
 
 #include "editor/editor_inspector.h"
-#include "editor/editor_locale_dialog.h"
 #include "editor/filesystem_dock.h"
 
 class Button;
@@ -242,41 +241,6 @@ public:
 	virtual void update_property() override;
 	virtual bool is_colored(ColorationMode p_mode) override;
 	EditorPropertyDictionary();
-};
-
-class EditorPropertyLocalizableString : public EditorProperty {
-	GDCLASS(EditorPropertyLocalizableString, EditorProperty);
-
-	EditorLocaleDialog *locale_select = nullptr;
-
-	bool updating;
-
-	Ref<EditorPropertyDictionaryObject> object;
-	int page_length = 20;
-	int page_index = 0;
-	Button *edit = nullptr;
-	MarginContainer *container = nullptr;
-	VBoxContainer *property_vbox = nullptr;
-	EditorSpinSlider *size_slider = nullptr;
-	Button *button_add_item = nullptr;
-	EditorPaginator *paginator = nullptr;
-
-	void _page_changed(int p_page);
-	void _edit_pressed();
-	void _remove_item(Object *p_button, int p_index);
-	void _property_changed(const String &p_property, const Variant &p_value, const String &p_name = "", bool p_changing = false);
-
-	void _add_locale_popup();
-	void _add_locale(const String &p_locale);
-	void _object_id_selected(const StringName &p_property, ObjectID p_id);
-
-protected:
-	static void _bind_methods();
-	void _notification(int p_what);
-
-public:
-	virtual void update_property() override;
-	EditorPropertyLocalizableString();
 };
 
 #endif // EDITOR_PROPERTIES_ARRAY_DICT_H

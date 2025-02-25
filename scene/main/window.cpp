@@ -34,7 +34,6 @@
 #include "core/config/project_settings.h"
 #include "core/debugger/engine_debugger.h"
 #include "core/input/shortcut.h"
-#include "core/string/translation.h"
 #include "core/variant/variant_parser.h"
 #include "scene/gui/control.h"
 #include "scene/theme/theme_db.h"
@@ -2678,8 +2677,7 @@ bool Window::is_layout_rtl() const {
 					String locale = OS::get_singleton()->get_locale();
 					return TS->is_locale_right_to_left(locale);
 				} else {
-					String locale = TranslationServer::get_singleton()->get_tool_locale();
-					return TS->is_locale_right_to_left(locale);
+					return true;
 				}
 			}
 		}
@@ -2709,17 +2707,9 @@ bool Window::is_layout_rtl() const {
 		} else if (root_layout_direction == 3) {
 			String locale = OS::get_singleton()->get_locale();
 			return TS->is_locale_right_to_left(locale);
-		} else {
-			String locale = TranslationServer::get_singleton()->get_tool_locale();
-			return TS->is_locale_right_to_left(locale);
 		}
 	} else if (layout_dir == LAYOUT_DIRECTION_LOCALE) {
-		if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
-			return true;
-		} else {
-			String locale = TranslationServer::get_singleton()->get_tool_locale();
-			return TS->is_locale_right_to_left(locale);
-		}
+		return true;
 	} else {
 		return (layout_dir == LAYOUT_DIRECTION_RTL);
 	}

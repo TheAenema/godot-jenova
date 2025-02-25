@@ -38,7 +38,6 @@
 #include "core/io/marshalls.h"
 #include "core/io/resource_importer.h"
 #include "core/object/script_language.h"
-#include "core/string/translation.h"
 #include "editor/editor_settings.h"
 #include "editor/export/editor_export.h"
 #include "scene/resources/theme.h"
@@ -71,9 +70,8 @@ static String _get_indent(const String &p_text) {
 static String _translate_doc_string(const String &p_text) {
 	const String indent = _get_indent(p_text);
 	const String message = p_text.dedent().strip_edges();
-	const String translated = TranslationServer::get_singleton()->doc_translate(message, "");
 	// No need to restore stripped edges because they'll be stripped again later.
-	return translated.indent(indent);
+	return message.indent(indent);
 }
 
 // Comparator for constructors, based on `MetodDoc` operator.

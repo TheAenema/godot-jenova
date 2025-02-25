@@ -42,7 +42,6 @@
 #include "core/os/os.h"
 #include "core/os/time.h"
 #include "core/string/print_string.h"
-#include "core/string/translation.h"
 #include "core/version.h"
 #include "editor/editor_string_names.h"
 #include "main/main.h"
@@ -94,7 +93,6 @@
 #include "editor/editor_run_native.h"
 #include "editor/editor_settings.h"
 #include "editor/editor_settings_dialog.h"
-#include "editor/editor_translation_parser.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/export/editor_export.h"
 #include "editor/export/export_template_manager.h"
@@ -112,7 +110,6 @@
 #include "editor/import/dynamic_font_import_settings.h"
 #include "editor/import/resource_importer_bitmask.h"
 #include "editor/import/resource_importer_bmfont.h"
-#include "editor/import/resource_importer_csv_translation.h"
 #include "editor/import/resource_importer_dynamic_font.h"
 #include "editor/import/resource_importer_image.h"
 #include "editor/import/resource_importer_imagefont.h"
@@ -133,7 +130,6 @@
 #include "editor/plugins/editor_preview_plugins.h"
 #include "editor/plugins/editor_resource_conversion_plugin.h"
 #include "editor/plugins/gdextension_export_plugin.h"
-#include "editor/plugins/component_translation_parser_plugin.h"
 #include "editor/plugins/particle_process_material_editor_plugin.h"
 #include "editor/plugins/plugin_config_dialog.h"
 #include "editor/plugins/root_motion_editor_plugin.h"
@@ -6355,7 +6351,6 @@ EditorNode::EditorNode() {
 	}
 
 	SceneState::set_disable_placeholders(true);
-	ResourceLoader::clear_translation_remaps(); // Using no remaps if in editor.
 	ResourceLoader::clear_path_remaps();
 	ResourceLoader::set_create_missing_resources_if_class_unavailable(true);
 
@@ -6367,7 +6362,6 @@ EditorNode::EditorNode() {
 	ProjectSettings::get_singleton()->connect("settings_changed", callable_mp(this, &EditorNode::_update_from_settings));
 	GDExtensionManager::get_singleton()->connect("extensions_reloaded", callable_mp(this, &EditorNode::_gdextensions_reloaded));
 
-	TranslationServer::get_singleton()->set_enabled(false);
 	// Load settings.
 	if (!EditorSettings::get_singleton()) {
 		EditorSettings::create();
@@ -6497,10 +6491,6 @@ EditorNode::EditorNode() {
 		Ref<ResourceImporterImageFont> import_font_data_image;
 		import_font_data_image.instantiate();
 		ResourceFormatImporter::get_singleton()->add_importer(import_font_data_image);
-
-		Ref<ResourceImporterCSVTranslation> import_csv_translation;
-		import_csv_translation.instantiate();
-		ResourceFormatImporter::get_singleton()->add_importer(import_csv_translation);
 
 		Ref<ResourceImporterWAV> import_wav;
 		import_wav.instantiate();
@@ -7301,10 +7291,6 @@ EditorNode::EditorNode() {
 
 	EditorExport::get_singleton()->add_export_plugin(dedicated_server_export_plugin);
 
-	Ref<ComponentEditorTranslationParserPlugin> component_translation_parser_plugin;
-	component_translation_parser_plugin.instantiate();
-	EditorTranslationParser::get_singleton()->add_parser(component_translation_parser_plugin, EditorTranslationParser::STANDARD);
-
 	_edit_current();
 	current = nullptr;
 	saving_resource = Ref<Resource>();
@@ -7423,7 +7409,6 @@ EditorNode::EditorNode() {
 
 EditorNode::~EditorNode() {
 	EditorInspector::cleanup_plugins();
-	EditorTranslationParser::get_singleton()->clean_parsers();
 	remove_print_handler(&print_handler);
 	EditorHelp::cleanup_doc();
 #if defined(MODULE_GDSCRIPT_ENABLED) || defined(MODULE_MONO_ENABLED)

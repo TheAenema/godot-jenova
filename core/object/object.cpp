@@ -38,7 +38,7 @@
 #include "core/object/script_language.h"
 #include "core/os/os.h"
 #include "core/string/print_string.h"
-#include "core/string/translation.h"
+
 #include "core/templates/local_vector.h"
 #include "core/variant/typed_array.h"
 
@@ -1515,41 +1515,11 @@ void Object::initialize_class() {
 }
 
 String Object::tr(const StringName &p_message, const StringName &p_context) const {
-	if (!_can_translate || !TranslationServer::get_singleton()) {
-		return p_message;
-	}
-
-	if (Engine::get_singleton()->is_editor_hint() || Engine::get_singleton()->is_project_manager_hint()) {
-		String tr_msg = TranslationServer::get_singleton()->extractable_translate(p_message, p_context);
-		if (!tr_msg.is_empty() && tr_msg != p_message) {
-			return tr_msg;
-		}
-
-		return TranslationServer::get_singleton()->tool_translate(p_message, p_context);
-	}
-
-	return TranslationServer::get_singleton()->translate(p_message, p_context);
+	return p_message;
 }
 
 String Object::tr_n(const StringName &p_message, const StringName &p_message_plural, int p_n, const StringName &p_context) const {
-	if (!_can_translate || !TranslationServer::get_singleton()) {
-		// Return message based on English plural rule if translation is not possible.
-		if (p_n == 1) {
-			return p_message;
-		}
-		return p_message_plural;
-	}
-
-	if (Engine::get_singleton()->is_editor_hint() || Engine::get_singleton()->is_project_manager_hint()) {
-		String tr_msg = TranslationServer::get_singleton()->extractable_translate_plural(p_message, p_message_plural, p_n, p_context);
-		if (!tr_msg.is_empty() && tr_msg != p_message && tr_msg != p_message_plural) {
-			return tr_msg;
-		}
-
-		return TranslationServer::get_singleton()->tool_translate_plural(p_message, p_message_plural, p_n, p_context);
-	}
-
-	return TranslationServer::get_singleton()->translate_plural(p_message, p_message_plural, p_n, p_context);
+	return p_message;
 }
 
 void Object::_clear_internal_resource_paths(const Variant &p_var) {
