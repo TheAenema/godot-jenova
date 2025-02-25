@@ -291,7 +291,7 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 			} else if (config.preset == "Lithium (Glass)") {
 				preset_accent_color = Color::html("#f4837e");
 				preset_base_color = Color::html("#26262666");
-				preset_contrast = -0.8f;
+				preset_contrast = 0.0f;
 				config.icon_saturation = 0.8f;
 			} else { // Default : Lithium
 				preset_accent_color = Color::html("#f4837e");
