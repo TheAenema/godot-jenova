@@ -159,57 +159,10 @@ protected:
 		virtual ~TrackCache() {}
 	};
 
-	struct TrackCacheTransform : public TrackCache {
-		int bone_idx = -1;
-		bool loc_used = false;
-		bool rot_used = false;
-		bool scale_used = false;
-		Vector3 init_loc = Vector3(0, 0, 0);
-		Quaternion init_rot = Quaternion(0, 0, 0, 1);
-		Vector3 init_scale = Vector3(1, 1, 1);
-		Vector3 loc;
-		Quaternion rot;
-		Vector3 scale;
-
-		TrackCacheTransform(const TrackCacheTransform &p_other) :
-				TrackCache(p_other),
-				bone_idx(p_other.bone_idx),
-				loc_used(p_other.loc_used),
-				rot_used(p_other.rot_used),
-				scale_used(p_other.scale_used),
-				init_loc(p_other.init_loc),
-				init_rot(p_other.init_rot),
-				init_scale(p_other.init_scale),
-				loc(p_other.loc),
-				rot(p_other.rot),
-				scale(p_other.scale) {
-		}
-
-		TrackCacheTransform() {
-			type = Animation::TYPE_POSITION_3D;
-		}
-		~TrackCacheTransform() {}
-	};
-
 	struct RootMotionCache {
 		Vector3 loc = Vector3(0, 0, 0);
 		Quaternion rot = Quaternion(0, 0, 0, 1);
 		Vector3 scale = Vector3(1, 1, 1);
-	};
-
-	struct TrackCacheBlendShape : public TrackCache {
-		float init_value = 0;
-		float value = 0;
-		int shape_index = -1;
-
-		TrackCacheBlendShape(const TrackCacheBlendShape &p_other) :
-				TrackCache(p_other),
-				init_value(p_other.init_value),
-				value(p_other.value),
-				shape_index(p_other.shape_index) {}
-
-		TrackCacheBlendShape() { type = Animation::TYPE_BLEND_SHAPE; }
-		~TrackCacheBlendShape() {}
 	};
 
 	struct TrackCacheValue : public TrackCache {

@@ -555,8 +555,6 @@ class AnimationTrackEditor : public VBoxContainer {
 	////////////// edit menu stuff
 
 	ConfirmationDialog *bake_dialog = nullptr;
-	CheckBox *bake_trs = nullptr;
-	CheckBox *bake_blendshape = nullptr;
 	CheckBox *bake_value = nullptr;
 	SpinBox *bake_fps = nullptr;
 

@@ -710,12 +710,6 @@ bool Motion::_update_caches() {
 						}
 
 					} break;
-					case Animation::TYPE_POSITION_3D:
-					case Animation::TYPE_ROTATION_3D:
-					case Animation::TYPE_SCALE_3D: {
-					} break;
-					case Animation::TYPE_BLEND_SHAPE: {
-					} break;
 					case Animation::TYPE_METHOD: {
 						TrackCacheMethod *track_method = memnew(TrackCacheMethod);
 
@@ -755,26 +749,6 @@ bool Motion::_update_caches() {
 				}
 				track->path = path;
 				track_cache[thash] = track;
-			} else if (track_cache_type == Animation::TYPE_POSITION_3D) {
-				TrackCacheTransform *track_xform = static_cast<TrackCacheTransform *>(track);
-				if (track->setup_pass != setup_pass) {
-					track_xform->loc_used = false;
-					track_xform->rot_used = false;
-					track_xform->scale_used = false;
-				}
-				switch (track_src_type) {
-					case Animation::TYPE_POSITION_3D: {
-						track_xform->loc_used = true;
-					} break;
-					case Animation::TYPE_ROTATION_3D: {
-						track_xform->rot_used = true;
-					} break;
-					case Animation::TYPE_SCALE_3D: {
-						track_xform->scale_used = true;
-					} break;
-					default: {
-					}
-				}
 			} else if (track_cache_type == Animation::TYPE_VALUE) {
 				TrackCacheValue *track_value = static_cast<TrackCacheValue *>(track);
 				// If it has at least one angle interpolation, it also uses angle interpolation for blending.
@@ -875,21 +849,6 @@ void Motion::_blend_init() {
 		track->total_weight = 0.0;
 
 		switch (track->type) {
-			case Animation::TYPE_POSITION_3D: {
-				TrackCacheTransform *t = static_cast<TrackCacheTransform *>(track);
-				if (track->root_motion) {
-					root_motion_cache.loc = Vector3(0, 0, 0);
-					root_motion_cache.rot = Quaternion(0, 0, 0, 1);
-					root_motion_cache.scale = Vector3(1, 1, 1);
-				}
-				t->loc = t->init_loc;
-				t->rot = t->init_rot;
-				t->scale = t->init_scale;
-			} break;
-			case Animation::TYPE_BLEND_SHAPE: {
-				TrackCacheBlendShape *t = static_cast<TrackCacheBlendShape *>(track);
-				t->value = t->init_value;
-			} break;
 			case Animation::TYPE_VALUE: {
 				TrackCacheValue *t = static_cast<TrackCacheValue *>(track);
 				t->value = Animation::cast_to_blendwise(t->init_value);
@@ -1021,14 +980,6 @@ void Motion::_blend_process(double p_delta, bool p_update_only) {
 			Animation::TrackType ttype = a->track_get_type(i);
 			track->root_motion = root_motion_track == a->track_get_path(i);
 			switch (ttype) {
-				case Animation::TYPE_POSITION_3D: {
-				} break;
-				case Animation::TYPE_ROTATION_3D: {
-				} break;
-				case Animation::TYPE_SCALE_3D: {
-				} break;
-				case Animation::TYPE_BLEND_SHAPE: {
-				} break;
 				case Animation::TYPE_BEZIER:
 				case Animation::TYPE_VALUE: {
 					if (Math::is_zero_approx(blend)) {
@@ -1332,10 +1283,6 @@ void Motion::_blend_apply() {
 			continue;
 		}
 		switch (track->type) {
-			case Animation::TYPE_POSITION_3D: {
-			} break;
-			case Animation::TYPE_BLEND_SHAPE: {
-			} break;
 			case Animation::TYPE_VALUE: {
 				TrackCacheValue *t = static_cast<TrackCacheValue *>(track);
 
@@ -1544,10 +1491,6 @@ void Motion::_build_backup_track_cache() {
 		TrackCache *track = K.value;
 		track->total_weight = 1.0;
 		switch (track->type) {
-			case Animation::TYPE_POSITION_3D: {
-			} break;
-			case Animation::TYPE_BLEND_SHAPE: {
-			} break;
 			case Animation::TYPE_VALUE: {
 				TrackCacheValue *t = static_cast<TrackCacheValue *>(track);
 				Object *t_obj = ObjectDB::get_instance(t->object_id);
@@ -1901,21 +1844,6 @@ Motion::TrackCache *AnimatedValuesBackup::get_cache_copy(Motion::TrackCache *p_c
 			Motion::TrackCacheValue *tc = memnew(Motion::TrackCacheValue(*src));
 			return tc;
 		}
-
-		case Animation::TYPE_POSITION_3D:
-		case Animation::TYPE_ROTATION_3D:
-		case Animation::TYPE_SCALE_3D: {
-			Motion::TrackCacheTransform *src = static_cast<Motion::TrackCacheTransform *>(p_cache);
-			Motion::TrackCacheTransform *tc = memnew(Motion::TrackCacheTransform(*src));
-			return tc;
-		}
-
-		case Animation::TYPE_BLEND_SHAPE: {
-			Motion::TrackCacheBlendShape *src = static_cast<Motion::TrackCacheBlendShape *>(p_cache);
-			Motion::TrackCacheBlendShape *tc = memnew(Motion::TrackCacheBlendShape(*src));
-			return tc;
-		}
-
 		case Animation::TYPE_AUDIO: {
 			Motion::TrackCacheAudio *src = static_cast<Motion::TrackCacheAudio *>(p_cache);
 			Motion::TrackCacheAudio *tc = memnew(Motion::TrackCacheAudio(*src));
