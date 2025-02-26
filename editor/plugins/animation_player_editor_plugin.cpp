@@ -46,7 +46,6 @@
 #include "editor/scene_tree_dock.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme_manager.h"
-#include "scene/animation/animation_tree.h"
 #include "scene/gui/separator.h"
 #include "scene/main/window.h"
 #include "scene/resources/animation.h"
@@ -1110,23 +1109,9 @@ void AnimationPlayerEditor::edit(AnimationMixer *p_node, AnimationPlayer *p_play
 		}
 	}
 
-	AnimationTree *tree = Object::cast_to<AnimationTree>(p_node);
-
-	if (tree) {
-		if (tree->is_connected(SNAME("animation_player_changed"), callable_mp(this, &AnimationPlayerEditor::unpin))) {
-			tree->disconnect(SNAME("animation_player_changed"), callable_mp(this, &AnimationPlayerEditor::unpin));
-		}
-	}
-
 	original_node = p_node;
 	player = p_player;
 	is_dummy = p_is_dummy;
-
-	if (tree) {
-		if (!tree->is_connected(SNAME("animation_player_changed"), callable_mp(this, &AnimationPlayerEditor::unpin))) {
-			tree->connect(SNAME("animation_player_changed"), callable_mp(this, &AnimationPlayerEditor::unpin));
-		}
-	}
 
 	if (player) {
 		if (!player->is_connected(SNAME("animation_list_changed"), callable_mp(this, &AnimationPlayerEditor::_animation_libraries_updated))) {
@@ -1782,14 +1767,6 @@ void AnimationPlayerEditor::_pin_pressed() {
 AnimationMixer *AnimationPlayerEditor::fetch_mixer_for_library() const {
 	if (!original_node) {
 		return nullptr;
-	}
-	// Does AnimationTree have AnimationPlayer?
-	if (original_node->is_class("AnimationTree")) {
-		AnimationTree *src_tree = Object::cast_to<AnimationTree>(original_node);
-		Node *src_player = src_tree->get_node_or_null(src_tree->get_animation_player());
-		if (src_player) {
-			return Object::cast_to<AnimationMixer>(src_player);
-		}
 	}
 	return original_node;
 }

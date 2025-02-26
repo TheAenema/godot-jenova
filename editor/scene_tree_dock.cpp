@@ -53,7 +53,6 @@
 #include "editor/reparent_dialog.h"
 #include "editor/shader_create_dialog.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/animation/animation_tree.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/gui/check_box.h"
 #include "scene/property_utils.h"
@@ -2001,89 +2000,77 @@ void SceneTreeDock::perform_node_renames(Node *p_base, HashMap<Node *, NodePath>
 
 	AnimationMixer *mixer = Object::cast_to<AnimationMixer>(p_base);
 	if (autorename_animation_tracks && mixer) {
-		// Don't rename if we're an AnimationTree pointing to an AnimationPlayer
-		bool points_to_other_animation_player = false;
-		AnimationTree *at = Object::cast_to<AnimationTree>(mixer);
-		if (at) {
-			AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(at->get_node_or_null(at->get_animation_player()));
-			if (ap) {
-				points_to_other_animation_player = true;
-			}
-		}
+		List<StringName> anims;
+		mixer->get_animation_list(&anims);
+		Node *root = mixer->get_node(mixer->get_root_node());
 
-		if (!points_to_other_animation_player) {
-			List<StringName> anims;
-			mixer->get_animation_list(&anims);
-			Node *root = mixer->get_node(mixer->get_root_node());
-
-			if (root) {
-				HashMap<Node *, NodePath>::Iterator found_root_path = p_renames->find(root);
-				NodePath new_root_path = found_root_path ? found_root_path->value : root->get_path();
-				if (!new_root_path.is_empty()) { // No renaming if root node is deleted.
-					for (const StringName &E : anims) {
-						Ref<Animation> anim = mixer->get_animation(E);
-						if (!r_rem_anims->has(anim)) {
-							r_rem_anims->insert(anim, HashSet<int>());
-							HashSet<int> &ran = r_rem_anims->find(anim)->value;
-							for (int i = 0; i < anim->get_track_count(); i++) {
-								ran.insert(i);
-							}
-						}
-
+		if (root) {
+			HashMap<Node *, NodePath>::Iterator found_root_path = p_renames->find(root);
+			NodePath new_root_path = found_root_path ? found_root_path->value : root->get_path();
+			if (!new_root_path.is_empty()) { // No renaming if root node is deleted.
+				for (const StringName &E : anims) {
+					Ref<Animation> anim = mixer->get_animation(E);
+					if (!r_rem_anims->has(anim)) {
+						r_rem_anims->insert(anim, HashSet<int>());
 						HashSet<int> &ran = r_rem_anims->find(anim)->value;
+						for (int i = 0; i < anim->get_track_count(); i++) {
+							ran.insert(i);
+						}
+					}
 
-						if (anim.is_null() || EditorNode::get_singleton()->is_resource_read_only(anim)) {
+					HashSet<int> &ran = r_rem_anims->find(anim)->value;
+
+					if (anim.is_null() || EditorNode::get_singleton()->is_resource_read_only(anim)) {
+						continue;
+					}
+
+					int tracks_removed = 0;
+
+					for (int i = 0; i < anim->get_track_count(); i++) {
+						if (anim->track_is_imported(i)) {
 							continue;
 						}
 
-						int tracks_removed = 0;
+						NodePath track_np = anim->track_get_path(i);
 
-						for (int i = 0; i < anim->get_track_count(); i++) {
-							if (anim->track_is_imported(i)) {
-								continue;
-							}
+						Node *n = root->get_node_or_null(track_np);
+						if (!n) {
+							continue;
+						}
 
-							NodePath track_np = anim->track_get_path(i);
+						if (!ran.has(i)) {
+							continue; //channel was removed
+						}
 
-							Node *n = root->get_node_or_null(track_np);
-							if (!n) {
-								continue;
-							}
+						HashMap<Node *, NodePath>::Iterator found_path = p_renames->find(n);
+						EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+						if (found_path) {
+							if (found_path->value.is_empty()) {
+								//will be erased
 
-							if (!ran.has(i)) {
-								continue; //channel was removed
-							}
+								int idx = i - tracks_removed;
+								tracks_removed++;
 
-							HashMap<Node *, NodePath>::Iterator found_path = p_renames->find(n);
-							EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
-							if (found_path) {
-								if (found_path->value.is_empty()) {
-									//will be erased
-
-									int idx = i - tracks_removed;
-									tracks_removed++;
-
-									undo_redo->add_do_method(anim.ptr(), "remove_track", idx);
-									undo_redo->add_undo_method(anim.ptr(), "add_track", anim->track_get_type(i), idx);
-									undo_redo->add_undo_method(anim.ptr(), "track_set_path", idx, track_np);
-									undo_redo->add_undo_method(anim.ptr(), "track_set_interpolation_type", idx, anim->track_get_interpolation_type(i));
-									for (int j = 0; j < anim->track_get_key_count(i); j++) {
-										undo_redo->add_undo_method(anim.ptr(), "track_insert_key", idx, anim->track_get_key_time(i, j), anim->track_get_key_value(i, j), anim->track_get_key_transition(i, j));
-									}
-
-									ran.erase(i); //byebye channel
-
-								} else {
-									//will be renamed
-									NodePath rel_path = new_root_path.rel_path_to(found_path->value);
-
-									NodePath new_path = NodePath(rel_path.get_names(), track_np.get_subnames(), false);
-									if (new_path == track_np) {
-										continue; //bleh
-									}
-									undo_redo->add_do_method(anim.ptr(), "track_set_path", i, new_path);
-									undo_redo->add_undo_method(anim.ptr(), "track_set_path", i, track_np);
+								undo_redo->add_do_method(anim.ptr(), "remove_track", idx);
+								undo_redo->add_undo_method(anim.ptr(), "add_track", anim->track_get_type(i), idx);
+								undo_redo->add_undo_method(anim.ptr(), "track_set_path", idx, track_np);
+								undo_redo->add_undo_method(anim.ptr(), "track_set_interpolation_type", idx, anim->track_get_interpolation_type(i));
+								for (int j = 0; j < anim->track_get_key_count(i); j++) {
+									undo_redo->add_undo_method(anim.ptr(), "track_insert_key", idx, anim->track_get_key_time(i, j), anim->track_get_key_value(i, j), anim->track_get_key_transition(i, j));
 								}
+
+								ran.erase(i); //byebye channel
+
+							} else {
+								//will be renamed
+								NodePath rel_path = new_root_path.rel_path_to(found_path->value);
+
+								NodePath new_path = NodePath(rel_path.get_names(), track_np.get_subnames(), false);
+								if (new_path == track_np) {
+									continue; //bleh
+								}
+								undo_redo->add_do_method(anim.ptr(), "track_set_path", i, new_path);
+								undo_redo->add_undo_method(anim.ptr(), "track_set_path", i, track_np);
 							}
 						}
 					}

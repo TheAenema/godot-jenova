@@ -46,7 +46,6 @@
 #include "core/version.h"
 #include "editor/editor_string_names.h"
 #include "main/main.h"
-#include "scene/animation/animation_tree.h"
 #include "scene/gui/color_picker.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/file_dialog.h"
@@ -1759,29 +1758,6 @@ int EditorNode::_save_external_resources(bool p_also_save_external_data) {
 	return saved;
 }
 
-static void _reset_animation_mixers(Node *p_node, List<Pair<AnimationMixer *, Ref<AnimatedValuesBackup>>> *r_anim_backups) {
-	for (int i = 0; i < p_node->get_child_count(); i++) {
-		AnimationMixer *mixer = Object::cast_to<AnimationMixer>(p_node->get_child(i));
-		if (mixer && mixer->is_active() && mixer->is_reset_on_save_enabled() && mixer->can_apply_reset()) {
-			AnimationTree *tree = Object::cast_to<AnimationTree>(p_node->get_child(i));
-			if (tree) {
-				AnimationPlayer *player = Object::cast_to<AnimationPlayer>(tree->get_node_or_null(tree->get_animation_player()));
-				if (player && player->is_active() && player->is_reset_on_save_enabled() && player->can_apply_reset()) {
-					continue; // Avoid to process reset/restore many times.
-				}
-			}
-			Ref<AnimatedValuesBackup> backup = mixer->apply_reset();
-			if (backup.is_valid()) {
-				Pair<AnimationMixer *, Ref<AnimatedValuesBackup>> pair;
-				pair.first = mixer;
-				pair.second = backup;
-				r_anim_backups->push_back(pair);
-			}
-		}
-		_reset_animation_mixers(p_node->get_child(i), r_anim_backups);
-	}
-}
-
 void EditorNode::_save_scene(String p_file, int idx) {
 	ERR_FAIL_COND_MSG(!saving_scene.is_empty() && saving_scene == p_file, "Scene saved while already being saved!");
 
@@ -1801,7 +1777,6 @@ void EditorNode::_save_scene(String p_file, int idx) {
 
 	editor_data.apply_changes_in_editors();
 	List<Pair<AnimationMixer *, Ref<AnimatedValuesBackup>>> anim_backups;
-	_reset_animation_mixers(scene, &anim_backups);
 	save_default_environment();
 
 	_save_editor_states(p_file, idx);

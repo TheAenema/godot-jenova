@@ -601,7 +601,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	EDITOR_SETTING(Variant::STRING, PROPERTY_HINT_ENUM, "text_editor/theme/color_theme", "Lithium", "Lithium,Custom")
 
 	// Theme: Highlighting
-	_load_godot2_text_editor_theme();
+	_load_lithium_text_editor_theme();
 
 	// Appearance
 	// Appearance: Caret
@@ -796,16 +796,6 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	// Shader editor
 	_initial_set("editors/shader_editor/behavior/files/restore_shaders_on_load", true);
 
-	// Visual editors
-	EDITOR_SETTING(Variant::STRING, PROPERTY_HINT_ENUM, "editors/visual_editors/color_theme", "Default", "Default,Legacy,Custom")
-
-	_load_default_visual_shader_editor_theme();
-
-	EDITOR_SETTING(Variant::FLOAT, PROPERTY_HINT_RANGE, "editors/visual_editors/minimap_opacity", 0.85, "0.0,1.0,0.01")
-	EDITOR_SETTING(Variant::FLOAT, PROPERTY_HINT_RANGE, "editors/visual_editors/lines_curvature", 0.5, "0.0,1.0,0.01")
-	EDITOR_SETTING(Variant::INT, PROPERTY_HINT_ENUM, "editors/visual_editors/grid_pattern", 1, "Lines,Dots")
-	EDITOR_SETTING(Variant::INT, PROPERTY_HINT_RANGE, "editors/visual_editors/visual_shader/port_preview_size", 160, "100,400,0.01")
-
 	/* Run */
 
 	// Window placement
@@ -905,8 +895,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	}
 }
 
-void EditorSettings::_load_godot2_text_editor_theme() {
-	// Godot 2 is only a dark theme; it doesn't have a light theme counterpart.
+void EditorSettings::_load_lithium_text_editor_theme() {
+	print_error("Lithium Theme Selected");
 	_initial_set("text_editor/theme/highlighting/symbol_color", Color(0.67, 0.79, 1, 1));
 	_initial_set("text_editor/theme/highlighting/keyword_color", Color(0.2442, 0.74, 0.61605, 1));
 	_initial_set("text_editor/theme/highlighting/control_flow_keyword_color", Color(0.95827, 0.61017, 0.35569, 1));
@@ -947,30 +937,6 @@ void EditorSettings::_load_godot2_text_editor_theme() {
 	_initial_set("text_editor/theme/highlighting/search_result_border_color", Color(0.41, 0.61, 0.91, 0.38)); // Default
 }
 
-void EditorSettings::_load_default_visual_shader_editor_theme() {
-	// Connection type colors
-	_initial_set("editors/visual_editors/connection_colors/scalar_color", Color(0.55, 0.55, 0.55));
-	_initial_set("editors/visual_editors/connection_colors/vector2_color", Color(0.44, 0.43, 0.64));
-	_initial_set("editors/visual_editors/connection_colors/vector3_color", Color(0.337, 0.314, 0.71));
-	_initial_set("editors/visual_editors/connection_colors/vector4_color", Color(0.7, 0.65, 0.147));
-	_initial_set("editors/visual_editors/connection_colors/boolean_color", Color(0.243, 0.612, 0.349));
-	_initial_set("editors/visual_editors/connection_colors/transform_color", Color(0.71, 0.357, 0.64));
-	_initial_set("editors/visual_editors/connection_colors/sampler_color", Color(0.659, 0.4, 0.137));
-
-	// Node category colors (used for the node headers)
-	_initial_set("editors/visual_editors/category_colors/output_color", Color(0.26, 0.10, 0.15));
-	_initial_set("editors/visual_editors/category_colors/color_color", Color(0.5, 0.5, 0.1));
-	_initial_set("editors/visual_editors/category_colors/conditional_color", Color(0.208, 0.522, 0.298));
-	_initial_set("editors/visual_editors/category_colors/input_color", Color(0.502, 0.2, 0.204));
-	_initial_set("editors/visual_editors/category_colors/scalar_color", Color(0.1, 0.5, 0.6));
-	_initial_set("editors/visual_editors/category_colors/textures_color", Color(0.5, 0.3, 0.1));
-	_initial_set("editors/visual_editors/category_colors/transform_color", Color(0.5, 0.3, 0.5));
-	_initial_set("editors/visual_editors/category_colors/utility_color", Color(0.2, 0.2, 0.2));
-	_initial_set("editors/visual_editors/category_colors/vector_color", Color(0.2, 0.2, 0.5));
-	_initial_set("editors/visual_editors/category_colors/special_color", Color(0.098, 0.361, 0.294));
-	_initial_set("editors/visual_editors/category_colors/particle_color", Color(0.12, 0.358, 0.8));
-}
-
 bool EditorSettings::_save_text_editor_theme(const String &p_file) {
 	String theme_section = "color_theme";
 	Ref<ConfigFile> cf = memnew(ConfigFile); // hex is better?
@@ -995,7 +961,7 @@ bool EditorSettings::_save_text_editor_theme(const String &p_file) {
 }
 
 bool EditorSettings::_is_default_text_editor_theme(const String &p_theme_name) {
-	return p_theme_name == "default" || p_theme_name == "godot 2" || p_theme_name == "custom";
+	return p_theme_name == "Lithium";
 }
 
 const String EditorSettings::_get_project_metadata_path() const {
@@ -1290,7 +1256,15 @@ Variant _EDITOR_DEF(const String &p_setting, const Variant &p_default, bool p_re
 }
 
 Variant _EDITOR_GET(const String &p_setting) {
-	ERR_FAIL_COND_V(!EditorSettings::get_singleton() || !EditorSettings::get_singleton()->has_setting(p_setting), Variant());
+	if (!EditorSettings::get_singleton() || !EditorSettings::get_singleton()->has_setting(p_setting)) {
+		_err_print_error(__FUNCTION__, "C:\\JNV\\lithium-base\\editor\\editor_settings.cpp", 1259, "Condition \""
+																								   "!EditorSettings::get_singleton() || !EditorSettings::get_singleton()->has_setting(p_setting)"
+																								   "\" is true. Returning: "
+																								   "Variant()");
+		print_line("Prop Name : [", p_setting, "]");
+		return Variant();
+	} else
+		((void)0);
 	return EditorSettings::get_singleton()->get(p_setting);
 }
 
@@ -1421,7 +1395,7 @@ void EditorSettings::load_favorites_and_recent_dirs() {
 }
 
 void EditorSettings::list_text_editor_themes() {
-	String themes = "Default,Godot 2,Custom";
+	String themes = "Lithium,Custom";
 
 	Ref<DirAccess> d = DirAccess::open(EditorPaths::get_singleton()->get_text_editor_themes_dir());
 	if (d.is_valid()) {
@@ -1448,8 +1422,8 @@ void EditorSettings::load_text_editor_theme() {
 	String p_file = get("text_editor/theme/color_theme");
 
 	if (_is_default_text_editor_theme(p_file.get_file().to_lower())) {
-		if (p_file == "Godot 2") {
-			_load_godot2_text_editor_theme();
+		if (p_file == "Lithium") {
+			_load_lithium_text_editor_theme();
 		}
 		return; // sorry for "Settings changed" console spam
 	}

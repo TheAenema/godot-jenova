@@ -41,7 +41,6 @@
 #include "editor/themes/editor_icons.h"
 #include "editor/themes/editor_scale.h"
 #include "editor/themes/editor_theme.h"
-#include "scene/gui/graph_edit.h"
 #include "scene/resources/image_texture.h"
 #include "scene/resources/style_box_flat.h"
 #include "scene/resources/style_box_line.h"
@@ -216,7 +215,6 @@ Ref<EditorTheme> EditorThemeManager::_create_base_theme(const Ref<EditorTheme> &
 	_populate_standard_styles(theme, config);
 	_populate_editor_styles(theme, config);
 	_populate_text_editor_styles(theme, config);
-	_populate_visual_shader_styles(theme, config);
 
 	OS::get_singleton()->benchmark_end_measure(get_benchmark_key(), "Create Base Theme");
 	return theme;
@@ -1527,22 +1525,6 @@ void EditorThemeManager::_populate_standard_styles(const Ref<EditorTheme> &p_the
 		p_theme->set_stylebox(SceneStringName(panel), "GraphEdit", p_config.tree_panel_style);
 		p_theme->set_stylebox("menu_panel", "GraphEdit", make_flat_stylebox(p_config.dark_color_1 * Color(1, 1, 1, 0.6), 4, 2, 4, 2, 3));
 
-		float grid_base_brightness = p_config.dark_theme ? 1.0 : 0.0;
-		GraphEdit::GridPattern grid_pattern = (GraphEdit::GridPattern) int(EDITOR_GET("editors/visual_editors/grid_pattern"));
-		switch (grid_pattern) {
-			case GraphEdit::GRID_PATTERN_LINES:
-				p_theme->set_color("grid_major", "GraphEdit", Color(grid_base_brightness, grid_base_brightness, grid_base_brightness, 0.10));
-				p_theme->set_color("grid_minor", "GraphEdit", Color(grid_base_brightness, grid_base_brightness, grid_base_brightness, 0.05));
-				break;
-			case GraphEdit::GRID_PATTERN_DOTS:
-				p_theme->set_color("grid_major", "GraphEdit", Color(grid_base_brightness, grid_base_brightness, grid_base_brightness, 0.07));
-				p_theme->set_color("grid_minor", "GraphEdit", Color(grid_base_brightness, grid_base_brightness, grid_base_brightness, 0.07));
-				break;
-			default:
-				WARN_PRINT("Unknown grid pattern.");
-				break;
-		}
-
 		p_theme->set_color("selection_fill", "GraphEdit", p_theme->get_color(SNAME("box_selection_fill_color"), EditorStringName(Editor)));
 		p_theme->set_color("selection_stroke", "GraphEdit", p_theme->get_color(SNAME("box_selection_stroke_color"), EditorStringName(Editor)));
 		p_theme->set_color("activity", "GraphEdit", p_config.dark_theme ? Color(1, 1, 1) : Color(0, 0, 0));
@@ -2574,59 +2556,6 @@ void EditorThemeManager::_populate_text_editor_styles(const Ref<EditorTheme> &p_
 	/* clang-format on */
 }
 
-void EditorThemeManager::_populate_visual_shader_styles(const Ref<EditorTheme> &p_theme, ThemeConfiguration &p_config) {
-	EditorSettings *ed_settings = EditorSettings::get_singleton();
-	String visual_shader_color_theme = ed_settings->get("editors/visual_editors/color_theme");
-	if (visual_shader_color_theme == "Default") {
-		// Connection type colors
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/scalar_color", Color(0.55, 0.55, 0.55), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/vector2_color", Color(0.44, 0.43, 0.64), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/vector3_color", Color(0.337, 0.314, 0.71), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/vector4_color", Color(0.7, 0.65, 0.147), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/boolean_color", Color(0.243, 0.612, 0.349), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/transform_color", Color(0.71, 0.357, 0.64), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/sampler_color", Color(0.659, 0.4, 0.137), true);
-
-		// Node category colors (used for the node headers)
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/output_color", Color(0.26, 0.10, 0.15), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/color_color", Color(0.5, 0.5, 0.1), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/conditional_color", Color(0.208, 0.522, 0.298), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/input_color", Color(0.502, 0.2, 0.204), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/scalar_color", Color(0.1, 0.5, 0.6), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/textures_color", Color(0.5, 0.3, 0.1), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/transform_color", Color(0.5, 0.3, 0.5), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/utility_color", Color(0.2, 0.2, 0.2), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/vector_color", Color(0.2, 0.2, 0.5), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/special_color", Color(0.098, 0.361, 0.294), true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/particle_color", Color(0.12, 0.358, 0.8), true);
-
-	} else if (visual_shader_color_theme == "Legacy") {
-		// Connection type colors
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/scalar_color", Color(0.38, 0.85, 0.96), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/vector2_color", Color(0.74, 0.57, 0.95), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/vector3_color", Color(0.84, 0.49, 0.93), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/vector4_color", Color(1.0, 0.125, 0.95), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/boolean_color", Color(0.55, 0.65, 0.94), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/transform_color", Color(0.96, 0.66, 0.43), true);
-		ed_settings->set_initial_value("editors/visual_editors/connection_colors/sampler_color", Color(1.0, 1.0, 0.0), true);
-
-		// Node category colors (used for the node headers)
-		Ref<StyleBoxFlat> gn_panel_style = p_theme->get_stylebox(SceneStringName(panel), "GraphNode");
-		Color gn_bg_color = gn_panel_style->get_bg_color();
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/output_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/color_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/conditional_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/input_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/scalar_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/textures_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/transform_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/utility_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/vector_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/special_color", gn_bg_color, true);
-		ed_settings->set_initial_value("editors/visual_editors/category_colors/particle_color", gn_bg_color, true);
-	}
-}
-
 void EditorThemeManager::_reset_dirty_flag() {
 	outdated_cache_dirty = true;
 }
@@ -2667,7 +2596,6 @@ bool EditorThemeManager::is_generated_theme_outdated() {
 				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/font") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/main_font") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("interface/editor/code_font") ||
-				EditorSettings::get_singleton()->check_changed_settings_in_group("editors/visual_editors") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/theme") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("text_editor/help/help") ||
 				EditorSettings::get_singleton()->check_changed_settings_in_group("docks/property_editor/subresource_hue_tint") ||

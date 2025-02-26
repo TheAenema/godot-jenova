@@ -33,13 +33,8 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
-#include "scene/animation/animation_blend_space_1d.h"
-#include "scene/animation/animation_blend_space_2d.h"
-#include "scene/animation/animation_blend_tree.h"
 #include "scene/animation/animation_mixer.h"
-#include "scene/animation/animation_node_state_machine.h"
 #include "scene/animation/animation_player.h"
-#include "scene/animation/animation_tree.h"
 #include "scene/animation/tween.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/debugger/scene_debugger.h"
@@ -56,9 +51,6 @@
 #include "scene/gui/dialogs.h"
 #include "scene/gui/file_dialog.h"
 #include "scene/gui/flow_container.h"
-#include "scene/gui/graph_edit.h"
-#include "scene/gui/graph_frame.h"
-#include "scene/gui/graph_node.h"
 #include "scene/gui/grid_container.h"
 #include "scene/gui/item_list.h"
 #include "scene/gui/label.h"
@@ -379,11 +371,6 @@ void register_scene_types() {
 	GDREGISTER_CLASS(HSplitContainer);
 	GDREGISTER_CLASS(VSplitContainer);
 
-	GDREGISTER_CLASS(GraphElement);
-	GDREGISTER_CLASS(GraphNode);
-	GDREGISTER_CLASS(GraphFrame);
-	GDREGISTER_CLASS(GraphEdit);
-
 	OS::get_singleton()->yield(); // may take time to init
 
 	bool swap_cancel_ok = false;
@@ -407,28 +394,6 @@ void register_scene_types() {
 
 	GDREGISTER_ABSTRACT_CLASS(AnimationMixer);
 	GDREGISTER_CLASS(AnimationPlayer);
-	GDREGISTER_CLASS(AnimationTree);
-	GDREGISTER_CLASS(AnimationNode);
-	GDREGISTER_CLASS(AnimationRootNode);
-	GDREGISTER_CLASS(AnimationNodeBlendTree);
-	GDREGISTER_CLASS(AnimationNodeBlendSpace1D);
-	GDREGISTER_CLASS(AnimationNodeBlendSpace2D);
-	GDREGISTER_CLASS(AnimationNodeStateMachine);
-	GDREGISTER_CLASS(AnimationNodeStateMachinePlayback);
-
-	GDREGISTER_CLASS(AnimationNodeSync);
-	GDREGISTER_CLASS(AnimationNodeStateMachineTransition);
-	GDREGISTER_CLASS(AnimationNodeOutput);
-	GDREGISTER_CLASS(AnimationNodeOneShot);
-	GDREGISTER_CLASS(AnimationNodeAnimation);
-	GDREGISTER_CLASS(AnimationNodeAdd2);
-	GDREGISTER_CLASS(AnimationNodeAdd3);
-	GDREGISTER_CLASS(AnimationNodeBlend2);
-	GDREGISTER_CLASS(AnimationNodeBlend3);
-	GDREGISTER_CLASS(AnimationNodeSub2);
-	GDREGISTER_CLASS(AnimationNodeTimeScale);
-	GDREGISTER_CLASS(AnimationNodeTimeSeek);
-	GDREGISTER_CLASS(AnimationNodeTransition);
 
 	GDREGISTER_CLASS(ShaderGlobalsOverride); // can be used in any shader
 
@@ -648,7 +613,6 @@ void register_scene_types() {
 	if (RenderingServer::get_singleton()) {
 		// RenderingServer needs to exist for this to succeed.
 		ColorPicker::init_shaders();
-		GraphEdit::init_shaders();
 	}
 
 	SceneDebugger::initialize();
@@ -691,7 +655,6 @@ void unregister_scene_types() {
 	ParticleProcessMaterial::finish_shaders();
 	ElementMaterial::finish_shaders();
 	ColorPicker::finish_shaders();
-	GraphEdit::finish_shaders();
 	SceneStringNames::free();
 
 	OS::get_singleton()->benchmark_end_measure("Scene", "Unregister Types");
