@@ -263,7 +263,7 @@ EditorBottomPanel::EditorBottomPanel() {
 	bottom_hbox->add_child(editor_toaster);
 
 	version_btn = memnew(LinkButton);
-	version_btn->set_text(String(VERSION_NUMBER) + "(" + VERSION_STATUS + ")");
+	version_btn->set_text(String(VERSION_NUMBER) + " (" + VERSION_STATUS + ")");
 	String hash = String(VERSION_HASH);
 	if (hash.length() != 0) {
 		hash = " " + vformat("[%s]", hash.left(9));
