@@ -473,7 +473,7 @@ void EditorNode::_update_theme(bool p_skip_creation) {
 	{
 		
 		auto backgroundStyleBox = Object::cast_to<StyleBoxFlat>(theme->get_stylebox(SNAME("Background"), EditorStringName(EditorStyles)).ptr());
-		if (bool(EDITOR_GET("interface/theme/glass_effect")) && backgroundStyleBox) {
+		if (bool(EDITOR_GET("interface/theme/glass_effect_xp")) && backgroundStyleBox) {
 			auto originalColor = backgroundStyleBox->get_bg_color();
 			originalColor.a = float(EDITOR_GET("interface/theme/glass_base_opacity"));
 			backgroundStyleBox->set_bg_color(originalColor);
@@ -7389,7 +7389,7 @@ EditorNode::EditorNode() {
 	system_theme_timer->set_autostart(true);
 
 	// Apply Glass Effect
-	if (bool(EDITOR_GET("interface/theme/glass_effect"))) {
+	if (bool(EDITOR_GET("interface/theme/glass_effect_xp"))) {
 		OS::get_singleton()->yield();
 		w->set_transparent_background(true);
 		DisplayServer::get_singleton()->set_glass_effect(true, bool(EDITOR_GET("interface/theme/acrylic_layering")), nullptr);

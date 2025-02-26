@@ -293,37 +293,37 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 			if (config.preset == "Jenova") {
 				preset_base_color = Color(0.0378f, 0.03854f, 0.06f);
 				preset_accent_color = Color(0.179542f, 0.735295f, 0.468908f);
-				preset_contrast = -0.6f;
+				preset_contrast = -0.6;
 			} else if (config.preset == "Lithium (Glass)") {
 				preset_accent_color = Color::html("#e85a5c");
 				preset_base_color = Color::html("#26262666");
-				preset_contrast = 0.15f;
-				config.icon_saturation = 0.8f;
+				preset_contrast = 0.15;
+				config.icon_saturation = 0.8;
 				glass_effect = true;
-				glass_base_opacity = 0.35f;
+				glass_base_opacity = 0.35;
 			} else if (config.preset == "Lithium (Frost)") {
 				preset_accent_color = Color::html("#f4837e");
 				preset_base_color = Color::html("#4f535842");
-				preset_contrast = -0.15f;
-				config.icon_saturation = 0.8f;
+				preset_contrast = -0.15;
+				config.icon_saturation = 0.8;
 				glass_effect = true;
-				glass_base_opacity = 0.12f;
+				glass_base_opacity = 0.12;
 				use_glass_everywhere = true;
 				acrylic_layering = true;
 			} else if (config.preset == "Lithium (Laminate)") {
 				preset_accent_color = Color::html("#f77b72");
 				preset_base_color = Color::html("#6b787b6e");
-				preset_contrast = 0.3f;
-				config.icon_saturation = 0.8f;
+				preset_contrast = 0.3;
+				config.icon_saturation = 0.8;
 				glass_effect = true;
-				glass_base_opacity = 0.5f;
+				glass_base_opacity = 0.5;
 				use_glass_everywhere = true;
 				acrylic_layering = true;
 			} else { // Default : Lithium
 				preset_accent_color = Color::html("#f4837e");
 				preset_base_color = Color::html("#111111");
-				preset_contrast = -0.4f;
-				config.icon_saturation = 1.0f;
+				preset_contrast = -0.4;
+				config.icon_saturation = 1.0;
 			}
 
 			config.accent_color = preset_accent_color;
@@ -344,7 +344,7 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/icon_saturation", config.icon_saturation);
 
 			// Set Glass Effect Initial Values
-			EditorSettings::get_singleton()->set_initial_value("interface/theme/glass_effect", config.glass_effect);
+			EditorSettings::get_singleton()->set_initial_value("interface/theme/glass_effect_xp", config.glass_effect);
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/glass_base_opacity", config.glass_base_opacity);
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/use_glass_everywhere", config.use_glass_everywhere);
 			EditorSettings::get_singleton()->set_initial_value("interface/theme/acrylic_layering", config.acrylic_layering);
@@ -371,7 +371,7 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 		if (config.preset != "Custom") {
 
 			bool issue_restart_request = false;
-			if (config.glass_effect != bool(EDITOR_GET("interface/theme/glass_effect"))) issue_restart_request = true;
+			if (config.glass_effect != bool(EDITOR_GET("interface/theme/glass_effect_xp"))) issue_restart_request = true;
 			if (config.use_glass_everywhere != bool(EDITOR_GET("interface/theme/use_glass_everywhere"))) issue_restart_request = true;
 			if (config.acrylic_layering != bool(EDITOR_GET("interface/theme/acrylic_layering"))) issue_restart_request = true;
 			if (issue_restart_request) {
@@ -381,7 +381,7 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 			}
 
 			// Set Glass Effect Settings
-			EditorSettings::get_singleton()->set_manually("interface/theme/glass_effect", config.glass_effect, true);
+			EditorSettings::get_singleton()->set_manually("interface/theme/glass_effect_xp", config.glass_effect, true);
 			EditorSettings::get_singleton()->set_manually("interface/theme/glass_base_opacity", config.glass_base_opacity, true);
 			EditorSettings::get_singleton()->set_manually("interface/theme/use_glass_everywhere", config.use_glass_everywhere, true);
 			EditorSettings::get_singleton()->set_manually("interface/theme/acrylic_layering", config.acrylic_layering, true);

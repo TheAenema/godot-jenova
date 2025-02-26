@@ -1886,7 +1886,7 @@ void Window::popup(const Rect2i &p_screen_rect) {
 
 	// Apply Glass Effect
 	#if defined(TOOLS_ENABLED)
-		if (bool(EDITOR_GET("interface/theme/glass_effect")) && bool(EDITOR_GET("interface/theme/use_glass_everywhere"))) {
+		if (bool(EDITOR_GET("interface/theme/glass_effect_xp")) && bool(EDITOR_GET("interface/theme/use_glass_everywhere"))) {
 			OS::get_singleton()->yield();
 			this->set_transparent_background(true);
 			DisplayServer::get_singleton()->set_glass_effect(true, bool(EDITOR_GET("interface/theme/acrylic_layering")), this);

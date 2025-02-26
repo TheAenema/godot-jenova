@@ -192,7 +192,6 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 	capitalize_string_remaps["fs"] = "FS";
 	capitalize_string_remaps["fsr"] = "FSR";
 	capitalize_string_remaps["fxaa"] = "FXAA";
-	capitalize_string_remaps["cpp"] = "C++";
 	capitalize_string_remaps["ggx"] = "GGX";
 	capitalize_string_remaps["gi"] = "GI";
 	capitalize_string_remaps["gl"] = "GL";
@@ -317,6 +316,8 @@ EditorPropertyNameProcessor::EditorPropertyNameProcessor() {
 	capitalize_string_remaps["xy"] = "XY";
 	capitalize_string_remaps["xz"] = "XZ";
 	capitalize_string_remaps["yz"] = "YZ";
+	capitalize_string_remaps["cpp"] = "C++";
+	capitalize_string_remaps["xp"] = "(Experimental)";
 
 	// Articles, conjunctions, prepositions.
 	// The following initialization is parsed in `editor/translations/scripts/common.py` with a regex.

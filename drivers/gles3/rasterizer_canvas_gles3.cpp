@@ -2192,7 +2192,7 @@ void RasterizerCanvasGLES3::canvas_begin(RID p_to_render_target, bool p_to_backb
 	}
 
 	#if defined(TOOLS_ENABLED)
-		if (Engine::get_singleton()->is_editor_hint() && bool(EDITOR_GET("interface/theme/glass_effect"))) {
+		if (Engine::get_singleton()->is_editor_hint() && bool(EDITOR_GET("interface/theme/glass_effect_xp"))) {
 			state.transparent_render_target = true;
 			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		} else {
@@ -2218,7 +2218,7 @@ void RasterizerCanvasGLES3::canvas_begin(RID p_to_render_target, bool p_to_backb
 		const Color &col = render_target->clear_color;
 
 		#if defined(TOOLS_ENABLED)
-			if (Engine::get_singleton()->is_editor_hint() && bool(EDITOR_GET("interface/theme/glass_effect"))) {
+			if (Engine::get_singleton()->is_editor_hint() && bool(EDITOR_GET("interface/theme/glass_effect_xp"))) {
 				glClearColor(col.r, col.g, col.b, render_target->is_transparent ? col.a : 1.0f);
 			} else {
 				glClearColor(col.r, col.g, col.b, render_target->is_transparent ? col.a : 1.0f);

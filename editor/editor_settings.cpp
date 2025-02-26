@@ -508,7 +508,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	EDITOR_SETTING(Variant::COLOR, PROPERTY_HINT_NONE, "interface/theme/base_color", Color(0.0378f, 0.03854f, 0.06f), "")
 	EDITOR_SETTING(Variant::COLOR, PROPERTY_HINT_NONE, "interface/theme/accent_color", Color(0.179542f, 0.735295f, 0.468908f), "")
 	EDITOR_SETTING(Variant::BOOL, PROPERTY_HINT_NONE, "interface/theme/use_system_accent_color", false, "")
-	EDITOR_SETTING_USAGE(Variant::BOOL, PROPERTY_HINT_ENUM, "interface/theme/glass_effect", false, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
+	EDITOR_SETTING_USAGE(Variant::BOOL, PROPERTY_HINT_ENUM, "interface/theme/glass_effect_xp", false, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
 	EDITOR_SETTING(Variant::FLOAT, PROPERTY_HINT_RANGE, "interface/theme/glass_base_opacity", 0.2, "0.01,1,0.01")
 	EDITOR_SETTING_USAGE(Variant::BOOL, PROPERTY_HINT_ENUM, "interface/theme/use_glass_everywhere", false, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
 	EDITOR_SETTING_USAGE(Variant::BOOL, PROPERTY_HINT_ENUM, "interface/theme/acrylic_layering", false, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED)
@@ -896,7 +896,6 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 }
 
 void EditorSettings::_load_lithium_text_editor_theme() {
-	print_error("Lithium Theme Selected");
 	_initial_set("text_editor/theme/highlighting/symbol_color", Color(0.67, 0.79, 1, 1));
 	_initial_set("text_editor/theme/highlighting/keyword_color", Color(0.2442, 0.74, 0.61605, 1));
 	_initial_set("text_editor/theme/highlighting/control_flow_keyword_color", Color(0.95827, 0.61017, 0.35569, 1));
@@ -906,8 +905,8 @@ void EditorSettings::_load_lithium_text_editor_theme() {
 	_initial_set("text_editor/theme/highlighting/comment_color", Color(0.7925, 0.78145, 0.781818, 0.5));
 	_initial_set("text_editor/theme/highlighting/doc_comment_color", Color(0.6, 0.7, 0.8, 0.8));
 	_initial_set("text_editor/theme/highlighting/string_color", Color(1, 0.2, 0.6, 1));
-	_initial_set("text_editor/theme/highlighting/background_color", Color(0.0616, 0.0849933, 0.11, 1));
-	_initial_set("text_editor/theme/highlighting/completion_background_color", Color(0.0952, 0.131353, 0.17, 1));
+	_initial_set("text_editor/theme/highlighting/background_color", Color::html("10161c30"));
+	_initial_set("text_editor/theme/highlighting/completion_background_color", Color(0.0952, 0.131353, 0.17, 0.8));
 	_initial_set("text_editor/theme/highlighting/completion_selected_color", Color(1, 1, 1, 0.07));
 	_initial_set("text_editor/theme/highlighting/completion_existing_color", Color(1, 1, 1, 0.14));
 	_initial_set("text_editor/theme/highlighting/completion_scroll_color", Color(1, 1, 1, 0.29)); // Default
@@ -961,7 +960,7 @@ bool EditorSettings::_save_text_editor_theme(const String &p_file) {
 }
 
 bool EditorSettings::_is_default_text_editor_theme(const String &p_theme_name) {
-	return p_theme_name == "Lithium";
+	return p_theme_name == "lithium" || p_theme_name == "custom";
 }
 
 const String EditorSettings::_get_project_metadata_path() const {
@@ -1419,8 +1418,8 @@ void EditorSettings::list_text_editor_themes() {
 }
 
 void EditorSettings::load_text_editor_theme() {
-	String p_file = get("text_editor/theme/color_theme");
 
+	String p_file = get("text_editor/theme/color_theme");
 	if (_is_default_text_editor_theme(p_file.get_file().to_lower())) {
 		if (p_file == "Lithium") {
 			_load_lithium_text_editor_theme();
