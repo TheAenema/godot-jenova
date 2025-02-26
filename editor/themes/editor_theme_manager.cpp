@@ -312,6 +312,15 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 				glass_base_opacity = 0.12f;
 				use_glass_everywhere = true;
 				acrylic_layering = true;
+			} else if (config.preset == "Lithium (Laminate)") {
+				preset_accent_color = Color::html("#f77b72");
+				preset_base_color = Color::html("#6b787b6e");
+				preset_contrast = 0.3f;
+				config.icon_saturation = 0.8f;
+				glass_effect = true;
+				glass_base_opacity = 0.5f;
+				use_glass_everywhere = true;
+				acrylic_layering = true;
 			} else { // Default : Lithium
 				preset_accent_color = Color::html("#f4837e");
 				preset_base_color = Color::html("#111111");
@@ -361,21 +370,24 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 		EditorSettings::get_singleton()->set_manually("interface/theme/draw_extra_borders", config.draw_extra_borders);
 
 		// Request Restart If Changes Happened to Glass
-		bool issue_restart_request = false;
-		if (config.glass_effect != bool(EDITOR_GET("interface/theme/glass_effect"))) issue_restart_request = true;
-		if (config.use_glass_everywhere != bool(EDITOR_GET("interface/theme/use_glass_everywhere"))) issue_restart_request = true;
-		if (config.acrylic_layering != bool(EDITOR_GET("interface/theme/acrylic_layering"))) issue_restart_request = true;
-		if (issue_restart_request) {
-			if (EditorNode::get_singleton() && EditorNode::get_singleton()->get_editor_settings_dialog()) {
-				EditorNode::get_singleton()->get_editor_settings_dialog()->editor_restart_request();
-			}
-		}
+		if (config.preset != "Custom") {
 
-		// Set Glass Effect Settings
-		EditorSettings::get_singleton()->set_manually("interface/theme/glass_effect", config.glass_effect, true);
-		EditorSettings::get_singleton()->set_manually("interface/theme/glass_base_opacity", config.glass_base_opacity, true);
-		EditorSettings::get_singleton()->set_manually("interface/theme/use_glass_everywhere", config.use_glass_everywhere, true);
-		EditorSettings::get_singleton()->set_manually("interface/theme/acrylic_layering", config.acrylic_layering, true);
+			bool issue_restart_request = false;
+			if (config.glass_effect != bool(EDITOR_GET("interface/theme/glass_effect"))) issue_restart_request = true;
+			if (config.use_glass_everywhere != bool(EDITOR_GET("interface/theme/use_glass_everywhere"))) issue_restart_request = true;
+			if (config.acrylic_layering != bool(EDITOR_GET("interface/theme/acrylic_layering"))) issue_restart_request = true;
+			if (issue_restart_request) {
+				if (EditorNode::get_singleton() && EditorNode::get_singleton()->get_editor_settings_dialog()) {
+					EditorNode::get_singleton()->get_editor_settings_dialog()->editor_restart_request();
+				}
+			}
+
+			// Set Glass Effect Settings
+			EditorSettings::get_singleton()->set_manually("interface/theme/glass_effect", config.glass_effect, true);
+			EditorSettings::get_singleton()->set_manually("interface/theme/glass_base_opacity", config.glass_base_opacity, true);
+			EditorSettings::get_singleton()->set_manually("interface/theme/use_glass_everywhere", config.use_glass_everywhere, true);
+			EditorSettings::get_singleton()->set_manually("interface/theme/acrylic_layering", config.acrylic_layering, true);
+		}
 	}
 
 	// Handle theme spacing preset.
