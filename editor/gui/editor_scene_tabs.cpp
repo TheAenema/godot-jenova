@@ -163,11 +163,11 @@ void EditorSceneTabs::_update_context_menu() {
 	if (tab_id >= 0) {
 		scene_tabs_context_menu->add_shortcut(ED_GET_SHORTCUT("editor/save_scene"), EditorNode::FILE_SAVE_SCENE);
 		_disable_menu_option_if(EditorNode::FILE_SAVE_SCENE, no_root_node);
-		scene_tabs_context_menu->add_shortcut(ED_GET_SHORTCUT("editor/save_scene_as"), EditorNode::FILE_SAVE_AS_SCENE);
-		_disable_menu_option_if(EditorNode::FILE_SAVE_AS_SCENE, no_root_node);
+		scene_tabs_context_menu->add_shortcut(ED_GET_SHORTCUT("editor/save_scene_as"), EditorNode::FILE_SAVE_AS_COMPONENT);
+		_disable_menu_option_if(EditorNode::FILE_SAVE_AS_COMPONENT, no_root_node);
 	}
 
-	scene_tabs_context_menu->add_shortcut(ED_GET_SHORTCUT("editor/save_all_scenes"), EditorNode::FILE_SAVE_ALL_SCENES);
+	scene_tabs_context_menu->add_shortcut(ED_GET_SHORTCUT("editor/save_all_scenes"), EditorNode::FILE_SAVE_ALL_COMPONENTS);
 	bool can_save_all_scenes = false;
 	for (int i = 0; i < EditorNode::get_editor_data().get_edited_scene_count(); i++) {
 		if (!EditorNode::get_editor_data().get_scene_path(i).is_empty() && EditorNode::get_editor_data().get_edited_scene_root(i)) {
@@ -175,7 +175,7 @@ void EditorSceneTabs::_update_context_menu() {
 			break;
 		}
 	}
-	_disable_menu_option_if(EditorNode::FILE_SAVE_ALL_SCENES, !can_save_all_scenes);
+	_disable_menu_option_if(EditorNode::FILE_SAVE_ALL_COMPONENTS, !can_save_all_scenes);
 
 	if (tab_id >= 0) {
 		scene_tabs_context_menu->add_separator();

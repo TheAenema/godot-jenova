@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animation_player_editor_plugin.h                                      */
+/*  animator_editor_plugin.h                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -34,24 +34,24 @@
 #include "editor/animation_track_editor.h"
 #include "editor/plugins/animation_library_editor.h"
 #include "editor/plugins/editor_plugin.h"
-#include "scene/animation/animation_player.h"
+#include "scene/animation/animator.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/slider.h"
 #include "scene/gui/spin_box.h"
 #include "scene/gui/texture_button.h"
 #include "scene/gui/tree.h"
 
-class AnimationPlayerEditorPlugin;
+class AnimatorEditorPlugin;
 class ImageTexture;
 
-class AnimationPlayerEditor : public VBoxContainer {
-	GDCLASS(AnimationPlayerEditor, VBoxContainer);
+class AnimatorEditor : public VBoxContainer {
+	GDCLASS(AnimatorEditor, VBoxContainer);
 
-	friend AnimationPlayerEditorPlugin;
+	friend AnimatorEditorPlugin;
 
-	AnimationPlayerEditorPlugin *plugin = nullptr;
-	AnimationMixer *original_node = nullptr; // For pinned mark in SceneTree.
-	AnimationPlayer *player = nullptr; // For AnimationPlayerEditor, could be dummy.
+	AnimatorEditorPlugin *plugin = nullptr;
+	Motion *original_node = nullptr; // For pinned mark in SceneTree.
+	Animator *player = nullptr; // For AnimatorEditor, could be dummy.
 	bool is_dummy = false;
 
 	enum {
@@ -135,7 +135,7 @@ class AnimationPlayerEditor : public VBoxContainer {
 	bool updating_blends = false;
 
 	AnimationTrackEditor *track_editor = nullptr;
-	static AnimationPlayerEditor *singleton;
+	static AnimatorEditor *singleton;
 
 	// Onion skinning.
 	struct {
@@ -211,7 +211,7 @@ class AnimationPlayerEditor : public VBoxContainer {
 	void _update_name_dialog_library_dropdown();
 	void _blend_edited();
 
-	void _animation_player_changed(Object *p_pl);
+	void _animator_changed(Object *p_pl);
 	void _animation_libraries_updated();
 
 	void _animation_key_editor_seek(float p_pos, bool p_timeline_only = false, bool p_update_position_only = false);
@@ -240,7 +240,7 @@ class AnimationPlayerEditor : public VBoxContainer {
 
 	void _ensure_dummy_player();
 
-	~AnimationPlayerEditor();
+	~AnimatorEditor();
 
 protected:
 	void _notification(int p_what);
@@ -248,11 +248,11 @@ protected:
 	static void _bind_methods();
 
 public:
-	AnimationMixer *get_editing_node() const;
-	AnimationPlayer *get_player() const;
-	AnimationMixer *fetch_mixer_for_library() const;
+	Motion *get_editing_node() const;
+	Animator *get_player() const;
+	Motion *fetch_mixer_for_library() const;
 
-	static AnimationPlayerEditor *get_singleton() { return singleton; }
+	static AnimatorEditor *get_singleton() { return singleton; }
 
 	bool is_pinned() const { return pin->is_pressed(); }
 	void unpin() {
@@ -265,23 +265,23 @@ public:
 
 	void ensure_visibility();
 
-	void edit(AnimationMixer *p_node, AnimationPlayer *p_player, bool p_is_dummy);
+	void edit(Motion *p_node, Animator *p_player, bool p_is_dummy);
 	void forward_force_draw_over_viewport(Control *p_overlay);
 
-	AnimationPlayerEditor(AnimationPlayerEditorPlugin *p_plugin);
+	AnimatorEditor(AnimatorEditorPlugin *p_plugin);
 };
 
-class AnimationPlayerEditorPlugin : public EditorPlugin {
-	GDCLASS(AnimationPlayerEditorPlugin, EditorPlugin);
+class AnimatorEditorPlugin : public EditorPlugin {
+	GDCLASS(AnimatorEditorPlugin, EditorPlugin);
 
-	friend AnimationPlayerEditor;
+	friend AnimatorEditor;
 
-	AnimationPlayerEditor *anim_editor = nullptr;
-	AnimationPlayer *player = nullptr;
-	AnimationPlayer *dummy_player = nullptr;
+	AnimatorEditor *anim_editor = nullptr;
+	Animator *player = nullptr;
+	Animator *dummy_player = nullptr;
 	ObjectID last_mixer;
 
-	void _update_dummy_player(AnimationMixer *p_mixer);
+	void _update_dummy_player(Motion *p_mixer);
 	void _clear_dummy_player();
 
 protected:
@@ -301,8 +301,8 @@ public:
 	virtual bool handles(Object *p_object) const override;
 	virtual void make_visible(bool p_visible) override;
 
-	AnimationPlayerEditorPlugin();
-	~AnimationPlayerEditorPlugin();
+	AnimatorEditorPlugin();
+	~AnimatorEditorPlugin();
 };
 
 // AnimationTrackKeyEditEditorPlugin

@@ -55,8 +55,8 @@ private:
 	static void _bind_methods();
 
 public:
-	void set_animation_mixer(const NodePath &p_path);
-	NodePath get_animation_mixer() const;
+	void set_motion(const NodePath &p_path);
+	NodePath get_motion() const;
 
 	void set_color(const Color &p_color);
 	Color get_color() const;

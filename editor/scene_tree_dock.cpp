@@ -47,7 +47,7 @@
 #include "editor/inspector_dock.h"
 #include "editor/multi_node_edit.h"
 #include "editor/node_dock.h"
-#include "editor/plugins/animation_player_editor_plugin.h"
+#include "editor/plugins/animator_editor_plugin.h"
 #include "editor/plugins/element_editor_plugin.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/reparent_dialog.h"
@@ -1790,8 +1790,8 @@ bool SceneTreeDock::_has_tracks_to_delete(Node *p_node, List<Node *> &p_to_delet
 		}
 	}
 
-	// This is an AnimationPlayer that survives the deletion.
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(p_node);
+	// This is an Animator that survives the deletion.
+	Animator *ap = Object::cast_to<Animator>(p_node);
 	if (ap) {
 		Node *root = ap->get_node(ap->get_root_node());
 		if (root && !p_to_delete.find(root)) {
@@ -1998,7 +1998,7 @@ void SceneTreeDock::perform_node_renames(Node *p_base, HashMap<Node *, NodePath>
 
 	bool autorename_animation_tracks = bool(EDITOR_GET("editors/animation/autorename_animation_tracks"));
 
-	AnimationMixer *mixer = Object::cast_to<AnimationMixer>(p_base);
+	Motion *mixer = Object::cast_to<Motion>(p_base);
 	if (autorename_animation_tracks && mixer) {
 		List<StringName> anims;
 		mixer->get_animation_list(&anims);
@@ -2332,8 +2332,8 @@ void SceneTreeDock::_do_reparent(Node *p_new_parent, int p_position_in_parent, V
 
 		undo_redo->add_do_method(this, "_set_owners", edited_scene, owners);
 
-		if (AnimationPlayerEditor::get_singleton()->get_track_editor()->get_root() == node) {
-			undo_redo->add_do_method(AnimationPlayerEditor::get_singleton()->get_track_editor(), "set_root", node);
+		if (AnimatorEditor::get_singleton()->get_track_editor()->get_root() == node) {
+			undo_redo->add_do_method(AnimatorEditor::get_singleton()->get_track_editor(), "set_root", node);
 		}
 
 		undo_redo->add_undo_method(new_parent, "remove_child", node);
@@ -2359,8 +2359,8 @@ void SceneTreeDock::_do_reparent(Node *p_new_parent, int p_position_in_parent, V
 		undo_redo->add_undo_method(node->get_parent(), "add_child", node, true);
 		undo_redo->add_undo_method(node->get_parent(), "move_child", node, child_pos);
 		undo_redo->add_undo_method(this, "_set_owners", edited_scene, owners);
-		if (AnimationPlayerEditor::get_singleton()->get_track_editor()->get_root() == node) {
-			undo_redo->add_undo_method(AnimationPlayerEditor::get_singleton()->get_track_editor(), "set_root", node);
+		if (AnimatorEditor::get_singleton()->get_track_editor()->get_root() == node) {
+			undo_redo->add_undo_method(AnimatorEditor::get_singleton()->get_track_editor(), "set_root", node);
 		}
 
 		if (p_keep_global_xform) {
@@ -2656,8 +2656,8 @@ void SceneTreeDock::_delete_confirm(bool p_cut) {
 			undo_redo->add_do_method(n->get_parent(), "remove_child", n);
 			undo_redo->add_undo_method(n->get_parent(), "add_child", n, true);
 			undo_redo->add_undo_method(n->get_parent(), "move_child", n, n->get_index(false));
-			if (AnimationPlayerEditor::get_singleton()->get_track_editor()->get_root() == n) {
-				undo_redo->add_undo_method(AnimationPlayerEditor::get_singleton()->get_track_editor(), "set_root", n);
+			if (AnimatorEditor::get_singleton()->get_track_editor()->get_root() == n) {
+				undo_redo->add_undo_method(AnimatorEditor::get_singleton()->get_track_editor(), "set_root", n);
 			}
 			undo_redo->add_undo_method(this, "_set_owners", edited_scene, owners);
 			undo_redo->add_undo_reference(n);

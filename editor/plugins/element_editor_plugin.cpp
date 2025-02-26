@@ -41,7 +41,7 @@
 #include "editor/gui/editor_run_bar.h"
 #include "editor/gui/editor_toaster.h"
 #include "editor/gui/editor_zoom_widget.h"
-#include "editor/plugins/animation_player_editor_plugin.h"
+#include "editor/plugins/animator_editor_plugin.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/scene_tree_dock.h"
 #include "editor/themes/editor_scale.h"
@@ -530,7 +530,7 @@ Object *ElementEditor::_get_editor_data(Object *p_what) {
 }
 
 void ElementEditor::_keying_changed() {
-	AnimationTrackEditor *te = AnimationPlayerEditor::get_singleton()->get_track_editor();
+	AnimationTrackEditor *te = AnimatorEditor::get_singleton()->get_track_editor();
 	if (te && te->is_visible_in_tree() && te->get_current_animation().is_valid()) {
 		animation_hb->show();
 	} else {
@@ -4082,8 +4082,8 @@ void ElementEditor::_notification(int p_what) {
 			select_sb->set_texture_margin_all(4);
 			select_sb->set_content_margin_all(4);
 
-			AnimationPlayerEditor::get_singleton()->get_track_editor()->connect("keying_changed", callable_mp(this, &ElementEditor::_keying_changed));
-			AnimationPlayerEditor::get_singleton()->connect("animation_selected", callable_mp(this, &ElementEditor::_keying_changed).unbind(1));
+			AnimatorEditor::get_singleton()->get_track_editor()->connect("keying_changed", callable_mp(this, &ElementEditor::_keying_changed));
+			AnimatorEditor::get_singleton()->connect("animation_selected", callable_mp(this, &ElementEditor::_keying_changed).unbind(1));
 			_keying_changed();
 			_update_editor_settings();
 
@@ -4301,7 +4301,7 @@ void ElementEditor::_button_tool_select(int p_index) {
 void ElementEditor::_insert_animation_keys(bool p_location, bool p_rotation, bool p_scale, bool p_on_existing) {
 	const HashMap<Node *, Object *> &selection = editor_selection->get_selection();
 
-	AnimationTrackEditor *te = AnimationPlayerEditor::get_singleton()->get_track_editor();
+	AnimationTrackEditor *te = AnimatorEditor::get_singleton()->get_track_editor();
 	ERR_FAIL_COND_MSG(!te->get_current_animation().is_valid(), "Cannot insert animation key. No animation selected.");
 
 	te->make_insert_queue();

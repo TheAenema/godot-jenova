@@ -33,8 +33,8 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
-#include "scene/animation/animation_mixer.h"
-#include "scene/animation/animation_player.h"
+#include "scene/animation/motion.h"
+#include "scene/animation/animator.h"
 #include "scene/animation/tween.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/debugger/scene_debugger.h"
@@ -392,8 +392,8 @@ void register_scene_types() {
 	GDREGISTER_CLASS(CallbackTweener);
 	GDREGISTER_CLASS(MethodTweener);
 
-	GDREGISTER_ABSTRACT_CLASS(AnimationMixer);
-	GDREGISTER_CLASS(AnimationPlayer);
+	GDREGISTER_ABSTRACT_CLASS(Motion);
+	GDREGISTER_CLASS(Animator);
 
 	GDREGISTER_CLASS(ShaderGlobalsOverride); // can be used in any shader
 

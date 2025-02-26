@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animation_mixer.h                                                     */
+/*  motion.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -39,8 +39,8 @@
 
 class AnimatedValuesBackup;
 
-class AnimationMixer : public Node {
-	GDCLASS(AnimationMixer, Node);
+class Motion : public Node {
+	GDCLASS(Motion, Node);
 	friend AnimatedValuesBackup;
 #ifdef TOOLS_ENABLED
 	bool editing = false;
@@ -469,27 +469,27 @@ public:
 	bool is_dummy() const;
 #endif // TOOLS_ENABLED
 
-	AnimationMixer();
-	~AnimationMixer();
+	Motion();
+	~Motion();
 };
 
 class AnimatedValuesBackup : public RefCounted {
 	GDCLASS(AnimatedValuesBackup, RefCounted);
 
-	HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> data;
+	HashMap<Animation::TypeHash, Motion::TrackCache *> data;
 
 public:
-	void set_data(const HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> p_data);
-	HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> get_data() const;
+	void set_data(const HashMap<Animation::TypeHash, Motion::TrackCache *> p_data);
+	HashMap<Animation::TypeHash, Motion::TrackCache *> get_data() const;
 	void clear_data();
 
-	AnimationMixer::TrackCache *get_cache_copy(AnimationMixer::TrackCache *p_cache) const;
+	Motion::TrackCache *get_cache_copy(Motion::TrackCache *p_cache) const;
 
 	~AnimatedValuesBackup() { clear_data(); }
 };
 
-VARIANT_ENUM_CAST(AnimationMixer::AnimationCallbackModeProcess);
-VARIANT_ENUM_CAST(AnimationMixer::AnimationCallbackModeMethod);
-VARIANT_ENUM_CAST(AnimationMixer::AnimationCallbackModeDiscrete);
+VARIANT_ENUM_CAST(Motion::AnimationCallbackModeProcess);
+VARIANT_ENUM_CAST(Motion::AnimationCallbackModeMethod);
+VARIANT_ENUM_CAST(Motion::AnimationCallbackModeDiscrete);
 
 #endif // ANIMATION_MIXER_H

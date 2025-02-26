@@ -33,11 +33,11 @@
 
 #include "editor/animation_track_editor.h"
 #include "editor/plugins/editor_plugin.h"
-#include "scene/animation/animation_mixer.h"
+#include "scene/animation/motion.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
 
-class AnimationMixer;
+class Motion;
 class EditorFileDialog;
 
 class AnimationLibraryEditor : public AcceptDialog {
@@ -94,7 +94,7 @@ class AnimationLibraryEditor : public AcceptDialog {
 
 	Tree *tree = nullptr;
 
-	AnimationMixer *mixer = nullptr;
+	Motion *mixer = nullptr;
 
 	void _add_library();
 	void _add_library_validate(const String &p_name);
@@ -117,7 +117,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	void set_animation_mixer(Object *p_mixer);
+	void set_motion(Object *p_mixer);
 	void show_dialog();
 	void update_tree();
 	AnimationLibraryEditor();

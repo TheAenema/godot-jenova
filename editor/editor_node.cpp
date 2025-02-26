@@ -124,7 +124,7 @@
 #include "editor/inspector_dock.h"
 #include "editor/multi_node_edit.h"
 #include "editor/node_dock.h"
-#include "editor/plugins/animation_player_editor_plugin.h"
+#include "editor/plugins/animator_editor_plugin.h"
 #include "editor/plugins/element_editor_plugin.h"
 #include "editor/plugins/debugger_editor_plugin.h"
 #include "editor/plugins/dedicated_server_export_plugin.h"
@@ -1032,7 +1032,7 @@ void EditorNode::_resources_reimported(const Vector<String> &p_resources) {
 	}
 
 	// Editor may crash when related animation is playing while re-importing GLTF scene, stop it in advance.
-	AnimationPlayer *ap = AnimationPlayerEditor::get_singleton()->get_player();
+	Animator *ap = AnimatorEditor::get_singleton()->get_player();
 	if (ap && scenes.size() > 0) {
 		ap->stop(true);
 	}
@@ -1059,12 +1059,12 @@ void EditorNode::_sources_changed(bool p_exist) {
 		_load_editor_layout();
 
 		if (!defer_load_scene.is_empty()) {
-			OS::get_singleton()->benchmark_begin_measure("Editor", "Load Scene");
+			OS::get_singleton()->benchmark_begin_measure("Editor", "Load Component");
 
 			load_scene(defer_load_scene);
 			defer_load_scene = "";
 
-			OS::get_singleton()->benchmark_end_measure("Editor", "Load Scene");
+			OS::get_singleton()->benchmark_end_measure("Editor", "Load Component");
 			OS::get_singleton()->benchmark_dump();
 		}
 
@@ -1428,13 +1428,13 @@ void EditorNode::_dialog_display_load_error(String p_file, Error p_error) {
 				show_accept(vformat(TTR("Error while parsing file '%s'."), p_file.get_file()), TTR("OK"));
 			} break;
 			case ERR_FILE_CORRUPT: {
-				show_accept(vformat(TTR("Scene file '%s' appears to be invalid/corrupt."), p_file.get_file()), TTR("OK"));
+				show_accept(vformat(TTR("Component file '%s' appears to be invalid/corrupt."), p_file.get_file()), TTR("OK"));
 			} break;
 			case ERR_FILE_NOT_FOUND: {
 				show_accept(vformat(TTR("Missing file '%s' or one of its dependencies."), p_file.get_file()), TTR("OK"));
 			} break;
 			case ERR_FILE_UNRECOGNIZED: {
-				show_accept(vformat(TTR("File '%s' is saved in a format that is newer than the formats supported by this version of Godot, so it can't be opened."), p_file.get_file()), TTR("OK"));
+				show_accept(vformat(TTR("File '%s' is saved in a format that is newer than the formats supported by this version of Lithium, so it can't be opened."), p_file.get_file()), TTR("OK"));
 			} break;
 			default: {
 				show_accept(vformat(TTR("Error while loading file '%s'."), p_file.get_file()), TTR("OK"));
@@ -1607,7 +1607,7 @@ void EditorNode::_find_node_types(Node *p_node, int &count_2d, int &count_3d) {
 }
 
 void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
-	EditorProgress save("save", TTR("Saving Scene"), 4);
+	EditorProgress save("save", TTR("Saving Component"), 4);
 
 	if (editor_data.get_edited_scene_root() != nullptr) {
 		save.step(TTR("Analyzing"), 0);
@@ -1674,7 +1674,7 @@ void EditorNode::_save_scene_with_preview(String p_file, int p_idx) {
 		}
 	}
 
-	save.step(TTR("Saving Scene"), 4);
+	save.step(TTR("Saving Component"), 4);
 	_save_scene(p_file, p_idx);
 
 	if (!singleton->cmdline_export_mode) {
@@ -1759,7 +1759,7 @@ int EditorNode::_save_external_resources(bool p_also_save_external_data) {
 }
 
 void EditorNode::_save_scene(String p_file, int idx) {
-	ERR_FAIL_COND_MSG(!saving_scene.is_empty() && saving_scene == p_file, "Scene saved while already being saved!");
+	ERR_FAIL_COND_MSG(!saving_scene.is_empty() && saving_scene == p_file, "Component saved while already being saved!");
 
 	Node *scene = editor_data.get_edited_scene_root(idx);
 
@@ -1776,7 +1776,7 @@ void EditorNode::_save_scene(String p_file, int idx) {
 	scene->propagate_notification(NOTIFICATION_EDITOR_PRE_SAVE);
 
 	editor_data.apply_changes_in_editors();
-	List<Pair<AnimationMixer *, Ref<AnimatedValuesBackup>>> anim_backups;
+	List<Pair<Motion *, Ref<AnimatedValuesBackup>>> anim_backups;
 	save_default_environment();
 
 	_save_editor_states(p_file, idx);
@@ -1821,7 +1821,7 @@ void EditorNode::_save_scene(String p_file, int idx) {
 	editor_data.save_editor_external_data();
 	saving_scene = "";
 
-	for (Pair<AnimationMixer *, Ref<AnimatedValuesBackup>> &E : anim_backups) {
+	for (Pair<Motion *, Ref<AnimatedValuesBackup>> &E : anim_backups) {
 		E.first->restore(E.second);
 	}
 
@@ -1865,7 +1865,7 @@ void EditorNode::save_scene_list(const HashSet<String> &p_scene_paths) {
 
 void EditorNode::save_before_run() {
 	current_menu_option = FILE_SAVE_AND_RUN;
-	_menu_option_confirm(FILE_SAVE_AS_SCENE, true);
+	_menu_option_confirm(FILE_SAVE_AS_COMPONENT, true);
 	file->set_title(TTR("Save scene before running..."));
 }
 
@@ -1881,7 +1881,7 @@ void EditorNode::try_autosave() {
 			_save_scene_with_preview(scene->get_scene_file_path());
 		}
 	}
-	_menu_option(FILE_SAVE_ALL_SCENES);
+	_menu_option(FILE_SAVE_ALL_COMPONENTS);
 	editor_data.save_editor_external_data();
 }
 
@@ -1935,7 +1935,7 @@ void EditorNode::_save_all_scenes() {
 	}
 
 	if (!all_saved) {
-		show_warning(TTR("Could not save one or more scenes!"), TTR("Save All Scenes"));
+		show_warning(TTR("Could not save one or more scenes!"), TTR("Save All Components"));
 	}
 	save_default_environment();
 }
@@ -1960,7 +1960,7 @@ void EditorNode::_mark_unsaved_scenes() {
 
 void EditorNode::_dialog_action(String p_file) {
 	switch (current_menu_option) {
-		case FILE_NEW_INHERITED_SCENE: {
+		case FILE_NEW_INHERITED_COMPONENT: {
 			Node *scene = editor_data.get_edited_scene_root();
 			// If the previous scene is rootless, just close it in favor of the new one.
 			if (!scene) {
@@ -1969,7 +1969,7 @@ void EditorNode::_dialog_action(String p_file) {
 
 			load_scene(p_file, false, true);
 		} break;
-		case FILE_OPEN_SCENE: {
+		case FILE_OPEN_COMPONENT: {
 			load_scene(p_file);
 		} break;
 		case SETTINGS_PICK_MAIN_SCENE: {
@@ -1982,8 +1982,8 @@ void EditorNode::_dialog_action(String p_file) {
 		case FILE_CLOSE:
 		case SCENE_TAB_CLOSE:
 		case FILE_SAVE_SCENE:
-		case FILE_SAVE_AS_SCENE: {
-			int scene_idx = (current_menu_option == FILE_SAVE_SCENE || current_menu_option == FILE_SAVE_AS_SCENE) ? -1 : tab_closing_idx;
+		case FILE_SAVE_AS_COMPONENT: {
+			int scene_idx = (current_menu_option == FILE_SAVE_SCENE || current_menu_option == FILE_SAVE_AS_COMPONENT) ? -1 : tab_closing_idx;
 
 			if (file->get_file_mode() == EditorFileDialog::FILE_MODE_SAVE_FILE) {
 				bool same_open_scene = false;
@@ -2487,8 +2487,8 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			new_scene();
 
 		} break;
-		case FILE_NEW_INHERITED_SCENE:
-		case FILE_OPEN_SCENE: {
+		case FILE_NEW_INHERITED_COMPONENT:
+		case FILE_OPEN_COMPONENT: {
 			file->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_FILE);
 			List<String> extensions;
 			ResourceLoader::get_recognized_extensions_for_type("Component", &extensions);
@@ -2501,7 +2501,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			if (scene) {
 				file->set_current_path(scene->get_scene_file_path());
 			};
-			file->set_title(p_option == FILE_OPEN_SCENE ? TTR("Open Scene") : TTR("Open Base Scene"));
+			file->set_title(p_option == FILE_OPEN_COMPONENT ? TTR("Open Component") : TTR("Open Base Component"));
 			file->popup_file_dialog();
 
 		} break;
@@ -2510,9 +2510,9 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			quick_open->set_title(TTR("Quick Open..."));
 
 		} break;
-		case FILE_QUICK_OPEN_SCENE: {
+		case FILE_QUICK_OPEN_COMPONENT: {
 			quick_open->popup_dialog("Component", true);
-			quick_open->set_title(TTR("Quick Open Scene..."));
+			quick_open->set_title(TTR("Quick Open Component..."));
 
 		} break;
 		case FILE_QUICK_OPEN_SCRIPT: {
@@ -2589,8 +2589,8 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			}
 			[[fallthrough]];
 		}
-		case FILE_SAVE_AS_SCENE: {
-			int scene_idx = (p_option == FILE_SAVE_SCENE || p_option == FILE_SAVE_AS_SCENE) ? -1 : tab_closing_idx;
+		case FILE_SAVE_AS_COMPONENT: {
+			int scene_idx = (p_option == FILE_SAVE_SCENE || p_option == FILE_SAVE_AS_COMPONENT) ? -1 : tab_closing_idx;
 
 			Node *scene = editor_data.get_edited_scene_root(scene_idx);
 
@@ -2604,12 +2604,12 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				const int saved = _save_external_resources(true);
 				if (saved > 0) {
 					show_accept(
-							vformat(TTR("The current scene has no root node, but %d modified external resource(s) and/or plugin data were saved anyway."), saved),
+							vformat(TTR("The current component has no root node, but %d modified external resource(s) and/or plugin data were saved anyway."), saved),
 							TTR("OK"));
-				} else if (p_option == FILE_SAVE_AS_SCENE) {
+				} else if (p_option == FILE_SAVE_AS_COMPONENT) {
 					// Don't show this dialog when pressing Ctrl + S to avoid interfering with script saving.
 					show_accept(
-							TTR("A root node is required to save the scene. You can add a root node using the Scene tree dock."),
+							TTR("A root node is required to save the component. You can add a root node using the component tree dock."),
 							TTR("OK"));
 				}
 
@@ -2640,12 +2640,12 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 				root_name = EditorNode::adjust_scene_name_casing(root_name);
 				file->set_current_path(root_name + "." + extensions.front()->get().to_lower());
 			}
-			file->set_title(TTR("Save Scene As..."));
+			file->set_title(TTR("Save Component As..."));
 			file->popup_file_dialog();
 
 		} break;
 
-		case FILE_SAVE_ALL_SCENES: {
+		case FILE_SAVE_ALL_COMPONENTS: {
 			_save_all_scenes();
 		} break;
 
@@ -2660,7 +2660,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 		case FILE_EXTERNAL_OPEN_SCENE: {
 			if (unsaved_cache && !p_confirmed) {
 				confirmation->set_ok_button_text(TTR("Open"));
-				confirmation->set_text(TTR("Current scene not saved. Open anyway?"));
+				confirmation->set_text(TTR("Current Component Not Saved. Open Anyway?"));
 				confirmation->popup_centered();
 				break;
 			}
@@ -2692,7 +2692,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 							log->add_message(vformat(TTR("Remote Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
 							break;
 						default:
-							log->add_message(vformat(TTR("Scene Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+							log->add_message(vformat(TTR("Component Undo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
 					}
 				}
 			}
@@ -2718,7 +2718,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 							log->add_message(vformat(TTR("Remote Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
 							break;
 						default:
-							log->add_message(vformat(TTR("Scene Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
+							log->add_message(vformat(TTR("Component Redo: %s"), action), EditorLog::MSG_TYPE_EDITOR);
 					}
 				}
 			}
@@ -2739,7 +2739,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			}
 
 			if (unsaved_cache && !p_confirmed) {
-				confirmation->set_ok_button_text(TTR("Reload Saved Scene"));
+				confirmation->set_ok_button_text(TTR("Reload Saved Component"));
 				confirmation->set_text(
 						TTR("The current scene has unsaved changes.\nReload the saved scene anyway? This action cannot be undone."));
 				confirmation->popup_centered();
@@ -2908,7 +2908,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			if (scene) {
 				file->set_current_path(scene->get_scene_file_path());
 			}
-			file->set_title(TTR("Pick a Main Scene"));
+			file->set_title(TTR("Pick a Main Component"));
 			file->popup_file_dialog();
 
 		} break;
@@ -3749,7 +3749,7 @@ Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, b
 		}
 
 		if (!p_force_open_imported && FileAccess::exists(p_scene + ".import")) {
-			open_imported->set_text(vformat(TTR("Scene '%s' was automatically imported, so it can't be modified.\nTo make changes to it, a new inherited scene can be created."), p_scene.get_file()));
+			open_imported->set_text(vformat(TTR("Component '%s' was automatically imported, so it can't be modified.\nTo make changes to it, a new inherited scene can be created."), p_scene.get_file()));
 			open_imported->popup_centered();
 			new_inherited_button->grab_focus();
 			open_import_request = p_scene;
@@ -3819,7 +3819,7 @@ Error EditorNode::load_scene(const String &p_scene, bool p_ignore_broken_deps, b
 	dependency_errors.erase(lpath); // At least not self path.
 
 	for (KeyValue<String, HashSet<String>> &E : dependency_errors) {
-		String txt = vformat(TTR("Scene '%s' has broken dependencies:"), E.key) + "\n";
+		String txt = vformat(TTR("Component '%s' has broken dependencies:"), E.key) + "\n";
 		for (const String &F : E.value) {
 			txt += "\t" + F + "\n";
 		}
@@ -4319,7 +4319,7 @@ String EditorNode::get_multiwindow_support_tooltip_text() const {
 }
 
 void EditorNode::_inherit_request(String p_file) {
-	current_menu_option = FILE_NEW_INHERITED_SCENE;
+	current_menu_option = FILE_NEW_INHERITED_COMPONENT;
 	_dialog_action(p_file);
 }
 
@@ -4377,7 +4377,7 @@ void EditorNode::_update_recent_scenes() {
 	}
 
 	recent_scenes->add_separator();
-	recent_scenes->add_shortcut(ED_SHORTCUT("editor/clear_recent", TTR("Clear Recent Scenes")));
+	recent_scenes->add_shortcut(ED_SHORTCUT("editor/clear_recent", TTR("Clear Recent Components")));
 	recent_scenes->reset_size();
 }
 
@@ -4541,7 +4541,7 @@ void EditorNode::_pick_main_scene_custom_action(const String &p_custom_action_na
 
 		if (!FileAccess::exists(scene->get_scene_file_path())) {
 			current_menu_option = FILE_SAVE_AND_RUN_MAIN_SCENE;
-			_menu_option_confirm(FILE_SAVE_AS_SCENE, true);
+			_menu_option_confirm(FILE_SAVE_AS_COMPONENT, true);
 			file->set_title(TTR("Save scene before running..."));
 		} else {
 			current_menu_option = SETTINGS_PICK_MAIN_SCENE;
@@ -5292,7 +5292,7 @@ void EditorNode::_scene_tab_closed(int p_tab) {
 			} else {
 				last_modified_string = vformat(TTRN("%d hour ago", "%d hours ago", last_modified_seconds / 3600), last_modified_seconds / 3600);
 			}
-			unsaved_message = vformat(TTR("Scene \"%s\" has unsaved changes.\nLast saved: %s."), scene_filename, last_modified_string);
+			unsaved_message = vformat(TTR("Component \"%s\" has unsaved changes.\nLast saved: %s."), scene_filename, last_modified_string);
 		}
 	} else {
 		// Check if any plugin has unsaved changes in that scene.
@@ -5636,7 +5636,7 @@ void EditorNode::preload_reimporting_with_path_in_edited_scenes(const List<Strin
 	// Walk through each opened scene to get a global list of all instances which match
 	// the current reimported scenes.
 	for (int current_scene_idx = 0; current_scene_idx < editor_data.get_edited_scene_count(); current_scene_idx++) {
-		progress.step(vformat(TTR("Analyzing scene %s"), editor_data.get_scene_title(current_scene_idx)), current_scene_idx);
+		progress.step(vformat(TTR("Analyzing Component %s"), editor_data.get_scene_title(current_scene_idx)), current_scene_idx);
 
 		Node *edited_scene_root = editor_data.get_edited_scene_root(current_scene_idx);
 
@@ -5688,7 +5688,7 @@ void EditorNode::reload_instances_with_path_in_edited_scenes() {
 	if (scenes_modification_table.size() == 0) {
 		return;
 	}
-	EditorProgress progress("reloading_scene", TTR("Scenes reloading"), editor_data.get_edited_scene_count());
+	EditorProgress progress("reloading_scene", TTR("Components Reloading"), editor_data.get_edited_scene_count());
 	progress.step(TTR("Reloading..."), 0, true);
 
 	Error err;
@@ -6731,7 +6731,7 @@ EditorNode::EditorNode() {
 
 	save_accept = memnew(AcceptDialog);
 	save_accept->set_unparent_when_invisible(true);
-	save_accept->connect(SceneStringName(confirmed), callable_mp(this, &EditorNode::_menu_option).bind((int)MenuOptions::FILE_SAVE_AS_SCENE));
+	save_accept->connect(SceneStringName(confirmed), callable_mp(this, &EditorNode::_menu_option).bind((int)MenuOptions::FILE_SAVE_AS_COMPONENT));
 
 	project_export = memnew(ProjectExportDialog);
 	gui_base->add_child(project_export);
@@ -6770,33 +6770,33 @@ EditorNode::EditorNode() {
 	warning->add_button(TTR("Copy Text"), true, "copy");
 	warning->connect("custom_action", callable_mp(this, &EditorNode::_copy_warning));
 
-	ED_SHORTCUT("editor/next_tab", TTR("Next Scene Tab"), KeyModifierMask::CTRL + Key::TAB);
-	ED_SHORTCUT("editor/prev_tab", TTR("Previous Scene Tab"), KeyModifierMask::CTRL + KeyModifierMask::SHIFT + Key::TAB);
+	ED_SHORTCUT("editor/next_tab", TTR("Next Component Tab"), KeyModifierMask::CTRL + Key::TAB);
+	ED_SHORTCUT("editor/prev_tab", TTR("Previous Component Tab"), KeyModifierMask::CTRL + KeyModifierMask::SHIFT + Key::TAB);
 	ED_SHORTCUT("editor/filter_files", TTR("Focus FileSystem Filter"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::ALT + Key::P);
 
 	command_palette = EditorCommandPalette::get_singleton();
 	command_palette->set_title(TTR("Command Palette"));
 	gui_base->add_child(command_palette);
 
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/new_scene", TTR("New Scene"), KeyModifierMask::CMD_OR_CTRL + Key::N), FILE_NEW_COMPONENT);
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/new_inherited_scene", TTR("New Inherited Scene..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::N), FILE_NEW_INHERITED_SCENE);
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/open_scene", TTR("Open Scene..."), KeyModifierMask::CMD_OR_CTRL + Key::O), FILE_OPEN_SCENE);
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/reopen_closed_scene", TTR("Reopen Closed Scene"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::T), FILE_OPEN_PREV);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/new_scene", TTR("New Component"), KeyModifierMask::CMD_OR_CTRL + Key::N), FILE_NEW_COMPONENT);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/new_inherited_scene", TTR("New Inherited Component..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::N), FILE_NEW_INHERITED_COMPONENT);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/open_scene", TTR("Open Component..."), KeyModifierMask::CMD_OR_CTRL + Key::O), FILE_OPEN_COMPONENT);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/reopen_closed_scene", TTR("Reopen Closed Component"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::T), FILE_OPEN_PREV);
 
 	recent_scenes = memnew(PopupMenu);
 	file_menu->add_submenu_node_item(TTR("Open Recent"), recent_scenes, FILE_OPEN_RECENT);
 	recent_scenes->connect(SceneStringName(id_pressed), callable_mp(this, &EditorNode::_open_recent_scene));
 
 	file_menu->add_separator();
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/save_scene", TTR("Save Scene"), KeyModifierMask::CMD_OR_CTRL + Key::S), FILE_SAVE_SCENE);
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/save_scene_as", TTR("Save Scene As..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::S), FILE_SAVE_AS_SCENE);
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/save_all_scenes", TTR("Save All Scenes"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::S), FILE_SAVE_ALL_SCENES);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/save_scene", TTR("Save Component"), KeyModifierMask::CMD_OR_CTRL + Key::S), FILE_SAVE_SCENE);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/save_scene_as", TTR("Save Component As..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::S), FILE_SAVE_AS_COMPONENT);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/save_all_scenes", TTR("Save All Components"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::S), FILE_SAVE_ALL_COMPONENTS);
 
 	file_menu->add_separator();
 
 	file_menu->add_shortcut(ED_SHORTCUT_ARRAY_AND_COMMAND("editor/quick_open", TTR("Quick Open..."), { int32_t(KeyModifierMask::SHIFT + KeyModifierMask::ALT + Key::O), int32_t(KeyModifierMask::CMD_OR_CTRL + Key::P) }), FILE_QUICK_OPEN);
 	ED_SHORTCUT_OVERRIDE_ARRAY("editor/quick_open", "macos", { int32_t(KeyModifierMask::META + KeyModifierMask::CTRL + Key::O), int32_t(KeyModifierMask::CMD_OR_CTRL + Key::P) });
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/quick_open_scene", TTR("Quick Open Scene..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::O), FILE_QUICK_OPEN_SCENE);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/quick_open_scene", TTR("Quick Open Component..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::O), FILE_QUICK_OPEN_COMPONENT);
 	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/quick_open_script", TTR("Quick Open Script..."), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::ALT + Key::O), FILE_QUICK_OPEN_SCRIPT);
 
 	file_menu->add_separator();
@@ -6810,8 +6810,8 @@ EditorNode::EditorNode() {
 	file_menu->add_shortcut(ED_GET_SHORTCUT("ui_redo"), EDIT_REDO, false, true);
 
 	file_menu->add_separator();
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/reload_saved_scene", TTR("Reload Saved Scene")), EDIT_RELOAD_SAVED_SCENE);
-	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/close_scene", TTR("Close Scene"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::W), FILE_CLOSE);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/reload_saved_scene", TTR("Reload Saved Component")), EDIT_RELOAD_SAVED_SCENE);
+	file_menu->add_shortcut(ED_SHORTCUT_AND_COMMAND("editor/close_scene", TTR("Close Component"), KeyModifierMask::CMD_OR_CTRL + KeyModifierMask::SHIFT + Key::W), FILE_CLOSE);
 	ED_SHORTCUT_OVERRIDE("editor/close_scene", "macos", KeyModifierMask::CMD_OR_CTRL + Key::W);
 
 	file_menu->add_separator();
@@ -7069,7 +7069,7 @@ EditorNode::EditorNode() {
 	editor_dock_manager->add_dock(SceneTreeDock::get_singleton(), TTR("Hierarchy"), EditorDockManager::DOCK_SLOT_LEFT_UR, nullptr, "Component");
 
 	// Import: Top left, behind Scene.
-	editor_dock_manager->add_dock(ImportDock::get_singleton(), TTR("Import Settings"), EditorDockManager::DOCK_SLOT_LEFT_UR, nullptr, "FileAccess");
+	editor_dock_manager->add_dock(ImportDock::get_singleton(), TTR("Importer"), EditorDockManager::DOCK_SLOT_LEFT_UR, nullptr, "FileAccess");
 
 	// FileSystem: Bottom left.
 	editor_dock_manager->add_dock(FileSystemDock::get_singleton(), TTR("Asset Manager"), EditorDockManager::DOCK_SLOT_LEFT_BR, ED_SHORTCUT_AND_COMMAND("bottom_panels/toggle_filesystem_bottom_panel", TTR("Toggle FileSystem Bottom Panel"), KeyModifierMask::ALT | Key::F), "Folder");
@@ -7092,9 +7092,9 @@ EditorNode::EditorNode() {
 	const String docks_section = "docks";
 	default_layout.instantiate();
 	// Dock numbers are based on DockSlot enum value + 1.
-	default_layout->set_value(docks_section, "dock_3", "Scene,Import");
-	default_layout->set_value(docks_section, "dock_4", "FileSystem");
-	default_layout->set_value(docks_section, "dock_5", "Inspector,Node,History");
+	default_layout->set_value(docks_section, "dock_3", "Hierarchy,Importer");
+	default_layout->set_value(docks_section, "dock_4", "Asset Manager");
+	default_layout->set_value(docks_section, "dock_5", "Properties,Node,History");
 
 	// There are 4 vsplits and 4 hsplits.
 	for (int i = 0; i < editor_dock_manager->get_vsplit_count(); i++) {
@@ -7210,7 +7210,7 @@ EditorNode::EditorNode() {
 
 	gui_base->add_child(disk_changed);
 
-	add_editor_plugin(memnew(AnimationPlayerEditorPlugin));
+	add_editor_plugin(memnew(AnimatorEditorPlugin));
 	add_editor_plugin(memnew(AnimationTrackKeyEditEditorPlugin));
 	add_editor_plugin(memnew(ElementEditorPlugin));
 	add_editor_plugin(memnew(ScriptEditorPlugin));
@@ -7221,7 +7221,7 @@ EditorNode::EditorNode() {
 	TextEditor::register_editor();
 
 	// More visually meaningful to have this later.
-	bottom_panel->move_item_to_end(AnimationPlayerEditor::get_singleton());
+	bottom_panel->move_item_to_end(AnimatorEditor::get_singleton());
 
 	add_editor_plugin(VersionControlEditorPlugin::get_singleton());
 

@@ -162,12 +162,12 @@ private:
 
 	enum MenuOptions {
 		FILE_NEW_COMPONENT,
-		FILE_NEW_INHERITED_SCENE,
-		FILE_OPEN_SCENE,
+		FILE_NEW_INHERITED_COMPONENT,
+		FILE_OPEN_COMPONENT,
 		FILE_SAVE_SCENE,
 		FILE_SAVE_SCENE_SILENTLY,
-		FILE_SAVE_AS_SCENE,
-		FILE_SAVE_ALL_SCENES,
+		FILE_SAVE_AS_COMPONENT,
+		FILE_SAVE_ALL_COMPONENTS,
 		FILE_SAVE_AND_RUN,
 		FILE_SAVE_AND_RUN_MAIN_SCENE,
 		FILE_RUN_SCENE,
@@ -177,7 +177,7 @@ private:
 		FILE_OPEN_RECENT,
 		FILE_OPEN_OLD_SCENE,
 		FILE_QUICK_OPEN,
-		FILE_QUICK_OPEN_SCENE,
+		FILE_QUICK_OPEN_COMPONENT,
 		FILE_QUICK_OPEN_SCRIPT,
 		FILE_OPEN_PREV,
 		FILE_CLOSE,
@@ -715,7 +715,7 @@ public:
 	void trigger_menu_option(int p_option, bool p_confirmed);
 	bool has_previous_scenes() const;
 
-	void new_inherited_scene() { _menu_option_confirm(FILE_NEW_INHERITED_SCENE, false); }
+	void new_inherited_scene() { _menu_option_confirm(FILE_NEW_INHERITED_COMPONENT, false); }
 
 	void set_distraction_free_mode(bool p_enter);
 	bool is_distraction_free_mode_enabled() const;

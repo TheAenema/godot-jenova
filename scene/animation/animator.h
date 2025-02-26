@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animation_player.h                                                    */
+/*  animator.h                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -31,12 +31,12 @@
 #ifndef ANIMATION_PLAYER_H
 #define ANIMATION_PLAYER_H
 
-#include "animation_mixer.h"
+#include "motion.h"
 #include "scene/2d/node_2d.h"
 #include "scene/resources/animation.h"
 
-class AnimationPlayer : public AnimationMixer {
-	GDCLASS(AnimationPlayer, AnimationMixer);
+class Animator : public Motion {
+	GDCLASS(Animator, Motion);
 
 #ifndef DISABLE_DEPRECATED
 public:
@@ -213,13 +213,13 @@ public:
 
 	virtual void advance(double p_time) override;
 
-	AnimationPlayer();
-	~AnimationPlayer();
+	Animator();
+	~Animator();
 };
 
 #ifndef DISABLE_DEPRECATED
-VARIANT_ENUM_CAST(AnimationPlayer::AnimationProcessCallback);
-VARIANT_ENUM_CAST(AnimationPlayer::AnimationMethodCallMode);
+VARIANT_ENUM_CAST(Animator::AnimationProcessCallback);
+VARIANT_ENUM_CAST(Animator::AnimationMethodCallMode);
 #endif // DISABLE_DEPRECATED
 
 #endif // ANIMATION_PLAYER_H

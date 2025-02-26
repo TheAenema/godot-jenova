@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animation_player.cpp                                                  */
+/*  animator.cpp                                                  */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "animation_player.h"
-#include "animation_player.compat.inc"
+#include "animator.h"
+#include "animator.compat.inc"
 
 #include "core/config/engine.h"
 
-bool AnimationPlayer::_set(const StringName &p_name, const Variant &p_value) {
+bool Animator::_set(const StringName &p_name, const Variant &p_value) {
 	String name = p_name;
 	if (name.begins_with("playback/play")) { // For backward compatibility.
 		set_current_animation(p_value);
@@ -65,7 +65,7 @@ bool AnimationPlayer::_set(const StringName &p_name, const Variant &p_value) {
 	return true;
 }
 
-bool AnimationPlayer::_get(const StringName &p_name, Variant &r_ret) const {
+bool Animator::_get(const StringName &p_name, Variant &r_ret) const {
 	String name = p_name;
 
 	if (name == "playback/play") { // For backward compatibility.
@@ -105,8 +105,8 @@ bool AnimationPlayer::_get(const StringName &p_name, Variant &r_ret) const {
 	return true;
 }
 
-void AnimationPlayer::_validate_property(PropertyInfo &p_property) const {
-	AnimationMixer::_validate_property(p_property);
+void Animator::_validate_property(PropertyInfo &p_property) const {
+	Motion::_validate_property(p_property);
 
 	if (p_property.name == "current_animation") {
 		List<String> names;
@@ -129,7 +129,7 @@ void AnimationPlayer::_validate_property(PropertyInfo &p_property) const {
 	}
 }
 
-void AnimationPlayer::_get_property_list(List<PropertyInfo> *p_list) const {
+void Animator::_get_property_list(List<PropertyInfo> *p_list) const {
 	List<PropertyInfo> anim_names;
 
 	for (const KeyValue<StringName, AnimationData> &E : animation_set) {
@@ -146,7 +146,7 @@ void AnimationPlayer::_get_property_list(List<PropertyInfo> *p_list) const {
 	p_list->push_back(PropertyInfo(Variant::ARRAY, "blend_times", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL));
 }
 
-void AnimationPlayer::_notification(int p_what) {
+void Animator::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_READY: {
 			if (!Engine::get_singleton()->is_editor_hint() && animation_set.has(autoplay)) {
@@ -158,7 +158,7 @@ void AnimationPlayer::_notification(int p_what) {
 	}
 }
 
-void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, float p_blend, bool p_seeked, bool p_internal_seeked, bool p_started, bool p_is_current) {
+void Animator::_process_playback_data(PlaybackData &cd, double p_delta, float p_blend, bool p_seeked, bool p_internal_seeked, bool p_started, bool p_is_current) {
 	double speed = speed_scale * cd.speed_scale;
 	bool backwards = signbit(speed); // Negative zero means playing backwards too.
 	double delta = p_started ? 0 : p_delta * speed;
@@ -247,7 +247,7 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 	make_animation_instance(cd.from->name, pi);
 }
 
-float AnimationPlayer::get_current_blend_amount() {
+float Animator::get_current_blend_amount() {
 	Playback &c = playback;
 	float blend = 1.0;
 	for (List<Blend>::Element *E = c.blend.front(); E; E = E->next()) {
@@ -257,7 +257,7 @@ float AnimationPlayer::get_current_blend_amount() {
 	return MAX(0, blend);
 }
 
-void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started) {
+void Animator::_blend_playback_data(double p_delta, bool p_started) {
 	Playback &c = playback;
 
 	bool seeked = c.seeked; // The animation may be changed during process, so it is safer that the state is changed before process.
@@ -293,7 +293,7 @@ void AnimationPlayer::_blend_playback_data(double p_delta, bool p_started) {
 	}
 }
 
-bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, const HashMap<NodePath, int> &p_track_map) {
+bool Animator::_blend_pre_process(double p_delta, int p_track_count, const HashMap<NodePath, int> &p_track_map) {
 	if (!playback.current.from) {
 		_set_process(false);
 		return false;
@@ -318,11 +318,11 @@ bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, cons
 	return true;
 }
 
-void AnimationPlayer::_blend_capture(double p_delta) {
+void Animator::_blend_capture(double p_delta) {
 	blend_capture(p_delta * Math::abs(speed_scale));
 }
 
-void AnimationPlayer::_blend_post_process() {
+void Animator::_blend_post_process() {
 	if (end_reached) {
 		// If the method track changes current animation, the animation is not finished.
 		if (tmp_from == playback.current.from->animation->get_instance_id()) {
@@ -353,7 +353,7 @@ void AnimationPlayer::_blend_post_process() {
 	tmp_from = ObjectID();
 }
 
-void AnimationPlayer::queue(const StringName &p_name) {
+void Animator::queue(const StringName &p_name) {
 	if (!is_playing()) {
 		play(p_name);
 	} else {
@@ -361,7 +361,7 @@ void AnimationPlayer::queue(const StringName &p_name) {
 	}
 }
 
-Vector<String> AnimationPlayer::get_queue() {
+Vector<String> Animator::get_queue() {
 	Vector<String> ret;
 	for (const StringName &E : playback_queue) {
 		ret.push_back(E);
@@ -370,15 +370,15 @@ Vector<String> AnimationPlayer::get_queue() {
 	return ret;
 }
 
-void AnimationPlayer::clear_queue() {
+void Animator::clear_queue() {
 	playback_queue.clear();
 }
 
-void AnimationPlayer::play_backwards(const StringName &p_name, double p_custom_blend) {
+void Animator::play_backwards(const StringName &p_name, double p_custom_blend) {
 	play(p_name, p_custom_blend, -1, true);
 }
 
-void AnimationPlayer::play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end) {
+void Animator::play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end) {
 	if (auto_capture) {
 		play_with_capture(p_name, auto_capture_duration, p_custom_blend, p_custom_scale, p_from_end, auto_capture_transition_type, auto_capture_ease_type);
 	} else {
@@ -386,7 +386,7 @@ void AnimationPlayer::play(const StringName &p_name, double p_custom_blend, floa
 	}
 }
 
-void AnimationPlayer::_play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end) {
+void Animator::_play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end) {
 	StringName name = p_name;
 
 	if (name == StringName()) {
@@ -481,7 +481,7 @@ void AnimationPlayer::_play(const StringName &p_name, double p_custom_blend, flo
 	}
 }
 
-void AnimationPlayer::_capture(const StringName &p_name, bool p_from_end, double p_duration, Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type) {
+void Animator::_capture(const StringName &p_name, bool p_from_end, double p_duration, Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type) {
 	StringName name = p_name;
 	if (name == StringName()) {
 		name = playback.assigned;
@@ -517,16 +517,16 @@ void AnimationPlayer::_capture(const StringName &p_name, bool p_from_end, double
 	capture(name, p_duration, p_trans_type, p_ease_type);
 }
 
-void AnimationPlayer::play_with_capture(const StringName &p_name, double p_duration, double p_custom_blend, float p_custom_scale, bool p_from_end, Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type) {
+void Animator::play_with_capture(const StringName &p_name, double p_duration, double p_custom_blend, float p_custom_scale, bool p_from_end, Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type) {
 	_capture(p_name, p_from_end, p_duration, p_trans_type, p_ease_type);
 	_play(p_name, p_custom_blend, p_custom_scale, p_from_end);
 }
 
-bool AnimationPlayer::is_playing() const {
+bool Animator::is_playing() const {
 	return playing;
 }
 
-void AnimationPlayer::set_current_animation(const String &p_animation) {
+void Animator::set_current_animation(const String &p_animation) {
 	if (p_animation == "[stop]" || p_animation.is_empty()) {
 		stop();
 	} else if (!is_playing()) {
@@ -539,11 +539,11 @@ void AnimationPlayer::set_current_animation(const String &p_animation) {
 	}
 }
 
-String AnimationPlayer::get_current_animation() const {
+String Animator::get_current_animation() const {
 	return (is_playing() ? playback.assigned : "");
 }
 
-void AnimationPlayer::set_assigned_animation(const String &p_animation) {
+void Animator::set_assigned_animation(const String &p_animation) {
 	if (is_playing()) {
 		float speed = playback.current.speed_scale;
 		play(p_animation, -1.0, speed, signbit(speed));
@@ -556,34 +556,34 @@ void AnimationPlayer::set_assigned_animation(const String &p_animation) {
 	}
 }
 
-String AnimationPlayer::get_assigned_animation() const {
+String Animator::get_assigned_animation() const {
 	return playback.assigned;
 }
 
-void AnimationPlayer::pause() {
+void Animator::pause() {
 	_stop_internal(false, false);
 }
 
-void AnimationPlayer::stop(bool p_keep_state) {
+void Animator::stop(bool p_keep_state) {
 	_stop_internal(true, p_keep_state);
 }
 
-void AnimationPlayer::set_speed_scale(float p_speed) {
+void Animator::set_speed_scale(float p_speed) {
 	speed_scale = p_speed;
 }
 
-float AnimationPlayer::get_speed_scale() const {
+float Animator::get_speed_scale() const {
 	return speed_scale;
 }
 
-float AnimationPlayer::get_playing_speed() const {
+float Animator::get_playing_speed() const {
 	if (!playing) {
 		return 0;
 	}
 	return speed_scale * playback.current.speed_scale;
 }
 
-void AnimationPlayer::seek_internal(double p_time, bool p_update, bool p_update_only, bool p_is_internal_seek) {
+void Animator::seek_internal(double p_time, bool p_update, bool p_update_only, bool p_is_internal_seek) {
 	if (!active) {
 		return;
 	}
@@ -612,36 +612,36 @@ void AnimationPlayer::seek_internal(double p_time, bool p_update, bool p_update_
 	}
 }
 
-void AnimationPlayer::seek(double p_time, bool p_update, bool p_update_only) {
+void Animator::seek(double p_time, bool p_update, bool p_update_only) {
 	seek_internal(p_time, p_update, p_update_only);
 }
 
-void AnimationPlayer::advance(double p_time) {
+void Animator::advance(double p_time) {
 	_check_immediately_after_start();
-	AnimationMixer::advance(p_time);
+	Motion::advance(p_time);
 }
 
-void AnimationPlayer::_check_immediately_after_start() {
+void Animator::_check_immediately_after_start() {
 	if (playback.started) {
 		_process_animation(0); // Force process current key for Discrete/Method/Audio/AnimationPlayback. Then, started flag is cleared.
 	}
 }
 
-bool AnimationPlayer::is_valid() const {
+bool Animator::is_valid() const {
 	return (playback.current.from);
 }
 
-double AnimationPlayer::get_current_animation_position() const {
-	ERR_FAIL_NULL_V_MSG(playback.current.from, 0, "AnimationPlayer has no current animation.");
+double Animator::get_current_animation_position() const {
+	ERR_FAIL_NULL_V_MSG(playback.current.from, 0, "Animator has no current animation.");
 	return playback.current.pos;
 }
 
-double AnimationPlayer::get_current_animation_length() const {
-	ERR_FAIL_NULL_V_MSG(playback.current.from, 0, "AnimationPlayer has no current animation.");
+double Animator::get_current_animation_length() const {
+	ERR_FAIL_NULL_V_MSG(playback.current.from, 0, "Animator has no current animation.");
 	return playback.current.from->animation->get_length();
 }
 
-void AnimationPlayer::set_autoplay(const String &p_name) {
+void Animator::set_autoplay(const String &p_name) {
 	if (is_inside_tree() && !Engine::get_singleton()->is_editor_hint()) {
 		WARN_PRINT("Setting autoplay after the node has been added to the scene has no effect.");
 	}
@@ -649,19 +649,19 @@ void AnimationPlayer::set_autoplay(const String &p_name) {
 	autoplay = p_name;
 }
 
-String AnimationPlayer::get_autoplay() const {
+String Animator::get_autoplay() const {
 	return autoplay;
 }
 
-void AnimationPlayer::set_movie_quit_on_finish_enabled(bool p_enabled) {
+void Animator::set_movie_quit_on_finish_enabled(bool p_enabled) {
 	movie_quit_on_finish = p_enabled;
 }
 
-bool AnimationPlayer::is_movie_quit_on_finish_enabled() const {
+bool Animator::is_movie_quit_on_finish_enabled() const {
 	return movie_quit_on_finish;
 }
 
-void AnimationPlayer::_stop_internal(bool p_reset, bool p_keep_state) {
+void Animator::_stop_internal(bool p_reset, bool p_keep_state) {
 	_clear_caches();
 	Playback &c = playback;
 	// c.blend.clear();
@@ -683,27 +683,27 @@ void AnimationPlayer::_stop_internal(bool p_reset, bool p_keep_state) {
 	playing = false;
 }
 
-void AnimationPlayer::animation_set_next(const StringName &p_animation, const StringName &p_next) {
+void Animator::animation_set_next(const StringName &p_animation, const StringName &p_next) {
 	ERR_FAIL_COND_MSG(!animation_set.has(p_animation), vformat("Animation not found: %s.", p_animation));
 	animation_next_set[p_animation] = p_next;
 }
 
-StringName AnimationPlayer::animation_get_next(const StringName &p_animation) const {
+StringName Animator::animation_get_next(const StringName &p_animation) const {
 	if (!animation_next_set.has(p_animation)) {
 		return StringName();
 	}
 	return animation_next_set[p_animation];
 }
 
-void AnimationPlayer::set_default_blend_time(double p_default) {
+void Animator::set_default_blend_time(double p_default) {
 	default_blend_time = p_default;
 }
 
-double AnimationPlayer::get_default_blend_time() const {
+double Animator::get_default_blend_time() const {
 	return default_blend_time;
 }
 
-void AnimationPlayer::set_blend_time(const StringName &p_animation1, const StringName &p_animation2, double p_time) {
+void Animator::set_blend_time(const StringName &p_animation1, const StringName &p_animation2, double p_time) {
 	ERR_FAIL_COND_MSG(!animation_set.has(p_animation1), vformat("Animation not found: %s.", p_animation1));
 	ERR_FAIL_COND_MSG(!animation_set.has(p_animation2), vformat("Animation not found: %s.", p_animation2));
 	ERR_FAIL_COND_MSG(p_time < 0, "Blend time cannot be smaller than 0.");
@@ -718,7 +718,7 @@ void AnimationPlayer::set_blend_time(const StringName &p_animation1, const Strin
 	}
 }
 
-double AnimationPlayer::get_blend_time(const StringName &p_animation1, const StringName &p_animation2) const {
+double Animator::get_blend_time(const StringName &p_animation1, const StringName &p_animation2) const {
 	BlendKey bk;
 	bk.from = p_animation1;
 	bk.to = p_animation2;
@@ -730,41 +730,41 @@ double AnimationPlayer::get_blend_time(const StringName &p_animation1, const Str
 	}
 }
 
-void AnimationPlayer::set_auto_capture(bool p_auto_capture) {
+void Animator::set_auto_capture(bool p_auto_capture) {
 	auto_capture = p_auto_capture;
 	notify_property_list_changed();
 }
 
-bool AnimationPlayer::is_auto_capture() const {
+bool Animator::is_auto_capture() const {
 	return auto_capture;
 }
 
-void AnimationPlayer::set_auto_capture_duration(double p_auto_capture_duration) {
+void Animator::set_auto_capture_duration(double p_auto_capture_duration) {
 	auto_capture_duration = p_auto_capture_duration;
 }
 
-double AnimationPlayer::get_auto_capture_duration() const {
+double Animator::get_auto_capture_duration() const {
 	return auto_capture_duration;
 }
 
-void AnimationPlayer::set_auto_capture_transition_type(Tween::TransitionType p_auto_capture_transition_type) {
+void Animator::set_auto_capture_transition_type(Tween::TransitionType p_auto_capture_transition_type) {
 	auto_capture_transition_type = p_auto_capture_transition_type;
 }
 
-Tween::TransitionType AnimationPlayer::get_auto_capture_transition_type() const {
+Tween::TransitionType Animator::get_auto_capture_transition_type() const {
 	return auto_capture_transition_type;
 }
 
-void AnimationPlayer::set_auto_capture_ease_type(Tween::EaseType p_auto_capture_ease_type) {
+void Animator::set_auto_capture_ease_type(Tween::EaseType p_auto_capture_ease_type) {
 	auto_capture_ease_type = p_auto_capture_ease_type;
 }
 
-Tween::EaseType AnimationPlayer::get_auto_capture_ease_type() const {
+Tween::EaseType Animator::get_auto_capture_ease_type() const {
 	return auto_capture_ease_type;
 }
 
 #ifdef TOOLS_ENABLED
-void AnimationPlayer::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
+void Animator::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
 	const String pf = p_function;
 	if (p_idx == 0 && (pf == "play" || pf == "play_backwards" || pf == "has_animation" || pf == "queue")) {
 		List<StringName> al;
@@ -773,12 +773,12 @@ void AnimationPlayer::get_argument_options(const StringName &p_function, int p_i
 			r_options->push_back(String(name).quote());
 		}
 	}
-	AnimationMixer::get_argument_options(p_function, p_idx, r_options);
+	Motion::get_argument_options(p_function, p_idx, r_options);
 }
 #endif
 
-void AnimationPlayer::_animation_removed(const StringName &p_name, const StringName &p_library) {
-	AnimationMixer::_animation_removed(p_name, p_library);
+void Animator::_animation_removed(const StringName &p_name, const StringName &p_library) {
+	Motion::_animation_removed(p_name, p_library);
 
 	StringName name = p_library == StringName() ? p_name : StringName(String(p_library) + "/" + String(p_name));
 
@@ -803,8 +803,8 @@ void AnimationPlayer::_animation_removed(const StringName &p_name, const StringN
 	}
 }
 
-void AnimationPlayer::_rename_animation(const StringName &p_from_name, const StringName &p_to_name) {
-	AnimationMixer::_rename_animation(p_from_name, p_to_name);
+void Animator::_rename_animation(const StringName &p_from_name, const StringName &p_to_name) {
+	Motion::_rename_animation(p_from_name, p_to_name);
 
 	// Rename autoplay or blends if needed.
 	List<BlendKey> to_erase;
@@ -843,57 +843,57 @@ void AnimationPlayer::_rename_animation(const StringName &p_from_name, const Str
 	}
 }
 
-void AnimationPlayer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("animation_set_next", "animation_from", "animation_to"), &AnimationPlayer::animation_set_next);
-	ClassDB::bind_method(D_METHOD("animation_get_next", "animation_from"), &AnimationPlayer::animation_get_next);
+void Animator::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("animation_set_next", "animation_from", "animation_to"), &Animator::animation_set_next);
+	ClassDB::bind_method(D_METHOD("animation_get_next", "animation_from"), &Animator::animation_get_next);
 
-	ClassDB::bind_method(D_METHOD("set_blend_time", "animation_from", "animation_to", "sec"), &AnimationPlayer::set_blend_time);
-	ClassDB::bind_method(D_METHOD("get_blend_time", "animation_from", "animation_to"), &AnimationPlayer::get_blend_time);
+	ClassDB::bind_method(D_METHOD("set_blend_time", "animation_from", "animation_to", "sec"), &Animator::set_blend_time);
+	ClassDB::bind_method(D_METHOD("get_blend_time", "animation_from", "animation_to"), &Animator::get_blend_time);
 
-	ClassDB::bind_method(D_METHOD("set_default_blend_time", "sec"), &AnimationPlayer::set_default_blend_time);
-	ClassDB::bind_method(D_METHOD("get_default_blend_time"), &AnimationPlayer::get_default_blend_time);
+	ClassDB::bind_method(D_METHOD("set_default_blend_time", "sec"), &Animator::set_default_blend_time);
+	ClassDB::bind_method(D_METHOD("get_default_blend_time"), &Animator::get_default_blend_time);
 
-	ClassDB::bind_method(D_METHOD("set_auto_capture", "auto_capture"), &AnimationPlayer::set_auto_capture);
-	ClassDB::bind_method(D_METHOD("is_auto_capture"), &AnimationPlayer::is_auto_capture);
-	ClassDB::bind_method(D_METHOD("set_auto_capture_duration", "auto_capture_duration"), &AnimationPlayer::set_auto_capture_duration);
-	ClassDB::bind_method(D_METHOD("get_auto_capture_duration"), &AnimationPlayer::get_auto_capture_duration);
-	ClassDB::bind_method(D_METHOD("set_auto_capture_transition_type", "auto_capture_transition_type"), &AnimationPlayer::set_auto_capture_transition_type);
-	ClassDB::bind_method(D_METHOD("get_auto_capture_transition_type"), &AnimationPlayer::get_auto_capture_transition_type);
-	ClassDB::bind_method(D_METHOD("set_auto_capture_ease_type", "auto_capture_ease_type"), &AnimationPlayer::set_auto_capture_ease_type);
-	ClassDB::bind_method(D_METHOD("get_auto_capture_ease_type"), &AnimationPlayer::get_auto_capture_ease_type);
+	ClassDB::bind_method(D_METHOD("set_auto_capture", "auto_capture"), &Animator::set_auto_capture);
+	ClassDB::bind_method(D_METHOD("is_auto_capture"), &Animator::is_auto_capture);
+	ClassDB::bind_method(D_METHOD("set_auto_capture_duration", "auto_capture_duration"), &Animator::set_auto_capture_duration);
+	ClassDB::bind_method(D_METHOD("get_auto_capture_duration"), &Animator::get_auto_capture_duration);
+	ClassDB::bind_method(D_METHOD("set_auto_capture_transition_type", "auto_capture_transition_type"), &Animator::set_auto_capture_transition_type);
+	ClassDB::bind_method(D_METHOD("get_auto_capture_transition_type"), &Animator::get_auto_capture_transition_type);
+	ClassDB::bind_method(D_METHOD("set_auto_capture_ease_type", "auto_capture_ease_type"), &Animator::set_auto_capture_ease_type);
+	ClassDB::bind_method(D_METHOD("get_auto_capture_ease_type"), &Animator::get_auto_capture_ease_type);
 
-	ClassDB::bind_method(D_METHOD("play", "name", "custom_blend", "custom_speed", "from_end"), &AnimationPlayer::play, DEFVAL(StringName()), DEFVAL(-1), DEFVAL(1.0), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("play_backwards", "name", "custom_blend"), &AnimationPlayer::play_backwards, DEFVAL(StringName()), DEFVAL(-1));
-	ClassDB::bind_method(D_METHOD("play_with_capture", "name", "duration", "custom_blend", "custom_speed", "from_end", "trans_type", "ease_type"), &AnimationPlayer::play_with_capture, DEFVAL(StringName()), DEFVAL(-1.0), DEFVAL(-1), DEFVAL(1.0), DEFVAL(false), DEFVAL(Tween::TRANS_LINEAR), DEFVAL(Tween::EASE_IN));
-	ClassDB::bind_method(D_METHOD("pause"), &AnimationPlayer::pause);
-	ClassDB::bind_method(D_METHOD("stop", "keep_state"), &AnimationPlayer::stop, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("is_playing"), &AnimationPlayer::is_playing);
+	ClassDB::bind_method(D_METHOD("play", "name", "custom_blend", "custom_speed", "from_end"), &Animator::play, DEFVAL(StringName()), DEFVAL(-1), DEFVAL(1.0), DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("play_backwards", "name", "custom_blend"), &Animator::play_backwards, DEFVAL(StringName()), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("play_with_capture", "name", "duration", "custom_blend", "custom_speed", "from_end", "trans_type", "ease_type"), &Animator::play_with_capture, DEFVAL(StringName()), DEFVAL(-1.0), DEFVAL(-1), DEFVAL(1.0), DEFVAL(false), DEFVAL(Tween::TRANS_LINEAR), DEFVAL(Tween::EASE_IN));
+	ClassDB::bind_method(D_METHOD("pause"), &Animator::pause);
+	ClassDB::bind_method(D_METHOD("stop", "keep_state"), &Animator::stop, DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("is_playing"), &Animator::is_playing);
 
-	ClassDB::bind_method(D_METHOD("set_current_animation", "animation"), &AnimationPlayer::set_current_animation);
-	ClassDB::bind_method(D_METHOD("get_current_animation"), &AnimationPlayer::get_current_animation);
-	ClassDB::bind_method(D_METHOD("set_assigned_animation", "animation"), &AnimationPlayer::set_assigned_animation);
-	ClassDB::bind_method(D_METHOD("get_assigned_animation"), &AnimationPlayer::get_assigned_animation);
-	ClassDB::bind_method(D_METHOD("queue", "name"), &AnimationPlayer::queue);
-	ClassDB::bind_method(D_METHOD("get_queue"), &AnimationPlayer::get_queue);
-	ClassDB::bind_method(D_METHOD("clear_queue"), &AnimationPlayer::clear_queue);
+	ClassDB::bind_method(D_METHOD("set_current_animation", "animation"), &Animator::set_current_animation);
+	ClassDB::bind_method(D_METHOD("get_current_animation"), &Animator::get_current_animation);
+	ClassDB::bind_method(D_METHOD("set_assigned_animation", "animation"), &Animator::set_assigned_animation);
+	ClassDB::bind_method(D_METHOD("get_assigned_animation"), &Animator::get_assigned_animation);
+	ClassDB::bind_method(D_METHOD("queue", "name"), &Animator::queue);
+	ClassDB::bind_method(D_METHOD("get_queue"), &Animator::get_queue);
+	ClassDB::bind_method(D_METHOD("clear_queue"), &Animator::clear_queue);
 
-	ClassDB::bind_method(D_METHOD("set_speed_scale", "speed"), &AnimationPlayer::set_speed_scale);
-	ClassDB::bind_method(D_METHOD("get_speed_scale"), &AnimationPlayer::get_speed_scale);
-	ClassDB::bind_method(D_METHOD("get_playing_speed"), &AnimationPlayer::get_playing_speed);
+	ClassDB::bind_method(D_METHOD("set_speed_scale", "speed"), &Animator::set_speed_scale);
+	ClassDB::bind_method(D_METHOD("get_speed_scale"), &Animator::get_speed_scale);
+	ClassDB::bind_method(D_METHOD("get_playing_speed"), &Animator::get_playing_speed);
 
-	ClassDB::bind_method(D_METHOD("set_autoplay", "name"), &AnimationPlayer::set_autoplay);
-	ClassDB::bind_method(D_METHOD("get_autoplay"), &AnimationPlayer::get_autoplay);
+	ClassDB::bind_method(D_METHOD("set_autoplay", "name"), &Animator::set_autoplay);
+	ClassDB::bind_method(D_METHOD("get_autoplay"), &Animator::get_autoplay);
 
-	ClassDB::bind_method(D_METHOD("find_animation", "animation"), &AnimationPlayer::find_animation);
-	ClassDB::bind_method(D_METHOD("find_animation_library", "animation"), &AnimationPlayer::find_animation_library);
+	ClassDB::bind_method(D_METHOD("find_animation", "animation"), &Animator::find_animation);
+	ClassDB::bind_method(D_METHOD("find_animation_library", "animation"), &Animator::find_animation_library);
 
-	ClassDB::bind_method(D_METHOD("set_movie_quit_on_finish_enabled", "enabled"), &AnimationPlayer::set_movie_quit_on_finish_enabled);
-	ClassDB::bind_method(D_METHOD("is_movie_quit_on_finish_enabled"), &AnimationPlayer::is_movie_quit_on_finish_enabled);
+	ClassDB::bind_method(D_METHOD("set_movie_quit_on_finish_enabled", "enabled"), &Animator::set_movie_quit_on_finish_enabled);
+	ClassDB::bind_method(D_METHOD("is_movie_quit_on_finish_enabled"), &Animator::is_movie_quit_on_finish_enabled);
 
-	ClassDB::bind_method(D_METHOD("get_current_animation_position"), &AnimationPlayer::get_current_animation_position);
-	ClassDB::bind_method(D_METHOD("get_current_animation_length"), &AnimationPlayer::get_current_animation_length);
+	ClassDB::bind_method(D_METHOD("get_current_animation_position"), &Animator::get_current_animation_position);
+	ClassDB::bind_method(D_METHOD("get_current_animation_length"), &Animator::get_current_animation_length);
 
-	ClassDB::bind_method(D_METHOD("seek", "seconds", "update", "update_only"), &AnimationPlayer::seek, DEFVAL(false), DEFVAL(false));
+	ClassDB::bind_method(D_METHOD("seek", "seconds", "update", "update_only"), &Animator::seek, DEFVAL(false), DEFVAL(false));
 
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "current_animation", PROPERTY_HINT_ENUM, "", PROPERTY_USAGE_EDITOR), "set_current_animation", "get_current_animation");
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "assigned_animation", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE), "set_assigned_animation", "get_assigned_animation");
@@ -915,8 +915,8 @@ void AnimationPlayer::_bind_methods() {
 	ADD_SIGNAL(MethodInfo(SNAME("animation_changed"), PropertyInfo(Variant::STRING_NAME, "old_name"), PropertyInfo(Variant::STRING_NAME, "new_name")));
 }
 
-AnimationPlayer::AnimationPlayer() {
+Animator::Animator() {
 }
 
-AnimationPlayer::~AnimationPlayer() {
+Animator::~Animator() {
 }

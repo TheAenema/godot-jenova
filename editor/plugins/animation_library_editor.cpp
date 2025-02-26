@@ -36,10 +36,10 @@
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/animation/animation_mixer.h"
+#include "scene/animation/motion.h"
 
-void AnimationLibraryEditor::set_animation_mixer(Object *p_mixer) {
-	mixer = Object::cast_to<AnimationMixer>(p_mixer);
+void AnimationLibraryEditor::set_motion(Object *p_mixer) {
+	mixer = Object::cast_to<Motion>(p_mixer);
 }
 
 void AnimationLibraryEditor::_add_library() {

@@ -41,9 +41,9 @@
 #include "editor/gui/editor_spin_slider.h"
 #include "editor/gui/scene_tree_editor.h"
 #include "editor/inspector_dock.h"
-#include "editor/plugins/animation_player_editor_plugin.h"
+#include "editor/plugins/animator_editor_plugin.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/animation/animation_player.h"
+#include "scene/animation/animator.h"
 #include "scene/animation/tween.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/grid_container.h"
@@ -604,7 +604,7 @@ void AnimationTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const
 			String animations;
 
 			if (root_path) {
-				AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(root_path->get_node_or_null(animation->track_get_path(track)));
+				Animator *ap = Object::cast_to<Animator>(root_path->get_node_or_null(animation->track_get_path(track)));
 				if (ap) {
 					List<StringName> anims;
 					ap->get_animation_list(&anims);
@@ -1210,7 +1210,7 @@ void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) 
 				String animations;
 
 				if (root_path) {
-					AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(root_path->get_node_or_null(animation->track_get_path(first_track)));
+					Animator *ap = Object::cast_to<Animator>(root_path->get_node_or_null(animation->track_get_path(first_track)));
 					if (ap) {
 						List<StringName> anims;
 						ap->get_animation_list(&anims);
@@ -2846,9 +2846,9 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpLinear")), TTR("Linear"), MENU_INTERPOLATION_LINEAR);
 				menu->add_icon_item(get_editor_theme_icon(SNAME("InterpCubic")), TTR("Cubic"), MENU_INTERPOLATION_CUBIC);
 				// Check whether it is angle property.
-				AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+				AnimatorEditor *ape = AnimatorEditor::get_singleton();
 				if (ape) {
-					AnimationPlayer *ap = ape->get_player();
+					Animator *ap = ape->get_player();
 					if (ap) {
 						NodePath npath = animation->track_get_path(track);
 						Node *a_ap_root_node = ap->get_node_or_null(ap->get_root_node());
@@ -2942,7 +2942,7 @@ void AnimationTrackEdit::gui_input(const Ref<InputEvent> &p_event) {
 					menu->add_icon_item(get_editor_theme_icon(SNAME("ActionPaste")), TTR("Paste Key(s)"), MENU_KEY_PASTE);
 				}
 				if (selected || editor->is_selection_active()) {
-					AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+					Animator *player = AnimatorEditor::get_singleton()->get_player();
 					if ((!player->has_animation(SceneStringName(RESET)) || animation != player->get_animation(SceneStringName(RESET))) && editor->can_add_reset_key()) {
 						menu->add_icon_item(get_editor_theme_icon(SNAME("Reload")), TTR("Add RESET Value(s)"), MENU_KEY_ADD_RESET);
 					}
@@ -3708,7 +3708,7 @@ void AnimationTrackEditor::_animation_track_remove_request(int p_track, Ref<Anim
 		undo_redo->create_action(TTR("Remove Anim Track"), UndoRedo::MERGE_DISABLE, p_from_animation.ptr());
 
 		// Remove corresponding reset tracks if they are no longer needed.
-		AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+		Animator *player = AnimatorEditor::get_singleton()->get_player();
 		if (player->has_animation(SceneStringName(RESET))) {
 			Ref<Animation> reset = player->get_animation(SceneStringName(RESET));
 			if (reset != p_from_animation) {
@@ -3816,7 +3816,7 @@ void AnimationTrackEditor::make_insert_queue() {
 
 void AnimationTrackEditor::commit_insert_queue() {
 	bool reset_allowed = true;
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	Animator *player = AnimatorEditor::get_singleton()->get_player();
 	if (player->has_animation(SceneStringName(RESET)) && player->get_animation(SceneStringName(RESET)) == animation) {
 		// Avoid messing with the reset animation itself.
 		reset_allowed = false;
@@ -4050,9 +4050,9 @@ void AnimationTrackEditor::insert_node_value_key(Node *p_node, const String &p_p
 	Node *node = p_node;
 	String path = root->get_path_to(node, true);
 
-	if (Object::cast_to<AnimationPlayer>(node) && p_property == "current_animation") {
-		if (node == AnimationPlayerEditor::get_singleton()->get_player()) {
-			EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
+	if (Object::cast_to<Animator>(node) && p_property == "current_animation") {
+		if (node == AnimatorEditor::get_singleton()->get_player()) {
+			EditorNode::get_singleton()->show_warning(TTR("Animator can't animate itself, only other players."));
 			return;
 		}
 		_insert_animation_key(path, p_value);
@@ -4150,9 +4150,9 @@ void AnimationTrackEditor::insert_value_key(const String &p_property, const Vari
 	Node *node = Object::cast_to<Node>(obj);
 	String path = root->get_path_to(node, true);
 
-	if (Object::cast_to<AnimationPlayer>(node) && p_property == "current_animation") {
-		if (node == AnimationPlayerEditor::get_singleton()->get_player()) {
-			EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
+	if (Object::cast_to<Animator>(node) && p_property == "current_animation") {
+		if (node == AnimatorEditor::get_singleton()->get_player()) {
+			EditorNode::get_singleton()->show_warning(TTR("Animator can't animate itself, only other players."));
 			return;
 		}
 		_insert_animation_key(path, p_value);
@@ -4233,12 +4233,12 @@ void AnimationTrackEditor::insert_value_key(const String &p_property, const Vari
 }
 
 Ref<Animation> AnimationTrackEditor::_create_and_get_reset_animation() {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	Animator *player = AnimatorEditor::get_singleton()->get_player();
 	if (player->has_animation(SceneStringName(RESET))) {
 		return player->get_animation(SceneStringName(RESET));
 	} else {
 		Ref<AnimationLibrary> al;
-		AnimationMixer *mixer = AnimationPlayerEditor::get_singleton()->fetch_mixer_for_library();
+		Motion *mixer = AnimatorEditor::get_singleton()->fetch_mixer_for_library();
 		if (mixer) {
 			if (!mixer->has_animation_library("")) {
 				al.instantiate();
@@ -4252,9 +4252,9 @@ Ref<Animation> AnimationTrackEditor::_create_and_get_reset_animation() {
 		reset_anim->set_length(ANIM_MIN_LENGTH);
 		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
 		undo_redo->add_do_method(al.ptr(), "add_animation", SceneStringName(RESET), reset_anim);
-		undo_redo->add_do_method(AnimationPlayerEditor::get_singleton(), "_animation_player_changed", player);
+		undo_redo->add_do_method(AnimatorEditor::get_singleton(), "_animator_changed", player);
 		undo_redo->add_undo_method(al.ptr(), "remove_animation", SceneStringName(RESET));
-		undo_redo->add_undo_method(AnimationPlayerEditor::get_singleton(), "_animation_player_changed", player);
+		undo_redo->add_undo_method(AnimatorEditor::get_singleton(), "_animator_changed", player);
 		return reset_anim;
 	}
 }
@@ -4664,7 +4664,7 @@ void AnimationTrackEditor::_update_tracks() {
 				node = root->get_node_or_null(path);
 			}
 
-			if (node && Object::cast_to<AnimationPlayer>(node)) {
+			if (node && Object::cast_to<Animator>(node)) {
 				for (int j = 0; j < track_edit_plugins.size(); j++) {
 					track_edit = track_edit_plugins.write[j]->create_animation_track_edit(node);
 					if (track_edit) {
@@ -5022,13 +5022,13 @@ void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
 
 		} break;
 		case Animation::TYPE_ANIMATION: {
-			if (!node->is_class("AnimationPlayer")) {
-				EditorNode::get_singleton()->show_warning(TTR("Animation tracks can only point to AnimationPlayer nodes."));
+			if (!node->is_class("Animator")) {
+				EditorNode::get_singleton()->show_warning(TTR("Animation tracks can only point to Animator nodes."));
 				return;
 			}
 
-			if (node == AnimationPlayerEditor::get_singleton()->get_player()) {
-				EditorNode::get_singleton()->show_warning(TTR("AnimationPlayer can't animate itself, only other players."));
+			if (node == AnimatorEditor::get_singleton()->get_player()) {
+				EditorNode::get_singleton()->show_warning(TTR("Animator can't animate itself, only other players."));
 				return;
 			}
 
@@ -5044,9 +5044,9 @@ void AnimationTrackEditor::_new_track_node_selected(NodePath p_path) {
 }
 
 void AnimationTrackEditor::_add_track(int p_type) {
-	AnimationPlayer *ap = AnimationPlayerEditor::get_singleton()->get_player();
+	Animator *ap = AnimatorEditor::get_singleton()->get_player();
 	if (!ap) {
-		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
+		ERR_FAIL_EDMSG("No Animator is currently being edited.");
 	}
 	Node *root_node = ap->get_node_or_null(ap->get_root_node());
 	if (!root_node) {
@@ -5060,7 +5060,7 @@ void AnimationTrackEditor::_add_track(int p_type) {
 }
 
 void AnimationTrackEditor::_fetch_value_track_options(const NodePath &p_path, Animation::UpdateMode *r_update_mode, Animation::InterpolationType *r_interpolation_type, bool *r_loop_wrap) {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	Animator *player = AnimatorEditor::get_singleton()->get_player();
 	if (player->has_animation(SceneStringName(RESET))) {
 		Ref<Animation> reset_anim = player->get_animation(SceneStringName(RESET));
 		int rt = reset_anim->find_track(p_path, Animation::TrackType::TYPE_VALUE);
@@ -6016,9 +6016,9 @@ bool AnimationTrackEditor::_is_track_compatible(int p_target_track_idx, Variant:
 					bool path_valid = false;
 					Variant::Type property_type = Variant::NIL;
 
-					AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+					AnimatorEditor *ape = AnimatorEditor::get_singleton();
 					if (ape) {
-						AnimationPlayer *ap = ape->get_player();
+						Animator *ap = ape->get_player();
 						if (ap) {
 							NodePath npath = animation->track_get_path(p_target_track_idx);
 							Node *a_ap_root_node = ap->get_node(ap->get_root_node());
@@ -6057,7 +6057,7 @@ bool AnimationTrackEditor::_is_track_compatible(int p_target_track_idx, Variant:
 }
 
 void AnimationTrackEditor::_edit_menu_about_to_popup() {
-	AnimationPlayer *player = AnimationPlayerEditor::get_singleton()->get_player();
+	Animator *player = AnimatorEditor::get_singleton()->get_player();
 	edit->get_popup()->set_item_disabled(edit->get_popup()->get_item_index(EDIT_APPLY_RESET), !player->can_apply_reset());
 
 	bool has_length = false;
@@ -6700,7 +6700,7 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 		} break;
 
 		case EDIT_APPLY_RESET: {
-			AnimationPlayerEditor::get_singleton()->get_player()->apply_reset(true);
+			AnimatorEditor::get_singleton()->get_player()->apply_reset(true);
 		} break;
 
 		case EDIT_BAKE_ANIMATION: {
@@ -6840,9 +6840,9 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 		case EDIT_CLEAN_UP_ANIMATION_CONFIRM: {
 			if (cleanup_all->is_pressed()) {
 				List<StringName> names;
-				AnimationPlayerEditor::get_singleton()->get_player()->get_animation_list(&names);
+				AnimatorEditor::get_singleton()->get_player()->get_animation_list(&names);
 				for (const StringName &E : names) {
-					_cleanup_animation(AnimationPlayerEditor::get_singleton()->get_player()->get_animation(E));
+					_cleanup_animation(AnimatorEditor::get_singleton()->get_player()->get_animation(E));
 				}
 			} else {
 				_cleanup_animation(animation);
@@ -7051,12 +7051,12 @@ void AnimationTrackEditor::_show_imported_anim_warning() {
 
 void AnimationTrackEditor::_show_dummy_player_warning() {
 	EditorNode::get_singleton()->show_warning(
-			TTR("Some AnimationPlayerEditor's options are disabled since this is the dummy AnimationPlayer for preview.\n\nThe dummy player is forced active, non-deterministic and doesn't have the root motion track. Furthermore, the original node is inactive temporary."));
+			TTR("Some AnimatorEditor's options are disabled since this is the dummy Animator for preview.\n\nThe dummy player is forced active, non-deterministic and doesn't have the root motion track. Furthermore, the original node is inactive temporary."));
 }
 
 void AnimationTrackEditor::_show_inactive_player_warning() {
 	EditorNode::get_singleton()->show_warning(
-			TTR("AnimationPlayer is inactive. The playback will not be processed."));
+			TTR("Animator is inactive. The playback will not be processed."));
 }
 
 void AnimationTrackEditor::_select_all_tracks_for_copy() {
@@ -7178,7 +7178,7 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	timeline_vbox->add_theme_constant_override("separation", 0);
 
 	info_message = memnew(Label);
-	info_message->set_text(TTR("Select an AnimationPlayer node to create and edit animations."));
+	info_message->set_text(TTR("Select an Animator node to create and edit animations."));
 	info_message->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
 	info_message->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
 	info_message->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
@@ -7243,14 +7243,14 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	dummy_player_warning = memnew(Button);
 	dummy_player_warning->hide();
 	dummy_player_warning->set_text(TTR("Dummy Player"));
-	dummy_player_warning->set_tooltip_text(TTR("Warning: Editing dummy AnimationPlayer"));
+	dummy_player_warning->set_tooltip_text(TTR("Warning: Editing dummy Animator"));
 	dummy_player_warning->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_show_dummy_player_warning));
 	bottom_hb->add_child(dummy_player_warning);
 
 	inactive_player_warning = memnew(Button);
 	inactive_player_warning->hide();
 	inactive_player_warning->set_text(TTR("Inactive Player"));
-	inactive_player_warning->set_tooltip_text(TTR("Warning: AnimationPlayer is inactive"));
+	inactive_player_warning->set_tooltip_text(TTR("Warning: Animator is inactive"));
 	inactive_player_warning->connect(SceneStringName(pressed), callable_mp(this, &AnimationTrackEditor::_show_inactive_player_warning));
 	bottom_hb->add_child(inactive_player_warning);
 
@@ -7649,7 +7649,7 @@ void AnimationTrackKeyEditEditor::_time_edit_exited() {
 	}
 
 	// Reselect key.
-	AnimationPlayerEditor *ape = AnimationPlayerEditor::get_singleton();
+	AnimatorEditor *ape = AnimatorEditor::get_singleton();
 	if (ape) {
 		AnimationTrackEditor *ate = ape->get_track_editor();
 		if (ate) {

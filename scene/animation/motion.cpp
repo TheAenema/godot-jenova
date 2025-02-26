@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  animation_mixer.cpp                                                   */
+/*  motion.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "animation_mixer.h"
-#include "animation_mixer.compat.inc"
+#include "motion.h"
+#include "motion.compat.inc"
 
 #include "core/config/engine.h"
 #include "core/config/project_settings.h"
 #include "scene/2d/audio_stream_player_2d.h"
-#include "scene/animation/animation_player.h"
+#include "scene/animation/animator.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/resources/animation.h"
 #include "servers/audio/audio_stream.h"
@@ -45,7 +45,7 @@
 #include "editor/editor_undo_redo_manager.h"
 #endif // TOOLS_ENABLED
 
-bool AnimationMixer::_set(const StringName &p_name, const Variant &p_value) {
+bool Motion::_set(const StringName &p_name, const Variant &p_value) {
 	String name = p_name;
 
 #ifndef DISABLE_DEPRECATED
@@ -86,7 +86,7 @@ bool AnimationMixer::_set(const StringName &p_name, const Variant &p_value) {
 	return true;
 }
 
-bool AnimationMixer::_get(const StringName &p_name, Variant &r_ret) const {
+bool Motion::_get(const StringName &p_name, Variant &r_ret) const {
 	String name = p_name;
 
 	if (name.begins_with("libraries")) {
@@ -102,7 +102,7 @@ bool AnimationMixer::_get(const StringName &p_name, Variant &r_ret) const {
 	return true;
 }
 
-void AnimationMixer::_get_property_list(List<PropertyInfo> *p_list) const {
+void Motion::_get_property_list(List<PropertyInfo> *p_list) const {
 	List<PropertyInfo> anim_names;
 	anim_names.push_back(PropertyInfo(Variant::DICTIONARY, PNAME("libraries")));
 	for (const PropertyInfo &E : anim_names) {
@@ -114,7 +114,7 @@ void AnimationMixer::_get_property_list(List<PropertyInfo> *p_list) const {
 	}
 }
 
-void AnimationMixer::_validate_property(PropertyInfo &p_property) const {
+void Motion::_validate_property(PropertyInfo &p_property) const {
 #ifdef TOOLS_ENABLED
 	if (editing && (p_property.name == "active" || p_property.name == "deterministic" || p_property.name == "root_motion_track")) {
 		p_property.usage |= PROPERTY_USAGE_READ_ONLY;
@@ -126,7 +126,7 @@ void AnimationMixer::_validate_property(PropertyInfo &p_property) const {
 /* -- Data lists ------------------------------ */
 /* -------------------------------------------- */
 
-void AnimationMixer::_animation_set_cache_update() {
+void Motion::_animation_set_cache_update() {
 	// Relatively fast function to update all animations.
 	animation_set_update_pass++;
 	bool clear_cache_needed = false;
@@ -183,11 +183,11 @@ void AnimationMixer::_animation_set_cache_update() {
 	emit_signal(SNAME("animation_list_changed"));
 }
 
-void AnimationMixer::_animation_added(const StringName &p_name, const StringName &p_library) {
+void Motion::_animation_added(const StringName &p_name, const StringName &p_library) {
 	_animation_set_cache_update();
 }
 
-void AnimationMixer::_animation_removed(const StringName &p_name, const StringName &p_library) {
+void Motion::_animation_removed(const StringName &p_name, const StringName &p_library) {
 	StringName name = p_library == StringName() ? p_name : StringName(String(p_library) + "/" + String(p_name));
 
 	if (!animation_set.has(name)) {
@@ -199,7 +199,7 @@ void AnimationMixer::_animation_removed(const StringName &p_name, const StringNa
 	_remove_animation(name);
 }
 
-void AnimationMixer::_animation_renamed(const StringName &p_name, const StringName &p_to_name, const StringName &p_library) {
+void Motion::_animation_renamed(const StringName &p_name, const StringName &p_to_name, const StringName &p_library) {
 	StringName from_name = p_library == StringName() ? p_name : StringName(String(p_library) + "/" + String(p_name));
 	StringName to_name = p_library == StringName() ? p_to_name : StringName(String(p_library) + "/" + String(p_to_name));
 
@@ -211,23 +211,23 @@ void AnimationMixer::_animation_renamed(const StringName &p_name, const StringNa
 	_rename_animation(from_name, to_name);
 }
 
-void AnimationMixer::_animation_changed(const StringName &p_name) {
+void Motion::_animation_changed(const StringName &p_name) {
 	_clear_caches();
 }
 
-void AnimationMixer::_set_active(bool p_active) {
+void Motion::_set_active(bool p_active) {
 	//
 }
 
-void AnimationMixer::_remove_animation(const StringName &p_name) {
+void Motion::_remove_animation(const StringName &p_name) {
 	//
 }
 
-void AnimationMixer::_rename_animation(const StringName &p_from_name, const StringName &p_to_name) {
+void Motion::_rename_animation(const StringName &p_from_name, const StringName &p_to_name) {
 	//
 }
 
-TypedArray<StringName> AnimationMixer::_get_animation_library_list() const {
+TypedArray<StringName> Motion::_get_animation_library_list() const {
 	TypedArray<StringName> ret;
 	for (const AnimationLibraryData &lib : animation_libraries) {
 		ret.push_back(lib.name);
@@ -235,13 +235,13 @@ TypedArray<StringName> AnimationMixer::_get_animation_library_list() const {
 	return ret;
 }
 
-void AnimationMixer::get_animation_library_list(List<StringName> *p_libraries) const {
+void Motion::get_animation_library_list(List<StringName> *p_libraries) const {
 	for (const AnimationLibraryData &lib : animation_libraries) {
 		p_libraries->push_back(lib.name);
 	}
 }
 
-Ref<AnimationLibrary> AnimationMixer::get_animation_library(const StringName &p_name) const {
+Ref<AnimationLibrary> Motion::get_animation_library(const StringName &p_name) const {
 	for (const AnimationLibraryData &lib : animation_libraries) {
 		if (lib.name == p_name) {
 			return lib.library;
@@ -250,7 +250,7 @@ Ref<AnimationLibrary> AnimationMixer::get_animation_library(const StringName &p_
 	ERR_FAIL_V(Ref<AnimationLibrary>());
 }
 
-bool AnimationMixer::has_animation_library(const StringName &p_name) const {
+bool Motion::has_animation_library(const StringName &p_name) const {
 	for (const AnimationLibraryData &lib : animation_libraries) {
 		if (lib.name == p_name) {
 			return true;
@@ -260,7 +260,7 @@ bool AnimationMixer::has_animation_library(const StringName &p_name) const {
 	return false;
 }
 
-StringName AnimationMixer::find_animation_library(const Ref<Animation> &p_animation) const {
+StringName Motion::find_animation_library(const Ref<Animation> &p_animation) const {
 	for (const KeyValue<StringName, AnimationData> &E : animation_set) {
 		if (E.value.animation == p_animation) {
 			return E.value.animation_library;
@@ -269,7 +269,7 @@ StringName AnimationMixer::find_animation_library(const Ref<Animation> &p_animat
 	return StringName();
 }
 
-Error AnimationMixer::add_animation_library(const StringName &p_name, const Ref<AnimationLibrary> &p_animation_library) {
+Error Motion::add_animation_library(const StringName &p_name, const Ref<AnimationLibrary> &p_animation_library) {
 	ERR_FAIL_COND_V(p_animation_library.is_null(), ERR_INVALID_PARAMETER);
 #ifdef DEBUG_ENABLED
 	ERR_FAIL_COND_V_MSG(String(p_name).contains("/") || String(p_name).contains(":") || String(p_name).contains(",") || String(p_name).contains("["), ERR_INVALID_PARAMETER, "Invalid animation name: " + String(p_name) + ".");
@@ -294,10 +294,10 @@ Error AnimationMixer::add_animation_library(const StringName &p_name, const Ref<
 
 	animation_libraries.insert(insert_pos, ald);
 
-	ald.library->connect(SNAME("animation_added"), callable_mp(this, &AnimationMixer::_animation_added).bind(p_name));
-	ald.library->connect(SNAME("animation_removed"), callable_mp(this, &AnimationMixer::_animation_removed).bind(p_name));
-	ald.library->connect(SNAME("animation_renamed"), callable_mp(this, &AnimationMixer::_animation_renamed).bind(p_name));
-	ald.library->connect(SceneStringName(animation_changed), callable_mp(this, &AnimationMixer::_animation_changed));
+	ald.library->connect(SNAME("animation_added"), callable_mp(this, &Motion::_animation_added).bind(p_name));
+	ald.library->connect(SNAME("animation_removed"), callable_mp(this, &Motion::_animation_removed).bind(p_name));
+	ald.library->connect(SNAME("animation_renamed"), callable_mp(this, &Motion::_animation_renamed).bind(p_name));
+	ald.library->connect(SceneStringName(animation_changed), callable_mp(this, &Motion::_animation_changed));
 
 	_animation_set_cache_update();
 
@@ -306,7 +306,7 @@ Error AnimationMixer::add_animation_library(const StringName &p_name, const Ref<
 	return OK;
 }
 
-void AnimationMixer::remove_animation_library(const StringName &p_name) {
+void Motion::remove_animation_library(const StringName &p_name) {
 	int at_pos = -1;
 
 	for (uint32_t i = 0; i < animation_libraries.size(); i++) {
@@ -318,10 +318,10 @@ void AnimationMixer::remove_animation_library(const StringName &p_name) {
 
 	ERR_FAIL_COND(at_pos == -1);
 
-	animation_libraries[at_pos].library->disconnect(SNAME("animation_added"), callable_mp(this, &AnimationMixer::_animation_added));
-	animation_libraries[at_pos].library->disconnect(SNAME("animation_removed"), callable_mp(this, &AnimationMixer::_animation_removed));
-	animation_libraries[at_pos].library->disconnect(SNAME("animation_renamed"), callable_mp(this, &AnimationMixer::_animation_renamed));
-	animation_libraries[at_pos].library->disconnect(SceneStringName(animation_changed), callable_mp(this, &AnimationMixer::_animation_changed));
+	animation_libraries[at_pos].library->disconnect(SNAME("animation_added"), callable_mp(this, &Motion::_animation_added));
+	animation_libraries[at_pos].library->disconnect(SNAME("animation_removed"), callable_mp(this, &Motion::_animation_removed));
+	animation_libraries[at_pos].library->disconnect(SNAME("animation_renamed"), callable_mp(this, &Motion::_animation_renamed));
+	animation_libraries[at_pos].library->disconnect(SceneStringName(animation_changed), callable_mp(this, &Motion::_animation_changed));
 
 	animation_libraries.remove_at(at_pos);
 	_animation_set_cache_update();
@@ -329,7 +329,7 @@ void AnimationMixer::remove_animation_library(const StringName &p_name) {
 	notify_property_list_changed();
 }
 
-void AnimationMixer::rename_animation_library(const StringName &p_name, const StringName &p_new_name) {
+void Motion::rename_animation_library(const StringName &p_name, const StringName &p_new_name) {
 	if (p_name == p_new_name) {
 		return;
 	}
@@ -344,13 +344,13 @@ void AnimationMixer::rename_animation_library(const StringName &p_name, const St
 			found = true;
 			lib.name = p_new_name;
 			// rename connections
-			lib.library->disconnect(SNAME("animation_added"), callable_mp(this, &AnimationMixer::_animation_added));
-			lib.library->disconnect(SNAME("animation_removed"), callable_mp(this, &AnimationMixer::_animation_removed));
-			lib.library->disconnect(SNAME("animation_renamed"), callable_mp(this, &AnimationMixer::_animation_renamed));
+			lib.library->disconnect(SNAME("animation_added"), callable_mp(this, &Motion::_animation_added));
+			lib.library->disconnect(SNAME("animation_removed"), callable_mp(this, &Motion::_animation_removed));
+			lib.library->disconnect(SNAME("animation_renamed"), callable_mp(this, &Motion::_animation_renamed));
 
-			lib.library->connect(SNAME("animation_added"), callable_mp(this, &AnimationMixer::_animation_added).bind(p_new_name));
-			lib.library->connect(SNAME("animation_removed"), callable_mp(this, &AnimationMixer::_animation_removed).bind(p_new_name));
-			lib.library->connect(SNAME("animation_renamed"), callable_mp(this, &AnimationMixer::_animation_renamed).bind(p_new_name));
+			lib.library->connect(SNAME("animation_added"), callable_mp(this, &Motion::_animation_added).bind(p_new_name));
+			lib.library->connect(SNAME("animation_removed"), callable_mp(this, &Motion::_animation_removed).bind(p_new_name));
+			lib.library->connect(SNAME("animation_renamed"), callable_mp(this, &Motion::_animation_renamed).bind(p_new_name));
 
 			for (const KeyValue<StringName, Ref<Animation>> &K : lib.library->animations) {
 				StringName old_name = p_name == StringName() ? K.key : StringName(String(p_name) + "/" + String(K.key));
@@ -369,7 +369,7 @@ void AnimationMixer::rename_animation_library(const StringName &p_name, const St
 	notify_property_list_changed();
 }
 
-void AnimationMixer::get_animation_list(List<StringName> *p_animations) const {
+void Motion::get_animation_list(List<StringName> *p_animations) const {
 	List<String> anims;
 	for (const KeyValue<StringName, AnimationData> &E : animation_set) {
 		anims.push_back(E.key);
@@ -380,17 +380,17 @@ void AnimationMixer::get_animation_list(List<StringName> *p_animations) const {
 	}
 }
 
-Ref<Animation> AnimationMixer::get_animation(const StringName &p_name) const {
+Ref<Animation> Motion::get_animation(const StringName &p_name) const {
 	ERR_FAIL_COND_V_MSG(!animation_set.has(p_name), Ref<Animation>(), vformat("Animation not found: \"%s\".", p_name));
 	const AnimationData &anim_data = animation_set[p_name];
 	return anim_data.animation;
 }
 
-bool AnimationMixer::has_animation(const StringName &p_name) const {
+bool Motion::has_animation(const StringName &p_name) const {
 	return animation_set.has(p_name);
 }
 
-StringName AnimationMixer::find_animation(const Ref<Animation> &p_animation) const {
+StringName Motion::find_animation(const Ref<Animation> &p_animation) const {
 	for (const KeyValue<StringName, AnimationData> &E : animation_set) {
 		if (E.value.animation == p_animation) {
 			return E.key;
@@ -403,7 +403,7 @@ StringName AnimationMixer::find_animation(const Ref<Animation> &p_animation) con
 /* -- General settings for animation ---------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::_set_process(bool p_process, bool p_force) {
+void Motion::_set_process(bool p_process, bool p_force) {
 	if (processing == p_process && !p_force) {
 		return;
 	}
@@ -430,7 +430,7 @@ void AnimationMixer::_set_process(bool p_process, bool p_force) {
 	processing = p_process;
 }
 
-void AnimationMixer::set_active(bool p_active) {
+void Motion::set_active(bool p_active) {
 	if (active == p_active) {
 		return;
 	}
@@ -444,29 +444,29 @@ void AnimationMixer::set_active(bool p_active) {
 	}
 }
 
-bool AnimationMixer::is_active() const {
+bool Motion::is_active() const {
 	return active;
 }
 
-void AnimationMixer::set_root_node(const NodePath &p_path) {
+void Motion::set_root_node(const NodePath &p_path) {
 	root_node = p_path;
 	_clear_caches();
 }
 
-NodePath AnimationMixer::get_root_node() const {
+NodePath Motion::get_root_node() const {
 	return root_node;
 }
 
-void AnimationMixer::set_deterministic(bool p_deterministic) {
+void Motion::set_deterministic(bool p_deterministic) {
 	deterministic = p_deterministic;
 	_clear_caches();
 }
 
-bool AnimationMixer::is_deterministic() const {
+bool Motion::is_deterministic() const {
 	return deterministic;
 }
 
-void AnimationMixer::set_callback_mode_process(AnimationCallbackModeProcess p_mode) {
+void Motion::set_callback_mode_process(AnimationCallbackModeProcess p_mode) {
 	if (callback_mode_process == p_mode) {
 		return;
 	}
@@ -483,40 +483,40 @@ void AnimationMixer::set_callback_mode_process(AnimationCallbackModeProcess p_mo
 	}
 }
 
-AnimationMixer::AnimationCallbackModeProcess AnimationMixer::get_callback_mode_process() const {
+Motion::AnimationCallbackModeProcess Motion::get_callback_mode_process() const {
 	return callback_mode_process;
 }
 
-void AnimationMixer::set_callback_mode_method(AnimationCallbackModeMethod p_mode) {
+void Motion::set_callback_mode_method(AnimationCallbackModeMethod p_mode) {
 	callback_mode_method = p_mode;
 	emit_signal(SNAME("mixer_updated"));
 }
 
-AnimationMixer::AnimationCallbackModeMethod AnimationMixer::get_callback_mode_method() const {
+Motion::AnimationCallbackModeMethod Motion::get_callback_mode_method() const {
 	return callback_mode_method;
 }
 
-void AnimationMixer::set_callback_mode_discrete(AnimationCallbackModeDiscrete p_mode) {
+void Motion::set_callback_mode_discrete(AnimationCallbackModeDiscrete p_mode) {
 	callback_mode_discrete = p_mode;
 	_clear_caches();
 	emit_signal(SNAME("mixer_updated"));
 }
 
-AnimationMixer::AnimationCallbackModeDiscrete AnimationMixer::get_callback_mode_discrete() const {
+Motion::AnimationCallbackModeDiscrete Motion::get_callback_mode_discrete() const {
 	return callback_mode_discrete;
 }
 
-void AnimationMixer::set_audio_max_polyphony(int p_audio_max_polyphony) {
+void Motion::set_audio_max_polyphony(int p_audio_max_polyphony) {
 	ERR_FAIL_COND(p_audio_max_polyphony < 0 || p_audio_max_polyphony > 128);
 	audio_max_polyphony = p_audio_max_polyphony;
 }
 
-int AnimationMixer::get_audio_max_polyphony() const {
+int Motion::get_audio_max_polyphony() const {
 	return audio_max_polyphony;
 }
 
 #ifdef TOOLS_ENABLED
-void AnimationMixer::set_editing(bool p_editing) {
+void Motion::set_editing(bool p_editing) {
 	if (editing == p_editing) {
 		return;
 	}
@@ -531,15 +531,15 @@ void AnimationMixer::set_editing(bool p_editing) {
 	notify_property_list_changed(); // To make active readonly.
 }
 
-bool AnimationMixer::is_editing() const {
+bool Motion::is_editing() const {
 	return editing;
 }
 
-void AnimationMixer::set_dummy(bool p_dummy) {
+void Motion::set_dummy(bool p_dummy) {
 	dummy = p_dummy;
 }
 
-bool AnimationMixer::is_dummy() const {
+bool Motion::is_dummy() const {
 	return dummy;
 }
 #endif // TOOLS_ENABLED
@@ -548,7 +548,7 @@ bool AnimationMixer::is_dummy() const {
 /* -- Caches for blending --------------------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::_clear_caches() {
+void Motion::_clear_caches() {
 	_init_root_motion_cache();
 	_clear_audio_streams();
 	_clear_playing_caches();
@@ -562,7 +562,7 @@ void AnimationMixer::_clear_caches() {
 	emit_signal(SNAME("caches_cleared"));
 }
 
-void AnimationMixer::_clear_audio_streams() {
+void Motion::_clear_audio_streams() {
 	for (int i = 0; i < playing_audio_stream_players.size(); i++) {
 		playing_audio_stream_players[i]->call(SNAME("stop"));
 		playing_audio_stream_players[i]->call(SNAME("set_stream"), Ref<AudioStream>());
@@ -570,7 +570,7 @@ void AnimationMixer::_clear_audio_streams() {
 	playing_audio_stream_players.clear();
 }
 
-void AnimationMixer::_clear_playing_caches() {
+void Motion::_clear_playing_caches() {
 	for (const TrackCache *E : playing_caches) {
 		Object *t_obj = ObjectDB::get_instance(E->object_id);
 		if (t_obj) {
@@ -580,7 +580,7 @@ void AnimationMixer::_clear_playing_caches() {
 	playing_caches.clear();
 }
 
-void AnimationMixer::_init_root_motion_cache() {
+void Motion::_init_root_motion_cache() {
 	root_motion_cache.loc = Vector3(0, 0, 0);
 	root_motion_cache.rot = Quaternion(0, 0, 0, 1);
 	root_motion_cache.scale = Vector3(1, 1, 1);
@@ -592,7 +592,7 @@ void AnimationMixer::_init_root_motion_cache() {
 	root_motion_scale_accumulator = Vector3(1, 1, 1);
 }
 
-bool AnimationMixer::_update_caches() {
+bool Motion::_update_caches() {
 	setup_pass++;
 
 	root_motion_cache.loc = Vector3(0, 0, 0);
@@ -612,7 +612,7 @@ bool AnimationMixer::_update_caches() {
 	}
 
 #ifdef TOOLS_ENABLED
-	String mixer_name = "AnimationMixer";
+	String mixer_name = "Motion";
 	const Node *owner = get_owner();
 	if (owner) {
 		const String scene_path = owner->get_scene_file_path();
@@ -621,7 +621,7 @@ bool AnimationMixer::_update_caches() {
 		}
 	}
 #else
-	const String mixer_name = "AnimationMixer";
+	const String mixer_name = "Motion";
 #endif
 
 	Ref<Animation> reset_anim;
@@ -828,7 +828,7 @@ bool AnimationMixer::_update_caches() {
 /* -- Blending processor ---------------------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::_process_animation(double p_delta, bool p_update_only) {
+void Motion::_process_animation(double p_delta, bool p_update_only) {
 	_blend_init();
 	if (_blend_pre_process(p_delta, track_count, track_map)) {
 		_blend_capture(p_delta);
@@ -841,7 +841,7 @@ void AnimationMixer::_process_animation(double p_delta, bool p_update_only) {
 	clear_animation_instances();
 }
 
-Variant AnimationMixer::post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant p_value, ObjectID p_object_id, int p_object_sub_idx) {
+Variant Motion::post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant p_value, ObjectID p_object_id, int p_object_sub_idx) {
 	Variant res;
 	if (GDVIRTUAL_CALL(_post_process_key_value, p_anim, p_track, p_value, p_object_id, p_object_sub_idx, res)) {
 		return res;
@@ -849,11 +849,11 @@ Variant AnimationMixer::post_process_key_value(const Ref<Animation> &p_anim, int
 	return _post_process_key_value(p_anim, p_track, p_value, p_object_id, p_object_sub_idx);
 }
 
-Variant AnimationMixer::_post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant p_value, ObjectID p_object_id, int p_object_sub_idx) {
+Variant Motion::_post_process_key_value(const Ref<Animation> &p_anim, int p_track, Variant p_value, ObjectID p_object_id, int p_object_sub_idx) {
 	return p_value;
 }
 
-void AnimationMixer::_blend_init() {
+void Motion::_blend_init() {
 	// Check all tracks, see if they need modification.
 	root_motion_position = Vector3(0, 0, 0);
 	root_motion_rotation = Quaternion(0, 0, 0, 1);
@@ -910,19 +910,19 @@ void AnimationMixer::_blend_init() {
 	}
 }
 
-bool AnimationMixer::_blend_pre_process(double p_delta, int p_track_count, const HashMap<NodePath, int> &p_track_map) {
+bool Motion::_blend_pre_process(double p_delta, int p_track_count, const HashMap<NodePath, int> &p_track_map) {
 	return true;
 }
 
-void AnimationMixer::_blend_post_process() {
+void Motion::_blend_post_process() {
 	//
 }
 
-void AnimationMixer::_blend_capture(double p_delta) {
+void Motion::_blend_capture(double p_delta) {
 	blend_capture(p_delta);
 }
 
-void AnimationMixer::blend_capture(double p_delta) {
+void Motion::blend_capture(double p_delta) {
 	if (capture_cache.animation.is_null()) {
 		return;
 	}
@@ -955,7 +955,7 @@ void AnimationMixer::blend_capture(double p_delta) {
 	animation_instances.push_back(ai);
 }
 
-void AnimationMixer::_blend_calc_total_weight() {
+void Motion::_blend_calc_total_weight() {
 	for (const AnimationInstance &ai : animation_instances) {
 		Ref<Animation> a = ai.animation_data.animation;
 		real_t weight = ai.playback_info.weight;
@@ -981,7 +981,7 @@ void AnimationMixer::_blend_calc_total_weight() {
 	}
 }
 
-void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
+void Motion::_blend_process(double p_delta, bool p_update_only) {
 	// Apply value/transform/blend/bezier blends to track caches and execute method/audio/animation tracks.
 #ifdef TOOLS_ENABLED
 	bool can_call = is_inside_tree() && !Engine::get_singleton()->is_editor_hint();
@@ -1255,7 +1255,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					if (!t_obj) {
 						continue;
 					}
-					AnimationPlayer *player2 = Object::cast_to<AnimationPlayer>(t_obj);
+					Animator *player2 = Object::cast_to<Animator>(t_obj);
 					if (!player2) {
 						continue;
 					}
@@ -1323,7 +1323,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 	}
 }
 
-void AnimationMixer::_blend_apply() {
+void Motion::_blend_apply() {
 	// Finally, set the tracks.
 	for (const KeyValue<Animation::TypeHash, TrackCache *> &K : track_cache) {
 		TrackCache *track = K.value;
@@ -1440,7 +1440,7 @@ void AnimationMixer::_blend_apply() {
 	}
 }
 
-void AnimationMixer::_call_object(ObjectID p_object_id, const StringName &p_method, const Vector<Variant> &p_params, bool p_deferred) {
+void Motion::_call_object(ObjectID p_object_id, const StringName &p_method, const Vector<Variant> &p_params, bool p_deferred) {
 	// Separate function to use alloca() more efficiently
 	const Variant **argptrs = (const Variant **)alloca(sizeof(Variant *) * p_params.size());
 	const Variant *args = p_params.ptr();
@@ -1460,7 +1460,7 @@ void AnimationMixer::_call_object(ObjectID p_object_id, const StringName &p_meth
 	}
 }
 
-void AnimationMixer::make_animation_instance(const StringName &p_name, const PlaybackInfo p_playback_info) {
+void Motion::make_animation_instance(const StringName &p_name, const PlaybackInfo p_playback_info) {
 	ERR_FAIL_COND(!has_animation(p_name));
 
 	AnimationData ad;
@@ -1475,15 +1475,15 @@ void AnimationMixer::make_animation_instance(const StringName &p_name, const Pla
 	animation_instances.push_back(ai);
 }
 
-void AnimationMixer::clear_animation_instances() {
+void Motion::clear_animation_instances() {
 	animation_instances.clear();
 }
 
-void AnimationMixer::advance(double p_time) {
+void Motion::advance(double p_time) {
 	_process_animation(p_time);
 }
 
-void AnimationMixer::clear_caches() {
+void Motion::clear_caches() {
 	_clear_caches();
 }
 
@@ -1491,35 +1491,35 @@ void AnimationMixer::clear_caches() {
 /* -- Root motion ----------------------------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::set_root_motion_track(const NodePath &p_track) {
+void Motion::set_root_motion_track(const NodePath &p_track) {
 	root_motion_track = p_track;
 }
 
-NodePath AnimationMixer::get_root_motion_track() const {
+NodePath Motion::get_root_motion_track() const {
 	return root_motion_track;
 }
 
-Vector3 AnimationMixer::get_root_motion_position() const {
+Vector3 Motion::get_root_motion_position() const {
 	return root_motion_position;
 }
 
-Quaternion AnimationMixer::get_root_motion_rotation() const {
+Quaternion Motion::get_root_motion_rotation() const {
 	return root_motion_rotation;
 }
 
-Vector3 AnimationMixer::get_root_motion_scale() const {
+Vector3 Motion::get_root_motion_scale() const {
 	return root_motion_scale;
 }
 
-Vector3 AnimationMixer::get_root_motion_position_accumulator() const {
+Vector3 Motion::get_root_motion_position_accumulator() const {
 	return root_motion_position_accumulator;
 }
 
-Quaternion AnimationMixer::get_root_motion_rotation_accumulator() const {
+Quaternion Motion::get_root_motion_rotation_accumulator() const {
 	return root_motion_rotation_accumulator;
 }
 
-Vector3 AnimationMixer::get_root_motion_scale_accumulator() const {
+Vector3 Motion::get_root_motion_scale_accumulator() const {
 	return root_motion_scale_accumulator;
 }
 
@@ -1527,19 +1527,19 @@ Vector3 AnimationMixer::get_root_motion_scale_accumulator() const {
 /* -- Reset on save --------------------------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::set_reset_on_save_enabled(bool p_enabled) {
+void Motion::set_reset_on_save_enabled(bool p_enabled) {
 	reset_on_save = p_enabled;
 }
 
-bool AnimationMixer::is_reset_on_save_enabled() const {
+bool Motion::is_reset_on_save_enabled() const {
 	return reset_on_save;
 }
 
-bool AnimationMixer::can_apply_reset() const {
+bool Motion::can_apply_reset() const {
 	return has_animation(SceneStringName(RESET));
 }
 
-void AnimationMixer::_build_backup_track_cache() {
+void Motion::_build_backup_track_cache() {
 	for (const KeyValue<Animation::TypeHash, TrackCache *> &K : track_cache) {
 		TrackCache *track = K.value;
 		track->total_weight = 1.0;
@@ -1578,7 +1578,7 @@ void AnimationMixer::_build_backup_track_cache() {
 	}
 }
 
-Ref<AnimatedValuesBackup> AnimationMixer::make_backup() {
+Ref<AnimatedValuesBackup> Motion::make_backup() {
 	Ref<AnimatedValuesBackup> backup;
 	backup.instantiate();
 
@@ -1600,7 +1600,7 @@ Ref<AnimatedValuesBackup> AnimationMixer::make_backup() {
 	return backup;
 }
 
-void AnimationMixer::reset() {
+void Motion::reset() {
 	ERR_FAIL_COND(!can_apply_reset());
 
 	Ref<Animation> reset_anim = animation_set[SceneStringName(RESET)].animation;
@@ -1609,7 +1609,7 @@ void AnimationMixer::reset() {
 	Node *root_node_object = get_node_or_null(root_node);
 	ERR_FAIL_NULL(root_node_object);
 
-	AnimationPlayer *aux_player = memnew(AnimationPlayer);
+	Animator *aux_player = memnew(Animator);
 	root_node_object->add_child(aux_player);
 	Ref<AnimationLibrary> al;
 	al.instantiate();
@@ -1622,16 +1622,16 @@ void AnimationMixer::reset() {
 	aux_player->queue_free();
 }
 
-void AnimationMixer::restore(const Ref<AnimatedValuesBackup> &p_backup) {
+void Motion::restore(const Ref<AnimatedValuesBackup> &p_backup) {
 	ERR_FAIL_COND(p_backup.is_null());
 	track_cache = p_backup->get_data();
 	_blend_apply();
-	track_cache = HashMap<Animation::TypeHash, AnimationMixer::TrackCache *>();
+	track_cache = HashMap<Animation::TypeHash, Motion::TrackCache *>();
 	cache_valid = false;
 }
 
 #ifdef TOOLS_ENABLED
-Ref<AnimatedValuesBackup> AnimationMixer::apply_reset(bool p_user_initiated) {
+Ref<AnimatedValuesBackup> Motion::apply_reset(bool p_user_initiated) {
 	if (!p_user_initiated && dummy) {
 		return Ref<AnimatedValuesBackup>();
 	}
@@ -1659,7 +1659,7 @@ Ref<AnimatedValuesBackup> AnimationMixer::apply_reset(bool p_user_initiated) {
 /* -- Capture feature ------------------------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::capture(const StringName &p_name, double p_duration, Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type) {
+void Motion::capture(const StringName &p_name, double p_duration, Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type) {
 	ERR_FAIL_COND(!active);
 	ERR_FAIL_COND(!has_animation(p_name));
 	ERR_FAIL_COND(p_duration <= 0);
@@ -1703,11 +1703,11 @@ void AnimationMixer::capture(const StringName &p_name, double p_duration, Tween:
 /* -- General functions ----------------------- */
 /* -------------------------------------------- */
 
-void AnimationMixer::_node_removed(Node *p_node) {
+void Motion::_node_removed(Node *p_node) {
 	_clear_caches();
 }
 
-void AnimationMixer::_notification(int p_what) {
+void Motion::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
 			if (!processing) {
@@ -1736,7 +1736,7 @@ void AnimationMixer::_notification(int p_what) {
 }
 
 #ifdef TOOLS_ENABLED
-void AnimationMixer::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
+void Motion::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
 	const String pf = p_function;
 	if (p_idx == 0) {
 		if (pf == "get_animation" || pf == "has_animation") {
@@ -1757,64 +1757,64 @@ void AnimationMixer::get_argument_options(const StringName &p_function, int p_id
 }
 #endif
 
-void AnimationMixer::_bind_methods() {
+void Motion::_bind_methods() {
 	/* ---- Data lists ---- */
-	ClassDB::bind_method(D_METHOD("add_animation_library", "name", "library"), &AnimationMixer::add_animation_library);
-	ClassDB::bind_method(D_METHOD("remove_animation_library", "name"), &AnimationMixer::remove_animation_library);
-	ClassDB::bind_method(D_METHOD("rename_animation_library", "name", "newname"), &AnimationMixer::rename_animation_library);
-	ClassDB::bind_method(D_METHOD("has_animation_library", "name"), &AnimationMixer::has_animation_library);
-	ClassDB::bind_method(D_METHOD("get_animation_library", "name"), &AnimationMixer::get_animation_library);
-	ClassDB::bind_method(D_METHOD("get_animation_library_list"), &AnimationMixer::_get_animation_library_list);
+	ClassDB::bind_method(D_METHOD("add_animation_library", "name", "library"), &Motion::add_animation_library);
+	ClassDB::bind_method(D_METHOD("remove_animation_library", "name"), &Motion::remove_animation_library);
+	ClassDB::bind_method(D_METHOD("rename_animation_library", "name", "newname"), &Motion::rename_animation_library);
+	ClassDB::bind_method(D_METHOD("has_animation_library", "name"), &Motion::has_animation_library);
+	ClassDB::bind_method(D_METHOD("get_animation_library", "name"), &Motion::get_animation_library);
+	ClassDB::bind_method(D_METHOD("get_animation_library_list"), &Motion::_get_animation_library_list);
 
-	ClassDB::bind_method(D_METHOD("has_animation", "name"), &AnimationMixer::has_animation);
-	ClassDB::bind_method(D_METHOD("get_animation", "name"), &AnimationMixer::get_animation);
-	ClassDB::bind_method(D_METHOD("get_animation_list"), &AnimationMixer::_get_animation_list);
+	ClassDB::bind_method(D_METHOD("has_animation", "name"), &Motion::has_animation);
+	ClassDB::bind_method(D_METHOD("get_animation", "name"), &Motion::get_animation);
+	ClassDB::bind_method(D_METHOD("get_animation_list"), &Motion::_get_animation_list);
 
 	/* ---- General settings for animation ---- */
-	ClassDB::bind_method(D_METHOD("set_active", "active"), &AnimationMixer::set_active);
-	ClassDB::bind_method(D_METHOD("is_active"), &AnimationMixer::is_active);
+	ClassDB::bind_method(D_METHOD("set_active", "active"), &Motion::set_active);
+	ClassDB::bind_method(D_METHOD("is_active"), &Motion::is_active);
 
-	ClassDB::bind_method(D_METHOD("set_deterministic", "deterministic"), &AnimationMixer::set_deterministic);
-	ClassDB::bind_method(D_METHOD("is_deterministic"), &AnimationMixer::is_deterministic);
+	ClassDB::bind_method(D_METHOD("set_deterministic", "deterministic"), &Motion::set_deterministic);
+	ClassDB::bind_method(D_METHOD("is_deterministic"), &Motion::is_deterministic);
 
-	ClassDB::bind_method(D_METHOD("set_root_node", "path"), &AnimationMixer::set_root_node);
-	ClassDB::bind_method(D_METHOD("get_root_node"), &AnimationMixer::get_root_node);
+	ClassDB::bind_method(D_METHOD("set_root_node", "path"), &Motion::set_root_node);
+	ClassDB::bind_method(D_METHOD("get_root_node"), &Motion::get_root_node);
 
-	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "mode"), &AnimationMixer::set_callback_mode_process);
-	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &AnimationMixer::get_callback_mode_process);
+	ClassDB::bind_method(D_METHOD("set_callback_mode_process", "mode"), &Motion::set_callback_mode_process);
+	ClassDB::bind_method(D_METHOD("get_callback_mode_process"), &Motion::get_callback_mode_process);
 
-	ClassDB::bind_method(D_METHOD("set_callback_mode_method", "mode"), &AnimationMixer::set_callback_mode_method);
-	ClassDB::bind_method(D_METHOD("get_callback_mode_method"), &AnimationMixer::get_callback_mode_method);
+	ClassDB::bind_method(D_METHOD("set_callback_mode_method", "mode"), &Motion::set_callback_mode_method);
+	ClassDB::bind_method(D_METHOD("get_callback_mode_method"), &Motion::get_callback_mode_method);
 
-	ClassDB::bind_method(D_METHOD("set_callback_mode_discrete", "mode"), &AnimationMixer::set_callback_mode_discrete);
-	ClassDB::bind_method(D_METHOD("get_callback_mode_discrete"), &AnimationMixer::get_callback_mode_discrete);
+	ClassDB::bind_method(D_METHOD("set_callback_mode_discrete", "mode"), &Motion::set_callback_mode_discrete);
+	ClassDB::bind_method(D_METHOD("get_callback_mode_discrete"), &Motion::get_callback_mode_discrete);
 
 	/* ---- Audio ---- */
-	ClassDB::bind_method(D_METHOD("set_audio_max_polyphony", "max_polyphony"), &AnimationMixer::set_audio_max_polyphony);
-	ClassDB::bind_method(D_METHOD("get_audio_max_polyphony"), &AnimationMixer::get_audio_max_polyphony);
+	ClassDB::bind_method(D_METHOD("set_audio_max_polyphony", "max_polyphony"), &Motion::set_audio_max_polyphony);
+	ClassDB::bind_method(D_METHOD("get_audio_max_polyphony"), &Motion::get_audio_max_polyphony);
 
 	/* ---- Root motion accumulator for Skeleton3D ---- */
-	ClassDB::bind_method(D_METHOD("set_root_motion_track", "path"), &AnimationMixer::set_root_motion_track);
-	ClassDB::bind_method(D_METHOD("get_root_motion_track"), &AnimationMixer::get_root_motion_track);
+	ClassDB::bind_method(D_METHOD("set_root_motion_track", "path"), &Motion::set_root_motion_track);
+	ClassDB::bind_method(D_METHOD("get_root_motion_track"), &Motion::get_root_motion_track);
 
-	ClassDB::bind_method(D_METHOD("get_root_motion_position"), &AnimationMixer::get_root_motion_position);
-	ClassDB::bind_method(D_METHOD("get_root_motion_rotation"), &AnimationMixer::get_root_motion_rotation);
-	ClassDB::bind_method(D_METHOD("get_root_motion_scale"), &AnimationMixer::get_root_motion_scale);
-	ClassDB::bind_method(D_METHOD("get_root_motion_position_accumulator"), &AnimationMixer::get_root_motion_position_accumulator);
-	ClassDB::bind_method(D_METHOD("get_root_motion_rotation_accumulator"), &AnimationMixer::get_root_motion_rotation_accumulator);
-	ClassDB::bind_method(D_METHOD("get_root_motion_scale_accumulator"), &AnimationMixer::get_root_motion_scale_accumulator);
+	ClassDB::bind_method(D_METHOD("get_root_motion_position"), &Motion::get_root_motion_position);
+	ClassDB::bind_method(D_METHOD("get_root_motion_rotation"), &Motion::get_root_motion_rotation);
+	ClassDB::bind_method(D_METHOD("get_root_motion_scale"), &Motion::get_root_motion_scale);
+	ClassDB::bind_method(D_METHOD("get_root_motion_position_accumulator"), &Motion::get_root_motion_position_accumulator);
+	ClassDB::bind_method(D_METHOD("get_root_motion_rotation_accumulator"), &Motion::get_root_motion_rotation_accumulator);
+	ClassDB::bind_method(D_METHOD("get_root_motion_scale_accumulator"), &Motion::get_root_motion_scale_accumulator);
 
 	/* ---- Blending processor ---- */
-	ClassDB::bind_method(D_METHOD("clear_caches"), &AnimationMixer::clear_caches);
-	ClassDB::bind_method(D_METHOD("advance", "delta"), &AnimationMixer::advance);
+	ClassDB::bind_method(D_METHOD("clear_caches"), &Motion::clear_caches);
+	ClassDB::bind_method(D_METHOD("advance", "delta"), &Motion::advance);
 	GDVIRTUAL_BIND(_post_process_key_value, "animation", "track", "value", "object_id", "object_sub_idx");
 
 	/* ---- Capture feature ---- */
-	ClassDB::bind_method(D_METHOD("capture", "name", "duration", "trans_type", "ease_type"), &AnimationMixer::capture, DEFVAL(Tween::TRANS_LINEAR), DEFVAL(Tween::EASE_IN));
+	ClassDB::bind_method(D_METHOD("capture", "name", "duration", "trans_type", "ease_type"), &Motion::capture, DEFVAL(Tween::TRANS_LINEAR), DEFVAL(Tween::EASE_IN));
 
 	/* ---- Reset on save ---- */
-	ClassDB::bind_method(D_METHOD("set_reset_on_save_enabled", "enabled"), &AnimationMixer::set_reset_on_save_enabled);
-	ClassDB::bind_method(D_METHOD("is_reset_on_save_enabled"), &AnimationMixer::is_reset_on_save_enabled);
+	ClassDB::bind_method(D_METHOD("set_reset_on_save_enabled", "enabled"), &Motion::set_reset_on_save_enabled);
+	ClassDB::bind_method(D_METHOD("is_reset_on_save_enabled"), &Motion::is_reset_on_save_enabled);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active", "is_active");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "deterministic"), "set_deterministic", "is_deterministic");
@@ -1851,22 +1851,22 @@ void AnimationMixer::_bind_methods() {
 	ADD_SIGNAL(MethodInfo(SNAME("mixer_applied")));
 	ADD_SIGNAL(MethodInfo(SNAME("mixer_updated"))); // For updating dummy player.
 
-	ClassDB::bind_method(D_METHOD("_reset"), &AnimationMixer::reset);
-	ClassDB::bind_method(D_METHOD("_restore", "backup"), &AnimationMixer::restore);
+	ClassDB::bind_method(D_METHOD("_reset"), &Motion::reset);
+	ClassDB::bind_method(D_METHOD("_restore", "backup"), &Motion::restore);
 }
 
-AnimationMixer::AnimationMixer() {
+Motion::Motion() {
 	root_node = SceneStringName(path_pp);
 }
 
-AnimationMixer::~AnimationMixer() {
+Motion::~Motion() {
 }
 
-void AnimatedValuesBackup::set_data(const HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> p_data) {
+void AnimatedValuesBackup::set_data(const HashMap<Animation::TypeHash, Motion::TrackCache *> p_data) {
 	clear_data();
 
-	for (const KeyValue<Animation::TypeHash, AnimationMixer::TrackCache *> &E : p_data) {
-		AnimationMixer::TrackCache *track = get_cache_copy(E.value);
+	for (const KeyValue<Animation::TypeHash, Motion::TrackCache *> &E : p_data) {
+		Motion::TrackCache *track = get_cache_copy(E.value);
 		if (!track) {
 			continue; // Some types of tracks do not get a copy and must be ignored.
 		}
@@ -1875,10 +1875,10 @@ void AnimatedValuesBackup::set_data(const HashMap<Animation::TypeHash, Animation
 	}
 }
 
-HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> AnimatedValuesBackup::get_data() const {
-	HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> ret;
-	for (const KeyValue<Animation::TypeHash, AnimationMixer::TrackCache *> &E : data) {
-		AnimationMixer::TrackCache *track = get_cache_copy(E.value);
+HashMap<Animation::TypeHash, Motion::TrackCache *> AnimatedValuesBackup::get_data() const {
+	HashMap<Animation::TypeHash, Motion::TrackCache *> ret;
+	for (const KeyValue<Animation::TypeHash, Motion::TrackCache *> &E : data) {
+		Motion::TrackCache *track = get_cache_copy(E.value);
 		ERR_CONTINUE(!track); // Backup shouldn't contain tracks that cannot be copied, this is a mistake.
 
 		ret.insert(E.key, track);
@@ -1887,38 +1887,38 @@ HashMap<Animation::TypeHash, AnimationMixer::TrackCache *> AnimatedValuesBackup:
 }
 
 void AnimatedValuesBackup::clear_data() {
-	for (KeyValue<Animation::TypeHash, AnimationMixer::TrackCache *> &K : data) {
+	for (KeyValue<Animation::TypeHash, Motion::TrackCache *> &K : data) {
 		memdelete(K.value);
 	}
 	data.clear();
 }
 
-AnimationMixer::TrackCache *AnimatedValuesBackup::get_cache_copy(AnimationMixer::TrackCache *p_cache) const {
+Motion::TrackCache *AnimatedValuesBackup::get_cache_copy(Motion::TrackCache *p_cache) const {
 	switch (p_cache->type) {
 		case Animation::TYPE_BEZIER:
 		case Animation::TYPE_VALUE: {
-			AnimationMixer::TrackCacheValue *src = static_cast<AnimationMixer::TrackCacheValue *>(p_cache);
-			AnimationMixer::TrackCacheValue *tc = memnew(AnimationMixer::TrackCacheValue(*src));
+			Motion::TrackCacheValue *src = static_cast<Motion::TrackCacheValue *>(p_cache);
+			Motion::TrackCacheValue *tc = memnew(Motion::TrackCacheValue(*src));
 			return tc;
 		}
 
 		case Animation::TYPE_POSITION_3D:
 		case Animation::TYPE_ROTATION_3D:
 		case Animation::TYPE_SCALE_3D: {
-			AnimationMixer::TrackCacheTransform *src = static_cast<AnimationMixer::TrackCacheTransform *>(p_cache);
-			AnimationMixer::TrackCacheTransform *tc = memnew(AnimationMixer::TrackCacheTransform(*src));
+			Motion::TrackCacheTransform *src = static_cast<Motion::TrackCacheTransform *>(p_cache);
+			Motion::TrackCacheTransform *tc = memnew(Motion::TrackCacheTransform(*src));
 			return tc;
 		}
 
 		case Animation::TYPE_BLEND_SHAPE: {
-			AnimationMixer::TrackCacheBlendShape *src = static_cast<AnimationMixer::TrackCacheBlendShape *>(p_cache);
-			AnimationMixer::TrackCacheBlendShape *tc = memnew(AnimationMixer::TrackCacheBlendShape(*src));
+			Motion::TrackCacheBlendShape *src = static_cast<Motion::TrackCacheBlendShape *>(p_cache);
+			Motion::TrackCacheBlendShape *tc = memnew(Motion::TrackCacheBlendShape(*src));
 			return tc;
 		}
 
 		case Animation::TYPE_AUDIO: {
-			AnimationMixer::TrackCacheAudio *src = static_cast<AnimationMixer::TrackCacheAudio *>(p_cache);
-			AnimationMixer::TrackCacheAudio *tc = memnew(AnimationMixer::TrackCacheAudio(*src));
+			Motion::TrackCacheAudio *src = static_cast<Motion::TrackCacheAudio *>(p_cache);
+			Motion::TrackCacheAudio *tc = memnew(Motion::TrackCacheAudio(*src));
 			return tc;
 		}
 

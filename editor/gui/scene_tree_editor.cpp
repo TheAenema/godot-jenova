@@ -39,7 +39,7 @@
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/node_dock.h"
-#include "editor/plugins/animation_player_editor_plugin.h"
+#include "editor/plugins/animator_editor_plugin.h"
 #include "editor/plugins/element_editor_plugin.h"
 #include "editor/plugins/script_editor_plugin.h"
 #include "editor/themes/editor_scale.h"
@@ -111,8 +111,8 @@ void SceneTreeEditor::_cell_button_pressed(Object *p_item, int p_column, int p_i
 		undo_redo->add_undo_method(this, "emit_signal", "node_changed");
 		undo_redo->commit_action();
 	} else if (p_id == BUTTON_PIN) {
-		if (n->is_class("AnimationMixer")) {
-			AnimationPlayerEditor::get_singleton()->unpin();
+		if (n->is_class("Motion")) {
+			AnimatorEditor::get_singleton()->unpin();
 			_update_tree();
 		}
 
@@ -419,11 +419,11 @@ void SceneTreeEditor::_add_nodes(Node *p_node, TreeItem *p_parent) {
 			_update_visibility_color(p_node, item);
 		}
 
-		if (p_node->is_class("AnimationMixer")) {
-			bool is_pinned = AnimationPlayerEditor::get_singleton()->get_editing_node() == p_node && AnimationPlayerEditor::get_singleton()->is_pinned();
+		if (p_node->is_class("Motion")) {
+			bool is_pinned = AnimatorEditor::get_singleton()->get_editing_node() == p_node && AnimatorEditor::get_singleton()->is_pinned();
 
 			if (is_pinned) {
-				item->add_button(0, get_editor_theme_icon(SNAME("Pin")), BUTTON_PIN, false, TTR("AnimationPlayer is pinned.\nClick to unpin."));
+				item->add_button(0, get_editor_theme_icon(SNAME("Pin")), BUTTON_PIN, false, TTR("Animator is pinned.\nClick to unpin."));
 			}
 		}
 	}

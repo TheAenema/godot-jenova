@@ -44,7 +44,7 @@ class AnimationLibrary : public Resource {
 
 	void _animation_changed(const StringName &p_name);
 
-	friend class AnimationMixer; // For faster access.
+	friend class Motion; // For faster access.
 	HashMap<StringName, Ref<Animation>> animations;
 
 protected:

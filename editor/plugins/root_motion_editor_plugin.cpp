@@ -32,7 +32,7 @@
 
 #include "editor/editor_node.h"
 #include "editor/themes/editor_scale.h"
-#include "scene/animation/animation_mixer.h"
+#include "scene/animation/motion.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/tree.h"
@@ -51,16 +51,16 @@ void EditorPropertyRootMotion::_confirmed() {
 }
 
 void EditorPropertyRootMotion::_node_assign() {
-	AnimationMixer *mixer = Object::cast_to<AnimationMixer>(get_edited_object());
+	Motion *mixer = Object::cast_to<Motion>(get_edited_object());
 	if (!mixer) {
-		EditorNode::get_singleton()->show_warning(TTR("Path to AnimationMixer is invalid"));
+		EditorNode::get_singleton()->show_warning(TTR("Path to Motion is invalid"));
 		return;
 	}
 
 	Node *base = mixer->get_node(mixer->get_root_node());
 
 	if (!base) {
-		EditorNode::get_singleton()->show_warning(TTR("AnimationMixer has no valid root node path, so unable to retrieve track names."));
+		EditorNode::get_singleton()->show_warning(TTR("Motion has no valid root node path, so unable to retrieve track names."));
 		return;
 	}
 
@@ -199,7 +199,7 @@ bool EditorInspectorRootMotionPlugin::can_handle(Object *p_object) {
 }
 
 bool EditorInspectorRootMotionPlugin::parse_property(Object *p_object, const Variant::Type p_type, const String &p_path, const PropertyHint p_hint, const String &p_hint_text, const BitField<PropertyUsageFlags> p_usage, const bool p_wide) {
-	if (p_path == "root_motion_track" && p_object->is_class("AnimationMixer") && p_type == Variant::NODE_PATH) {
+	if (p_path == "root_motion_track" && p_object->is_class("Motion") && p_type == Variant::NODE_PATH) {
 		EditorPropertyRootMotion *editor = memnew(EditorPropertyRootMotion);
 		add_property_editor(p_path, editor);
 		return true;

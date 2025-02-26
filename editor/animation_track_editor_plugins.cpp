@@ -37,7 +37,7 @@
 #include "editor/themes/editor_scale.h"
 #include "scene/2d/animated_sprite_2d.h"
 #include "scene/2d/sprite_2d.h"
-#include "scene/animation/animation_player.h"
+#include "scene/animation/animator.h"
 #include "scene/resources/text_line.h"
 #include "servers/audio/audio_stream.h"
 
@@ -581,7 +581,7 @@ Rect2 AnimationTrackEditSubAnim::get_key_rect(int p_index, float p_pixels_sec) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	Animator *ap = Object::cast_to<Animator>(object);
 
 	if (!ap) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -617,7 +617,7 @@ void AnimationTrackEditSubAnim::draw_key(int p_index, float p_pixels_sec, int p_
 		return;
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	Animator *ap = Object::cast_to<Animator>(object);
 
 	if (!ap) {
 		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
@@ -1186,7 +1186,7 @@ Rect2 AnimationTrackEditTypeAnimation::get_key_rect(int p_index, float p_pixels_
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	Animator *ap = Object::cast_to<Animator>(object);
 
 	if (!ap) {
 		return AnimationTrackEdit::get_key_rect(p_index, p_pixels_sec);
@@ -1222,7 +1222,7 @@ void AnimationTrackEditTypeAnimation::draw_key(int p_index, float p_pixels_sec, 
 		return;
 	}
 
-	AnimationPlayer *ap = Object::cast_to<AnimationPlayer>(object);
+	Animator *ap = Object::cast_to<Animator>(object);
 
 	if (!ap) {
 		AnimationTrackEdit::draw_key(p_index, p_pixels_sec, p_x, p_selected, p_clip_left, p_clip_right);
@@ -1352,7 +1352,7 @@ AnimationTrackEdit *AnimationTrackEditDefaultPlugin::create_value_track_edit(Obj
 		return sprite;
 	}
 
-	if (p_property == "current_animation" && (p_object->is_class("AnimationPlayer"))) {
+	if (p_property == "current_animation" && (p_object->is_class("Animator"))) {
 		AnimationTrackEditSubAnim *player = memnew(AnimationTrackEditSubAnim);
 		player->set_node(p_object);
 		return player;
