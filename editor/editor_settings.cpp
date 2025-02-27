@@ -913,7 +913,7 @@ void EditorSettings::_load_lithium_text_editor_theme() {
 	_initial_set("text_editor/theme/highlighting/completion_scroll_hovered_color", Color(1, 1, 1, 0.4)); // Default
 	_initial_set("text_editor/theme/highlighting/completion_font_color", Color(0.7925, 0.78145, 0.781818, 1));
 	_initial_set("text_editor/theme/highlighting/text_color", Color(0.7925, 0.78145, 0.781818, 1));
-	_initial_set("text_editor/theme/highlighting/line_number_color", Color(0.7925, 0.78145, 0.781818, 0.5));
+	_initial_set("text_editor/theme/highlighting/line_number_color", Color::html("f2b5c280"));
 	_initial_set("text_editor/theme/highlighting/safe_line_number_color", Color(0.7925, 0.93774, 0.781818, 0.75));
 	_initial_set("text_editor/theme/highlighting/caret_color", Color(1, 1, 1, 1));
 	_initial_set("text_editor/theme/highlighting/caret_background_color", Color(0, 0, 0)); // Default
@@ -921,7 +921,7 @@ void EditorSettings::_load_lithium_text_editor_theme() {
 	_initial_set("text_editor/theme/highlighting/selection_color", Color(0.959969, 0.352594, 0.449071, 0.4));
 	_initial_set("text_editor/theme/highlighting/brace_mismatch_color", Color(1, 0.47, 0.42, 1));
 	_initial_set("text_editor/theme/highlighting/current_line_color", Color(1, 1, 1, 0.07));
-	_initial_set("text_editor/theme/highlighting/line_length_guideline_color", Color(0.17, 0.1258, 0.127273, 1));
+	_initial_set("text_editor/theme/highlighting/line_length_guideline_color", Color::html("#ffffff13"));
 	_initial_set("text_editor/theme/highlighting/word_highlighted_color", Color(1, 1, 1, 0.07));
 	_initial_set("text_editor/theme/highlighting/number_color", Color(0.63, 1, 0.88, 1));
 	_initial_set("text_editor/theme/highlighting/function_color", Color(0.34, 0.7, 1, 1));
