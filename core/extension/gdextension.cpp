@@ -935,39 +935,39 @@ Error GDExtensionResourceLoader::load_gdextension_resource(const String &p_path,
 
 	String entry_symbol = config->get_value("configuration", "entry_symbol");
 
-	uint32_t compatibility_minimum[3] = { 0, 0, 0 };
-	if (config->has_section_key("configuration", "compatibility_minimum")) {
-		String compat_string = config->get_value("configuration", "compatibility_minimum");
+	uint32_t compatibility_minimum_lithium[3] = { 0, 0, 0 };
+	if (config->has_section_key("configuration", "compatibility_minimum_lithium")) {
+		String compat_string = config->get_value("configuration", "compatibility_minimum_lithium");
 		Vector<int> parts = compat_string.split_ints(".");
 		for (int i = 0; i < parts.size(); i++) {
 			if (i >= 3) {
 				break;
 			}
 			if (parts[i] >= 0) {
-				compatibility_minimum[i] = parts[i];
+				compatibility_minimum_lithium[i] = parts[i];
 			}
 		}
 	} else {
-		ERR_PRINT("GDExtension configuration file must contain a \"configuration/compatibility_minimum\" key: " + p_path);
+		ERR_PRINT("GDExtension configuration file must contain a \"configuration/compatibility_minimum_lithium\" key: " + p_path);
 		return ERR_INVALID_DATA;
 	}
 
-	if (compatibility_minimum[0] < 1 || (compatibility_minimum[0] == 1 && compatibility_minimum[1] == 0)) {
-		ERR_PRINT(vformat("GDExtension's compatibility_minimum (%d.%d.%d) must be at least 1.1.0: %s", compatibility_minimum[0], compatibility_minimum[1], compatibility_minimum[2], p_path));
+	if (compatibility_minimum_lithium[0] < 1 || (compatibility_minimum_lithium[0] == 1 && compatibility_minimum_lithium[1] == 0)) {
+		ERR_PRINT(vformat("GDExtension's compatibility_minimum_lithium (%d.%d.%d) must be at least 1.1.0: %s", compatibility_minimum_lithium[0], compatibility_minimum_lithium[1], compatibility_minimum_lithium[2], p_path));
 		return ERR_INVALID_DATA;
 	}
 
 	bool compatible = true;
 	// Check version lexicographically.
-	if (VERSION_MAJOR != compatibility_minimum[0]) {
-		compatible = VERSION_MAJOR > compatibility_minimum[0];
-	} else if (VERSION_MINOR != compatibility_minimum[1]) {
-		compatible = VERSION_MINOR > compatibility_minimum[1];
+	if (VERSION_MAJOR != compatibility_minimum_lithium[0]) {
+		compatible = VERSION_MAJOR > compatibility_minimum_lithium[0];
+	} else if (VERSION_MINOR != compatibility_minimum_lithium[1]) {
+		compatible = VERSION_MINOR > compatibility_minimum_lithium[1];
 	} else {
-		compatible = VERSION_PATCH >= compatibility_minimum[2];
+		compatible = VERSION_PATCH >= compatibility_minimum_lithium[2];
 	}
 	if (!compatible) {
-		ERR_PRINT(vformat("GDExtension only compatible with Godot version %d.%d.%d or later: %s", compatibility_minimum[0], compatibility_minimum[1], compatibility_minimum[2], p_path));
+		ERR_PRINT(vformat("GDExtension only compatible with Godot version %d.%d.%d or later: %s", compatibility_minimum_lithium[0], compatibility_minimum_lithium[1], compatibility_minimum_lithium[2], p_path));
 		return ERR_INVALID_DATA;
 	}
 
