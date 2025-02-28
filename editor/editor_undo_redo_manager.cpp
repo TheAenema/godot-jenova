@@ -107,7 +107,9 @@ EditorUndoRedoManager::History &EditorUndoRedoManager::get_history_for_object(Ob
 	int history_id;
 	if (!forced_history) {
 		history_id = get_history_id_for_object(p_object);
-		ERR_FAIL_COND_V_MSG(pending_action.history_id != INVALID_HISTORY && history_id != pending_action.history_id, get_or_create_history(pending_action.history_id), vformat("UndoRedo history mismatch: expected %d, got %d.", pending_action.history_id, history_id));
+		if (pending_action.history_id != INVALID_HISTORY && history_id != pending_action.history_id) {
+			return get_or_create_history(pending_action.history_id);
+		}
 	} else {
 		history_id = pending_action.history_id;
 	}
