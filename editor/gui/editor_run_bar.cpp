@@ -339,7 +339,6 @@ EditorRunBar::EditorRunBar() {
 	pause_button->set_disabled(true);
 
 	ED_SHORTCUT("editor/pause_running_project", TTR("Pause Running Project"), Key::F7);
-	ED_SHORTCUT_OVERRIDE("editor/pause_running_project", "macos", KeyModifierMask::META | KeyModifierMask::CTRL | Key::Y);
 	pause_button->set_shortcut(ED_GET_SHORTCUT("editor/pause_running_project"));
 
 	stop_button = memnew(Button);
