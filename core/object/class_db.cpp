@@ -368,7 +368,7 @@ ClassDB::APIType ClassDB::get_api_type(const StringName &p_class) {
 }
 
 Error ClassDB::override_api_type(const StringName &p_class, ClassDB::APIType p_api) {
-	OBJTYPE_RLOCK;
+	Locker::Lock lock(Locker::STATE_WRITE);
 
 	ClassInfo *ti = classes.getptr(p_class);
 
