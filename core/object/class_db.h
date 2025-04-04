@@ -78,6 +78,8 @@ MethodDefinition D_METHOD(const char *p_name, const VarArgs... p_args) {
 #endif
 
 class ClassDB {
+	friend class Object;
+
 public:
 	enum APIType {
 		API_CORE,
@@ -193,7 +195,7 @@ public:
 	static APIType current_api;
 	static HashMap<APIType, uint32_t> api_hashes_cache;
 
-	static void _add_class2(const StringName &p_class, const StringName &p_inherits);
+	static void _add_class(const StringName &p_class, const StringName &p_inherits);
 
 	static HashMap<StringName, HashMap<StringName, Variant>> default_values;
 	static HashSet<StringName> default_values_cached;
@@ -221,12 +223,6 @@ private:
 	static bool _can_instantiate(ClassInfo *p_class_info, bool p_exposed_only = true);
 
 public:
-	// DO NOT USE THIS!!!!!! NEEDS TO BE PUBLIC BUT DO NOT USE NO MATTER WHAT!!!
-	template <typename T>
-	static void _add_class() {
-		_add_class2(T::get_class_static(), T::get_parent_class_static());
-	}
-
 	template <typename T>
 	static void register_class(bool p_virtual = false) {
 		Locker::Lock lock(Locker::STATE_WRITE);
@@ -315,7 +311,7 @@ public:
 	static void get_extension_class_list(const Ref<GDExtension> &p_extension, List<StringName> *p_classes);
 	static ObjectGDExtension *get_placeholder_extension(const StringName &p_class);
 #endif
-	static void get_inheriters_from_class(const StringName &p_class, List<StringName> *p_classes);
+	static void get_inheriters_from_class(const StringName &p_class, LocalVector<StringName> &p_classes);
 	static void get_direct_inheriters_from_class(const StringName &p_class, List<StringName> *p_classes);
 	static StringName get_parent_class_nocheck(const StringName &p_class);
 	static bool get_inheritance_chain_nocheck(const StringName &p_class, Vector<StringName> &r_result);
@@ -588,7 +584,3 @@ _FORCE_INLINE_ Vector<Error> errarray(P... p_args) {
 	}
 
 #define GDREGISTER_NATIVE_STRUCT(m_class, m_code) ClassDB::register_native_struct(#m_class, m_code, sizeof(m_class))
-
-#define GD_IS_CLASS_ENABLED(m_class) m_class::_class_is_enabled
-
-#include "core/disabled_classes.gen.h"
