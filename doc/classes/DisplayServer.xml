@@ -1204,6 +1204,14 @@
 				[b]Note:[/b] On iOS, this method has no effect if [member ProjectSettings.display/window/handheld/orientation] is not set to [constant SCREEN_SENSOR].
 			</description>
 		</method>
+		<method name="set_hardware_keyboard_connection_change_callback">
+			<return type="void" />
+			<param index="0" name="callable" type="Callable" />
+			<description>
+				Sets the [param callable] that should be called when hardware keyboard is connected/disconnected. [param callable] should accept a single [bool] parameter indicating whether the keyboard is connected (true) or disconnected (false).
+				[b]Note:[/b] This method is only implemented on Android.
+			</description>
+		</method>
 		<method name="set_icon">
 			<return type="void" />
 			<param index="0" name="image" type="Image" />
@@ -2180,9 +2188,9 @@
 			[b]Note:[/b] This flag is implemented only on Windows (11).
 		</constant>
 		<constant name="WINDOW_FLAG_EXCLUDE_FROM_CAPTURE" value="9" enum="WindowFlags">
-			Windows is excluded from screenshots taken by [method screen_get_image], [method screen_get_image_rect], and [method screen_get_pixel].
+			Window is excluded from screenshots taken by [method screen_get_image], [method screen_get_image_rect], and [method screen_get_pixel].
 			[b]Note:[/b] This flag is implemented on macOS and Windows.
-			[b]Note:[/b] Setting this flag will [b]NOT[/b] prevent other apps from capturing an image, it should not be used as a security measure.
+			[b]Note:[/b] Setting this flag will [b]NOT[/b] prevent other apps from capturing an image. It should not be used as a security measure.
 		</constant>
 		<constant name="WINDOW_FLAG_POPUP_WM_HINT" value="10" enum="WindowFlags">
 			Signals the window manager that this window is supposed to be an implementation-defined "popup" (usually a floating, borderless, untileable and immovable child window).
