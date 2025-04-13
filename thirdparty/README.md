@@ -955,7 +955,7 @@ Patches:
 ## thorvg
 
 - Upstream: https://github.com/thorvg/thorvg
-- Version: 0.15.11 (61360cf6db0a05a8dd2ebdcc44d4cbbc315692ec, 2025)
+- Version: 0.15.12 (91bd6f35b94e92abfc1a320632e66cd124943524, 2025)
 - License: MIT
 
 Files extracted from upstream source:
@@ -966,6 +966,7 @@ Files extracted from upstream source:
 Patches:
 
 - `0001-revert-tvglines-bezier-precision.patch` (GH-96658)
+- `0002-png-explicit-variable-scope.patch` (GH-105093)
 
 
 ## tinyexr
@@ -986,7 +987,7 @@ Patches:
 ## ufbx
 
 - Upstream: https://github.com/ufbx/ufbx
-- Version: 0.17.1 (6ca5309972f03625e6990f3084ff4c1cc55a09b6, 2025)
+- Version: 0.18.0 (729ab835444f5f229e5f7cff332692ce6c00415d, 2025)
 - License: MIT
 
 Files extracted from upstream source:

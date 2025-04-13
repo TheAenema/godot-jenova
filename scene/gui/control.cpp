@@ -883,6 +883,13 @@ void Control::_compute_offsets(Rect2 p_rect, const real_t p_anchors[4], real_t (
 	r_offsets[3] = p_rect.position.y + p_rect.size.y - (p_anchors[3] * parent_rect_size.y);
 }
 
+void Control::_compute_edge_positions(Rect2 p_rect, real_t (&r_edge_positions)[4]) {
+	for (int i = 0; i < 4; i++) {
+		real_t area = p_rect.size[i & 1];
+		r_edge_positions[i] = data.offset[i] + (data.anchor[i] * area);
+	}
+}
+
 /// Presets and layout modes.
 
 void Control::_set_layout_mode(LayoutMode p_mode) {
@@ -1413,10 +1420,13 @@ void Control::set_position(const Point2 &p_point, bool p_keep_offsets) {
 	}
 #endif // TOOLS_ENABLED
 
+	real_t edge_pos[4];
+	_compute_edge_positions(get_parent_anchorable_rect(), edge_pos);
+	Size2 offset_size(edge_pos[2] - edge_pos[0], edge_pos[3] - edge_pos[1]);
 	if (p_keep_offsets) {
-		_compute_anchors(Rect2(p_point, data.size_cache), data.offset, data.anchor);
+		_compute_anchors(Rect2(p_point, offset_size), data.offset, data.anchor);
 	} else {
-		_compute_offsets(Rect2(p_point, data.size_cache), data.anchor, data.offset);
+		_compute_offsets(Rect2(p_point, offset_size), data.anchor, data.offset);
 	}
 	_size_changed();
 }
@@ -1706,14 +1716,8 @@ Size2 Control::get_combined_minimum_size() const {
 
 void Control::_size_changed() {
 	Rect2 parent_rect = get_parent_anchorable_rect();
-
 	real_t edge_pos[4];
-
-	for (int i = 0; i < 4; i++) {
-		real_t area = parent_rect.size[i & 1];
-		edge_pos[i] = data.offset[i] + (data.anchor[i] * area);
-	}
-
+	_compute_edge_positions(parent_rect, edge_pos);
 	Point2 new_pos_cache = Point2(edge_pos[0], edge_pos[1]);
 	Size2 new_size_cache = Point2(edge_pos[2], edge_pos[3]) - new_pos_cache;
 
@@ -1743,8 +1747,11 @@ void Control::_size_changed() {
 		new_size_cache.height = minimum_size.height;
 	}
 
-	bool pos_changed = !new_pos_cache.is_equal_approx(data.pos_cache);
-	bool size_changed = !new_size_cache.is_equal_approx(data.size_cache);
+	bool pos_changed = new_pos_cache != data.pos_cache;
+	bool size_changed = new_size_cache != data.size_cache;
+	// Below helps in getting rid of floating point errors for signaling resized.
+	bool approx_pos_changed = !new_pos_cache.is_equal_approx(data.pos_cache);
+	bool approx_size_changed = !new_size_cache.is_equal_approx(data.size_cache);
 
 	if (pos_changed) {
 		data.pos_cache = new_pos_cache;
@@ -1754,13 +1761,13 @@ void Control::_size_changed() {
 	}
 
 	if (is_inside_tree()) {
-		if (pos_changed || size_changed) {
+		if (approx_pos_changed || approx_size_changed) {
 			// Ensure global transform is marked as dirty before `NOTIFICATION_RESIZED` / `item_rect_changed` signal
 			// so an up to date global transform could be obtained when handling these.
 			_notify_transform();
 
-			item_rect_changed(size_changed);
-			if (size_changed) {
+			item_rect_changed(approx_size_changed);
+			if (approx_size_changed) {
 				notification(NOTIFICATION_RESIZED);
 			}
 		}
@@ -2052,7 +2059,7 @@ void Control::accessibility_drag() {
 	Viewport *vp = get_viewport();
 
 	vp->_gui_force_drag_start();
-	Variant dnd_data = get_drag_data(Vector2(INFINITY, INFINITY));
+	Variant dnd_data = get_drag_data(Vector2(Math::INF, Math::INF));
 	if (dnd_data.get_type() != Variant::NIL) {
 		Window *w = Window::get_from_id(get_window()->get_window_id());
 		if (w) {
@@ -2070,7 +2077,7 @@ void Control::accessibility_drop() {
 	ERR_FAIL_COND(!is_inside_tree());
 	ERR_FAIL_COND(!get_viewport()->gui_is_dragging());
 
-	get_viewport()->gui_perform_drop_at(Vector2(INFINITY, INFINITY), this);
+	get_viewport()->gui_perform_drop_at(Vector2(Math::INF, Math::INF), this);
 
 	queue_accessibility_update();
 }
@@ -3596,7 +3603,7 @@ void Control::_notification(int p_notification) {
 			DisplayServer::get_singleton()->accessibility_update_add_action(ae, DisplayServer::AccessibilityAction::ACTION_HIDE_TOOLTIP, callable_mp(this, &Control::_accessibility_action_hide_tooltip));
 			DisplayServer::get_singleton()->accessibility_update_add_action(ae, DisplayServer::AccessibilityAction::ACTION_SCROLL_INTO_VIEW, callable_mp(this, &Control::_accessibility_action_scroll_into_view));
 			if (is_inside_tree() && get_viewport()->gui_is_dragging()) {
-				if (can_drop_data(Vector2(INFINITY, INFINITY), get_viewport()->gui_get_drag_data())) {
+				if (can_drop_data(Vector2(Math::INF, Math::INF), get_viewport()->gui_get_drag_data())) {
 					DisplayServer::get_singleton()->accessibility_update_set_extra_info(ae, vformat(RTR("%s can be dropped here. Use %s to drop, use %s to cancel."), get_viewport()->gui_get_drag_description(), InputMap::get_singleton()->get_action_description("ui_accessibility_drag_and_drop"), InputMap::get_singleton()->get_action_description("ui_cancel")));
 				} else {
 					DisplayServer::get_singleton()->accessibility_update_set_extra_info(ae, vformat(RTR("%s can not be dropped here. Use %s to cancel."), get_viewport()->gui_get_drag_description(), InputMap::get_singleton()->get_action_description("ui_cancel")));

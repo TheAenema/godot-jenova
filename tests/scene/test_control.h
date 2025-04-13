@@ -52,9 +52,9 @@ TEST_CASE("[SceneTree][Control] Transforms") {
 		CHECK_EQ(test_node->get_global_transform(), Transform2D(0, Size2(4, 4), 0, Vector2(2, 2)));
 		test_node->set_scale(Vector2(1, 1));
 		test_node->set_rotation_degrees(90);
-		CHECK_EQ(test_node->get_global_transform(), Transform2D(Math_PI / 2, Vector2(2, 2)));
+		CHECK_EQ(test_node->get_global_transform(), Transform2D(Math::PI / 2, Vector2(2, 2)));
 		test_node->set_pivot_offset(Vector2(1, 0));
-		CHECK_EQ(test_node->get_global_transform(), Transform2D(Math_PI / 2, Vector2(3, 1)));
+		CHECK_EQ(test_node->get_global_transform(), Transform2D(Math::PI / 2, Vector2(3, 1)));
 
 		memdelete(test_child);
 		memdelete(test_node);
@@ -990,6 +990,38 @@ TEST_CASE("[SceneTree][Control] Anchoring") {
 	}
 
 	memdelete(test_child);
+	memdelete(test_control);
+}
+
+TEST_CASE("[SceneTree][Control] Set position does not cause size side-effects") {
+	Control *test_control = memnew(Control);
+	test_control->set_size(Size2(1, 1));
+	test_control->set_custom_minimum_size(Size2(2, 2));
+	Window *root = SceneTree::get_singleton()->get_root();
+	root->add_child(test_control);
+
+	SUBCASE("Shrinks after setting position and smaller custom minimum size (without keeping offsets)") {
+		test_control->set_position(Point2(10, 10), false);
+		SceneTree::get_singleton()->process(0);
+
+		test_control->set_custom_minimum_size(Size2(0, 0));
+		SceneTree::get_singleton()->process(0);
+		CHECK_MESSAGE(
+				test_control->get_size().is_equal_approx(Vector2(1, 1)),
+				"Should shrink to original size after setting a smaller custom minimum size.");
+	}
+
+	SUBCASE("Shrinks after setting position and smaller custom minimum size (while keeping offsets)") {
+		test_control->set_position(Point2(10, 10), true);
+		SceneTree::get_singleton()->process(0);
+
+		test_control->set_custom_minimum_size(Size2(0, 0));
+		SceneTree::get_singleton()->process(0);
+		CHECK_MESSAGE(
+				test_control->get_size().is_equal_approx(Vector2(1, 1)),
+				"Should shrink to original size after setting a smaller custom minimum size.");
+	}
+
 	memdelete(test_control);
 }
 
