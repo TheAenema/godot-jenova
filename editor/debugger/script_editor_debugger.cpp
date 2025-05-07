@@ -408,6 +408,8 @@ void ScriptEditorDebugger::_msg_debug_exit(uint64_t p_thread_id, const Array &p_
 void ScriptEditorDebugger::_msg_set_pid(uint64_t p_thread_id, const Array &p_data) {
 	ERR_FAIL_COND(p_data.is_empty());
 	remote_pid = p_data[0];
+	// We emit the started signal after we've set the PID.
+	emit_signal(SNAME("started"));
 }
 
 void ScriptEditorDebugger::_msg_scene_click_ctrl(uint64_t p_thread_id, const Array &p_data) {
@@ -915,6 +917,14 @@ void ScriptEditorDebugger::_msg_window_title(uint64_t p_thread_id, const Array &
 	emit_signal(SNAME("remote_window_title_changed"), p_data[0]);
 }
 
+void ScriptEditorDebugger::_msg_embed_suspend_toggle(uint64_t p_thread_id, const Array &p_data) {
+	emit_signal(SNAME("embed_shortcut_requested"), EMBED_SUSPEND_TOGGLE);
+}
+
+void ScriptEditorDebugger::_msg_embed_next_frame(uint64_t p_thread_id, const Array &p_data) {
+	emit_signal(SNAME("embed_shortcut_requested"), EMBED_NEXT_FRAME);
+}
+
 void ScriptEditorDebugger::_parse_message(const String &p_msg, uint64_t p_thread_id, const Array &p_data) {
 	emit_signal(SNAME("debug_data"), p_msg, p_data);
 
@@ -963,6 +973,8 @@ void ScriptEditorDebugger::_init_parse_message_handlers() {
 	parse_message_handlers["filesystem:update_file"] = &ScriptEditorDebugger::_msg_filesystem_update_file;
 	parse_message_handlers["evaluation_return"] = &ScriptEditorDebugger::_msg_evaluation_return;
 	parse_message_handlers["window:title"] = &ScriptEditorDebugger::_msg_window_title;
+	parse_message_handlers["request_embed_suspend_toggle"] = &ScriptEditorDebugger::_msg_embed_suspend_toggle;
+	parse_message_handlers["request_embed_next_frame"] = &ScriptEditorDebugger::_msg_embed_next_frame;
 }
 
 void ScriptEditorDebugger::_set_reason_text(const String &p_reason, MessageType p_type) {
@@ -1164,7 +1176,6 @@ void ScriptEditorDebugger::start(Ref<RemoteDebuggerPeer> p_peer) {
 
 	_set_reason_text(TTR("Debug session started."), MESSAGE_SUCCESS);
 	_update_buttons_state();
-	emit_signal(SNAME("started"));
 
 	Array quit_keys = DebuggerMarshalls::serialize_key_shortcut(ED_GET_SHORTCUT("editor/stop_running_project"));
 	_put_msg("scene:setup_scene", quit_keys);
@@ -1905,6 +1916,7 @@ void ScriptEditorDebugger::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("set_breakpoint", PropertyInfo("script"), PropertyInfo(Variant::INT, "line"), PropertyInfo(Variant::BOOL, "enabled")));
 	ADD_SIGNAL(MethodInfo("clear_breakpoints"));
 	ADD_SIGNAL(MethodInfo("errors_cleared"));
+	ADD_SIGNAL(MethodInfo("embed_shortcut_requested", PropertyInfo(Variant::INT, "embed_shortcut_action")));
 }
 
 void ScriptEditorDebugger::add_debugger_tab(Control *p_control) {

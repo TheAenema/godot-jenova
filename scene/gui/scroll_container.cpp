@@ -399,6 +399,7 @@ void ScrollContainer::_reposition_children() {
 	}
 
 	if (draw_focus_border) {
+		focus_panel->set_position(Vector2(0, 0));
 		focus_panel->set_size(get_size());
 	}
 	queue_redraw();
@@ -441,7 +442,6 @@ void ScrollContainer::_notification(int p_what) {
 			DisplayServer::get_singleton()->accessibility_update_add_action(ae, DisplayServer::AccessibilityAction::ACTION_SET_SCROLL_OFFSET, callable_mp(this, &ScrollContainer::_accessibility_action_scroll_set));
 		} break;
 
-		case NOTIFICATION_ENTER_TREE:
 		case NOTIFICATION_THEME_CHANGED:
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
 		case NOTIFICATION_TRANSLATION_CHANGED: {
@@ -823,7 +823,7 @@ ScrollContainer::ScrollContainer() {
 	focus_panel->set_visible(draw_focus_border);
 	add_child(focus_panel, false, INTERNAL_MODE_BACK);
 
-	deadzone = GLOBAL_GET("gui/common/default_scroll_deadzone");
+	deadzone = GLOBAL_GET_CACHED(int, "gui/common/default_scroll_deadzone");
 
 	set_clip_contents(true);
 }

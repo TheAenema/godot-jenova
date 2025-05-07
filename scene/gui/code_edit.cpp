@@ -38,7 +38,7 @@
 #include "scene/theme/theme_db.h"
 
 void CodeEdit::_apply_project_settings() {
-	symbol_tooltip_timer->set_wait_time(GLOBAL_GET("gui/timers/tooltip_delay_sec"));
+	symbol_tooltip_timer->set_wait_time(GLOBAL_GET_CACHED(double, "gui/timers/tooltip_delay_sec"));
 }
 
 void CodeEdit::_notification(int p_what) {
@@ -2874,7 +2874,7 @@ void CodeEdit::_bind_methods() {
 	ADD_GROUP("Auto Brace Completion", "auto_brace_completion_");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_brace_completion_enabled"), "set_auto_brace_completion_enabled", "is_auto_brace_completion_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "auto_brace_completion_highlight_matching"), "set_highlight_matching_braces_enabled", "is_highlight_matching_braces_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "auto_brace_completion_pairs"), "set_auto_brace_completion_pairs", "get_auto_brace_completion_pairs");
+	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "auto_brace_completion_pairs", PROPERTY_HINT_TYPE_STRING, "String;String"), "set_auto_brace_completion_pairs", "get_auto_brace_completion_pairs");
 
 	/* Signals */
 	/* Gutters */
@@ -3731,7 +3731,7 @@ void CodeEdit::_text_changed() {
 	}
 
 	int lc = get_line_count();
-	int new_line_number_digits = log10l(lc) + 1;
+	int new_line_number_digits = std::log10(lc) + 1;
 	if (line_number_digits != new_line_number_digits) {
 		_clear_line_number_text_cache();
 	}

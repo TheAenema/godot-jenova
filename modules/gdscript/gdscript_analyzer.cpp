@@ -3011,7 +3011,7 @@ void GDScriptAnalyzer::reduce_assignment(GDScriptParser::AssignmentNode *p_assig
 		GDScriptParser::IdentifierNode *id = static_cast<GDScriptParser::IdentifierNode *>(p_assignment->assignee);
 		// Use == 1 here because this assignment was already counted in the beginning of the function.
 		if (id->source == GDScriptParser::IdentifierNode::LOCAL_VARIABLE && id->variable_source && id->variable_source->assignments == 1) {
-			parser->push_warning(p_assignment, GDScriptWarning::UNASSIGNED_VARIABLE_OP_ASSIGN, id->name);
+			parser->push_warning(p_assignment, GDScriptWarning::UNASSIGNED_VARIABLE_OP_ASSIGN, id->name, Variant::get_operator_name(p_assignment->variant_op));
 		}
 	}
 #endif
@@ -3701,7 +3701,7 @@ void GDScriptAnalyzer::reduce_call(GDScriptParser::CallNode *p_call, bool p_is_a
 			String base_name = is_self && !p_call->is_super ? "self" : base_type.to_string();
 #ifdef SUGGEST_GODOT4_RENAMES
 			String rename_hint;
-			if (GLOBAL_GET("debug/gdscript/warnings/renamed_in_godot_4_hint")) {
+			if (GLOBAL_GET_CACHED(bool, "debug/gdscript/warnings/renamed_in_godot_4_hint")) {
 				const char *renamed_function_name = check_for_renamed_identifier(p_call->function_name, p_call->type);
 				if (renamed_function_name) {
 					rename_hint = " " + vformat(R"(Did you mean to use "%s"?)", String(renamed_function_name) + "()");
@@ -4048,7 +4048,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 			if (!valid && base.is_hard_type()) {
 #ifdef SUGGEST_GODOT4_RENAMES
 				String rename_hint;
-				if (GLOBAL_GET("debug/gdscript/warnings/renamed_in_godot_4_hint")) {
+				if (GLOBAL_GET_CACHED(bool, "debug/gdscript/warnings/renamed_in_godot_4_hint")) {
 					const char *renamed_identifier_name = check_for_renamed_identifier(name, p_identifier->type);
 					if (renamed_identifier_name) {
 						rename_hint = " " + vformat(R"(Did you mean to use "%s"?)", renamed_identifier_name);
@@ -4092,7 +4092,7 @@ void GDScriptAnalyzer::reduce_identifier_from_base(GDScriptParser::IdentifierNod
 					if (base.is_hard_type()) {
 #ifdef SUGGEST_GODOT4_RENAMES
 						String rename_hint;
-						if (GLOBAL_GET("debug/gdscript/warnings/renamed_in_godot_4_hint")) {
+						if (GLOBAL_GET_CACHED(bool, "debug/gdscript/warnings/renamed_in_godot_4_hint")) {
 							const char *renamed_identifier_name = check_for_renamed_identifier(name, p_identifier->type);
 							if (renamed_identifier_name) {
 								rename_hint = " " + vformat(R"(Did you mean to use "%s"?)", renamed_identifier_name);
@@ -4608,7 +4608,7 @@ void GDScriptAnalyzer::reduce_identifier(GDScriptParser::IdentifierNode *p_ident
 	// Not found.
 #ifdef SUGGEST_GODOT4_RENAMES
 	String rename_hint;
-	if (GLOBAL_GET("debug/gdscript/warnings/renamed_in_godot_4_hint")) {
+	if (GLOBAL_GET_CACHED(bool, "debug/gdscript/warnings/renamed_in_godot_4_hint")) {
 		const char *renamed_identifier_name = check_for_renamed_identifier(name, p_identifier->type);
 		if (renamed_identifier_name) {
 			rename_hint = " " + vformat(R"(Did you mean to use "%s"?)", renamed_identifier_name);
@@ -5335,7 +5335,7 @@ Variant GDScriptAnalyzer::make_call_reduced_value(GDScriptParser::CallNode *p_ca
 
 		Vector<Variant> args;
 		args.resize(p_call->arguments.size());
-		const Variant **argptrs = (const Variant **)alloca(sizeof(const Variant **) * args.size());
+		const Variant **argptrs = (const Variant **)alloca(sizeof(const Variant *) * args.size());
 		for (int i = 0; i < p_call->arguments.size(); i++) {
 			bool is_arg_value_reduced = false;
 			Variant arg_value = make_expression_reduced_value(p_call->arguments[i], is_arg_value_reduced);

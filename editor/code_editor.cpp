@@ -138,10 +138,7 @@ void FindReplaceBar::_notification(int p_what) {
 		case NOTIFICATION_READY: {
 			find_prev->set_button_icon(get_editor_theme_icon(SNAME("MoveUp")));
 			find_next->set_button_icon(get_editor_theme_icon(SNAME("MoveDown")));
-			hide_button->set_texture_normal(get_editor_theme_icon(SNAME("Close")));
-			hide_button->set_texture_hover(get_editor_theme_icon(SNAME("Close")));
-			hide_button->set_texture_pressed(get_editor_theme_icon(SNAME("Close")));
-			hide_button->set_custom_minimum_size(hide_button->get_texture_normal()->get_size());
+			hide_button->set_button_icon(get_editor_theme_icon(SNAME("Close")));
 			_update_toggle_replace_button(replace_text->is_visible_in_tree());
 		} break;
 
@@ -759,7 +756,7 @@ FindReplaceBar::FindReplaceBar() {
 	toggle_replace_button->set_focus_mode(FOCUS_NONE);
 	toggle_replace_button->connect(SceneStringName(pressed), callable_mp(this, &FindReplaceBar::_toggle_replace_pressed));
 
-	vbc_lineedit = memnew(VBoxContainer);
+	VBoxContainer *vbc_lineedit = memnew(VBoxContainer);
 	add_child(vbc_lineedit);
 	vbc_lineedit->set_alignment(BoxContainer::ALIGNMENT_CENTER);
 	vbc_lineedit->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -769,18 +766,20 @@ FindReplaceBar::FindReplaceBar() {
 	add_child(vbc_option);
 
 	HBoxContainer *hbc_button_search = memnew(HBoxContainer);
-	vbc_button->add_child(hbc_button_search);
+	hbc_button_search->set_v_size_flags(SIZE_EXPAND_FILL);
 	hbc_button_search->set_alignment(BoxContainer::ALIGNMENT_END);
+	vbc_button->add_child(hbc_button_search);
 	hbc_button_replace = memnew(HBoxContainer);
-	vbc_button->add_child(hbc_button_replace);
+	hbc_button_replace->set_v_size_flags(SIZE_EXPAND_FILL);
 	hbc_button_replace->set_alignment(BoxContainer::ALIGNMENT_END);
+	vbc_button->add_child(hbc_button_replace);
 
 	HBoxContainer *hbc_option_search = memnew(HBoxContainer);
 	vbc_option->add_child(hbc_option_search);
 	hbc_option_replace = memnew(HBoxContainer);
 	vbc_option->add_child(hbc_option_replace);
 
-	// Search toolbar
+	// Search toolbar.
 	search_text = memnew(LineEdit);
 	search_text->set_keep_editing_on_text_submit(true);
 	vbc_lineedit->add_child(search_text);
@@ -798,6 +797,7 @@ FindReplaceBar::FindReplaceBar() {
 
 	find_prev = memnew(Button);
 	find_prev->set_flat(true);
+	find_prev->set_disabled(results_count < 1);
 	find_prev->set_tooltip_text(TTR("Previous Match"));
 	find_prev->set_accessibility_name(TTRC("Previous Match"));
 	hbc_button_search->add_child(find_prev);
@@ -806,6 +806,7 @@ FindReplaceBar::FindReplaceBar() {
 
 	find_next = memnew(Button);
 	find_next->set_flat(true);
+	find_next->set_disabled(results_count < 1);
 	find_next->set_tooltip_text(TTR("Next Match"));
 	find_next->set_accessibility_name(TTRC("Next Match"));
 	hbc_button_search->add_child(find_next);
@@ -824,7 +825,7 @@ FindReplaceBar::FindReplaceBar() {
 	whole_words->set_focus_mode(FOCUS_NONE);
 	whole_words->connect(SceneStringName(toggled), callable_mp(this, &FindReplaceBar::_search_options_changed));
 
-	// Replace toolbar
+	// Replace toolbar.
 	replace_text = memnew(LineEdit);
 	vbc_lineedit->add_child(replace_text);
 	replace_text->set_placeholder(TTR("Replace"));
@@ -849,13 +850,14 @@ FindReplaceBar::FindReplaceBar() {
 	selection_only->set_focus_mode(FOCUS_NONE);
 	selection_only->connect(SceneStringName(toggled), callable_mp(this, &FindReplaceBar::_search_options_changed));
 
-	hide_button = memnew(TextureButton);
-	add_child(hide_button);
+	hide_button = memnew(Button);
+	hide_button->set_flat(true);
 	hide_button->set_tooltip_text(TTR("Hide"));
 	hide_button->set_accessibility_name(TTRC("Hide"));
 	hide_button->set_focus_mode(FOCUS_NONE);
 	hide_button->connect(SceneStringName(pressed), callable_mp(this, &FindReplaceBar::_hide_bar));
 	hide_button->set_v_size_flags(SIZE_SHRINK_CENTER);
+	add_child(hide_button);
 }
 
 /*** CODE EDITOR ****/
@@ -940,7 +942,7 @@ void CodeTextEditor::_text_editor_gui_input(const Ref<InputEvent> &p_event) {
 #ifndef ANDROID_ENABLED
 	Ref<InputEventMagnifyGesture> magnify_gesture = p_event;
 	if (magnify_gesture.is_valid()) {
-		_zoom_to(zoom_factor * powf(magnify_gesture->get_factor(), 0.25f));
+		_zoom_to(zoom_factor * std::pow(magnify_gesture->get_factor(), 0.25f));
 		accept_event();
 		return;
 	}
@@ -1509,7 +1511,15 @@ Variant CodeTextEditor::get_navigation_state() {
 }
 
 void CodeTextEditor::set_error(const String &p_error) {
-	error->set_text(p_error);
+	// Trim the error message if it is more than 2 lines long.
+	if (p_error.count("\n") >= 2) {
+		Vector<String> splits = p_error.split("\n");
+		String trimmed_error = String("\n").join(splits.slice(0, 2));
+		error->set_text(trimmed_error + "...");
+	} else {
+		error->set_text(p_error);
+	}
+
 	if (!p_error.is_empty()) {
 		error->set_default_cursor_shape(CURSOR_POINTING_HAND);
 	} else {
@@ -1688,9 +1698,9 @@ void CodeTextEditor::set_error_count(int p_error_count) {
 	error_button->set_text(itos(p_error_count));
 	error_button->set_visible(p_error_count > 0);
 	if (p_error_count > 0) {
-		_set_show_errors_panel(false);
 		idle->set_wait_time(idle_time_with_errors); // Parsing should happen sooner.
 	} else {
+		_set_show_errors_panel(false);
 		idle->set_wait_time(idle_time);
 	}
 }
@@ -1855,6 +1865,7 @@ CodeTextEditor::CodeTextEditor() {
 	text_editor->set_structured_text_bidi_override(TextServer::STRUCTURED_TEXT_GDSCRIPT);
 	text_editor->set_draw_bookmarks_gutter(true);
 
+	text_editor->set_virtual_keyboard_show_on_focus(false);
 	text_editor->set_draw_line_numbers(true);
 	text_editor->set_highlight_matching_braces_enabled(true);
 	text_editor->set_auto_indent_enabled(true);

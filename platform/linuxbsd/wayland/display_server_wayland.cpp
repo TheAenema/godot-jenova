@@ -453,15 +453,13 @@ Point2i DisplayServerWayland::mouse_get_position() const {
 
 	WindowID pointed_id = wayland_thread.pointer_get_pointed_window_id();
 
-	if (pointed_id != INVALID_WINDOW_ID) {
+	if (pointed_id != INVALID_WINDOW_ID && windows.has(pointed_id)) {
 		return Input::get_singleton()->get_mouse_position() + windows[pointed_id].rect.position;
 	}
 
 	// We can't properly implement this method by design.
 	// This is the best we can do unfortunately.
 	return Input::get_singleton()->get_mouse_position();
-
-	return Point2i();
 }
 
 BitField<MouseButtonMask> DisplayServerWayland::mouse_get_button_state() const {
@@ -1541,7 +1539,10 @@ bool DisplayServerWayland::color_picker(const Callable &p_callback) {
 	// TODO: Use window IDs for multiwindow support.
 
 	WaylandThread::WindowState *ws = wayland_thread.wl_surface_get_window_state(wayland_thread.window_get_wl_surface(window_id));
+#ifdef DBUS_ENABLED
 	return portal_desktop->color_picker((ws ? ws->exported_handle : String()), p_callback);
+#endif
+	return false;
 }
 
 void DisplayServerWayland::try_suspend() {

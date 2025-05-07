@@ -41,7 +41,7 @@
 #include "scene/main/window.h"
 #include "scene/theme/theme_db.h"
 
-#include <limits.h>
+#include <climits>
 
 Size2 TreeItem::Cell::get_icon_size() const {
 	if (icon.is_null()) {
@@ -3557,6 +3557,47 @@ void Tree::_go_up() {
 	accept_event();
 }
 
+void Tree::_shift_select_range(TreeItem *new_item) {
+	if (!new_item) {
+		new_item = selected_item;
+	}
+	int s_col = selected_col;
+	bool in_range = false;
+	TreeItem *item = root;
+
+	if (!shift_anchor) {
+		shift_anchor = selected_item;
+	}
+
+	while (item) {
+		bool at_range_edge = item == shift_anchor || item == new_item;
+		if (at_range_edge) {
+			in_range = !in_range;
+		}
+		if (new_item == shift_anchor) {
+			in_range = false;
+		}
+		if (item->is_visible_in_tree()) {
+			if (in_range || at_range_edge) {
+				if (!item->is_selected(selected_col) && item->is_selectable(selected_col)) {
+					item->select(selected_col);
+					emit_signal(SNAME("multi_selected"), item, selected_col, true);
+				}
+			} else if (item->is_selected(selected_col)) {
+				item->deselect(selected_col);
+				emit_signal(SNAME("multi_selected"), item, selected_col, false);
+			}
+		}
+		item = item->get_next_in_tree(false);
+	}
+
+	selected_item = new_item;
+	selected_col = s_col;
+	ensure_cursor_is_visible();
+	queue_redraw();
+	accept_event();
+}
+
 void Tree::_go_down() {
 	TreeItem *next = nullptr;
 	if (!selected_item) {
@@ -3646,6 +3687,10 @@ void Tree::gui_input(const Ref<InputEvent> &p_event) {
 
 	Ref<InputEventKey> k = p_event;
 
+	if (k.is_valid() && k->get_keycode() == Key::SHIFT && !k->is_pressed()) {
+		shift_anchor = nullptr;
+	}
+
 	bool is_command = k.is_valid() && k->is_command_or_control_pressed();
 	if (p_event->is_action(cache.rtl ? "ui_left" : "ui_right") && p_event->is_pressed()) {
 		if (!cursor_can_exit_tree) {
@@ -3687,15 +3732,25 @@ void Tree::gui_input(const Ref<InputEvent> &p_event) {
 		if (!cursor_can_exit_tree) {
 			accept_event();
 		}
-
-		_go_up();
+		// Shift Up Selection.
+		if (k.is_valid() && k->is_shift_pressed() && selected_item && select_mode == SELECT_MULTI) {
+			TreeItem *new_item = selected_item->get_prev_visible(false);
+			_shift_select_range(new_item);
+		} else {
+			_go_up();
+		}
 
 	} else if (p_event->is_action("ui_down") && p_event->is_pressed() && !is_command) {
 		if (!cursor_can_exit_tree) {
 			accept_event();
 		}
-
-		_go_down();
+		// Shift Down Selection.
+		if (k.is_valid() && k->is_shift_pressed() && selected_item && select_mode == SELECT_MULTI) {
+			TreeItem *new_item = selected_item->get_next_visible(false);
+			_shift_select_range(new_item);
+		} else {
+			_go_down();
+		}
 	} else if (p_event->is_action("ui_menu") && p_event->is_pressed()) {
 		if (allow_rmb_select && selected_item) {
 			emit_signal(SNAME("item_mouse_selected"), get_item_rect(selected_item).position, MouseButton::RIGHT);
@@ -5905,7 +5960,7 @@ TreeItem *Tree::get_item_with_metadata(const Variant &p_find, int p_column) cons
 void Tree::_do_incr_search(const String &p_add) {
 	uint64_t time = OS::get_singleton()->get_ticks_usec() / 1000; // Convert to msec.
 	uint64_t diff = time - last_keypress;
-	if (diff > uint64_t(GLOBAL_GET("gui/timers/incremental_search_max_interval_msec"))) {
+	if (diff > uint64_t(GLOBAL_GET_CACHED(uint64_t, "gui/timers/incremental_search_max_interval_msec"))) {
 		incr_search = p_add;
 	} else if (incr_search != p_add) {
 		incr_search += p_add;

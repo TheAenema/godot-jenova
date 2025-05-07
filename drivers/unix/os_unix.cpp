@@ -69,19 +69,18 @@
 #endif
 
 #include <dlfcn.h>
-#include <errno.h>
 #include <poll.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <unistd.h>
+#include <cerrno>
+#include <csignal>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 
 #ifndef RTLD_DEEPBIND
 #define RTLD_DEEPBIND 0
@@ -1229,7 +1228,9 @@ void UnixTerminalLogger::log_error(const char *p_function, const char *p_file, i
 	logf_error("%s%sat: %s (%s:%i)%s\n", gray, indent, p_function, p_file, p_line, reset);
 
 	for (const Ref<ScriptBacktrace> &backtrace : p_script_backtraces) {
-		logf_error("%s%s%s\n", gray, backtrace->format(strlen(indent)).utf8().get_data(), reset);
+		if (!backtrace->is_empty()) {
+			logf_error("%s%s%s\n", gray, backtrace->format(strlen(indent)).utf8().get_data(), reset);
+		}
 	}
 }
 

@@ -74,22 +74,21 @@ Files extracted from upstream source:
 ## basis_universal
 
 - Upstream: https://github.com/BinomialLLC/basis_universal
-- Version: 1.50.0 (051ad6d8a64bb95a79e8601c317055fd1782ad3e, 2024)
+- Version: 1.60 (323239a6a5ffa57d6570cfc403be99156e33a8b0, 2025)
 - License: Apache 2.0
 
 Files extracted from upstream source:
 
 - `encoder/` and `transcoder/` folders, with the following files removed from `encoder`:
-  `jpgd.{cpp,h}`, `3rdparty/{qoi.h,tinydds.h,tinyexr.cpp,tinyexr.h}`
+  `3rdparty/{qoi.h,tinydds.h,tinyexr.cpp,tinyexr.h}`
 - `LICENSE`
 
 Patches:
 
 - `0001-external-zstd-pr344.patch` (GH-73441)
-- `0002-external-jpgd.patch` (GH-88508)
-- `0003-external-tinyexr.patch` (GH-97582)
-- `0004-remove-tinydds-qoi.patch` (GH-97582)
-
+- `0002-external-tinyexr.patch` (GH-97582)
+- `0003-remove-tinydds-qoi.patch` (GH-97582)
+- `0004-ambiguous-calls.patch` (GH-103968)
 
 ## brotli
 
@@ -468,22 +467,6 @@ Files extracted from upstream source:
 - `LICENSE`
 
 
-## jpeg-compressor
-
-- Upstream: https://github.com/richgel999/jpeg-compressor
-- Version: 2.00 (aeb7d3b463aa8228b87a28013c15ee50a7e6fcf3, 2020)
-- License: Public domain or MIT
-
-Files extracted from upstream source:
-
-- `jpgd*.{c,h}`
-- `jpge*.{c,h}`
-
-Patches:
-
-- `0001-clang-fortify-fix.patch` (GH-101927)
-
-
 ## libbacktrace
 
 - Upstream: https://github.com/ianlancetaylor/libbacktrace
@@ -501,6 +484,25 @@ Patches:
 
 - `0001-big-files-support.patch` (GH-100281)
 
+
+## libjpeg-turbo
+
+- Upstream: https://github.com/libjpeg-turbo/libjpeg-turbo
+- Version: git (20ade4dea9589515a69793e447a6c6220b464535, 2024)
+- License: BSD-3-Clause and IJG
+
+Files extracted from upstream source:
+
+- `src/*.{c,h}` except for:
+  * `cdjpeg.c cjpeg.c djpeg.c example.c jcdiffct.c jclhuff.c jclossls.c jcstest.c jddiffct.c jdlhuff.c jdlossls.c jlossls.h jpegtran.c rdbmp.c rdcolmap.c rdgif.c rdjpgcom.c rdppm.c rdswitch.c rdtarga.c strtest.c tjbench.c tjcomp.c tjdecomp.c tjtran.c tjunittest.c tjutil.c wrbmp.c wrgif.c wrjpgcom.c wrppm.c wrtarga.c`
+- `LICENSE.md`
+- `README.ijg`
+
+Patches:
+
+- `0001-cmake-generated-headers.patch` (GH-104347)
+- `0002-disable-16bitlossless.patch` (GH-104347)
+- `0003-remove-bmp-ppm-support.patch` (GH-104347)
 
 ## libktx
 
@@ -523,6 +525,7 @@ Patches:
 
 - `0001-external-basisu.patch` (GH-76572)
 - `0002-disable-astc-block-ext.patch` (GH-76572)
+- `0003-basisu-1.60.patch` (GH-103968)
 
 
 ## libogg

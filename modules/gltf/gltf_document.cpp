@@ -77,8 +77,8 @@
 #define GLTF_IMPORT_DISCARD_MESHES_AND_MATERIALS 32
 #define GLTF_IMPORT_FORCE_DISABLE_MESH_COMPRESSION 64
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 constexpr int COMPONENT_COUNT_FOR_ACCESSOR_TYPE[7] = {
 	1, 2, 3, 4, 4, 9, 16
@@ -3609,7 +3609,7 @@ Error GLTFDocument::_parse_meshes(Ref<GLTFState> p_state) {
 				} else {
 					for (int vert = 0; vert < normals.size(); vert++) {
 						Vector3 tan = Vector3(tangents[vert * 4 + 0], tangents[vert * 4 + 1], tangents[vert * 4 + 2]);
-						if (abs(tan.dot(normals[vert])) > 0.0001) {
+						if (std::abs(tan.dot(normals[vert])) > 0.0001) {
 							// Tangent is not perpendicular to the normal, so we can't use compression.
 							flags &= ~RS::ARRAY_FLAG_COMPRESS_ATTRIBUTES;
 						}

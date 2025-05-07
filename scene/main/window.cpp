@@ -953,7 +953,7 @@ void Window::set_visible(bool p_visible) {
 			embedder = embedder_vp;
 			if (initial_position != WINDOW_INITIAL_POSITION_ABSOLUTE) {
 				if (is_in_edited_scene_root()) {
-					Size2 screen_size = Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+					Size2 screen_size = Size2(GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_width"), GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_height"));
 					position = (screen_size - size) / 2;
 				} else {
 					position = (embedder->get_visible_rect().size - size) / 2;
@@ -1322,6 +1322,7 @@ void Window::_update_viewport_size() {
 
 	if (embedder) {
 		float scale = MIN(embedder->stretch_transform.get_scale().width, embedder->stretch_transform.get_scale().height);
+		Viewport::set_oversampling_override(scale);
 		Size2 s = Size2(final_size.width * scale, final_size.height * scale).ceil();
 		RS::get_singleton()->viewport_set_global_canvas_transform(get_viewport_rid(), global_canvas_transform * scale * content_scale_factor);
 		RS::get_singleton()->viewport_set_size(get_viewport_rid(), s.width, s.height);
@@ -1483,7 +1484,7 @@ void Window::_notification(int p_what) {
 				if (embedder) {
 					if (initial_position != WINDOW_INITIAL_POSITION_ABSOLUTE) {
 						if (is_in_edited_scene_root()) {
-							Size2 screen_size = Size2(GLOBAL_GET("display/window/size/viewport_width"), GLOBAL_GET("display/window/size/viewport_height"));
+							Size2 screen_size = Size2(GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_width"), GLOBAL_GET_CACHED(real_t, "display/window/size/viewport_height"));
 							position = (screen_size - size) / 2;
 						} else {
 							position = (embedder->get_visible_rect().size - size) / 2;
@@ -2853,13 +2854,13 @@ bool Window::is_layout_rtl() const {
 	ERR_READ_THREAD_GUARD_V(false);
 	if (layout_dir == LAYOUT_DIRECTION_INHERITED) {
 #ifdef TOOLS_ENABLED
-		if (is_part_of_edited_scene() && GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
+		if (is_part_of_edited_scene() && GLOBAL_GET_CACHED(bool, "internationalization/rendering/force_right_to_left_layout_direction")) {
 			return true;
 		}
 		if (is_inside_tree()) {
 			Node *edited_scene_root = get_tree()->get_edited_scene_root();
 			if (edited_scene_root == this) {
-				int proj_root_layout_direction = GLOBAL_GET(SNAME("internationalization/rendering/root_node_layout_direction"));
+				int proj_root_layout_direction = GLOBAL_GET_CACHED(int, "internationalization/rendering/root_node_layout_direction");
 				if (proj_root_layout_direction == 1) {
 					return false;
 				} else if (proj_root_layout_direction == 2) {
@@ -2874,7 +2875,7 @@ bool Window::is_layout_rtl() const {
 			}
 		}
 #else
-		if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
+		if (GLOBAL_GET_CACHED(bool, "internationalization/rendering/force_right_to_left_layout_direction")) {
 			return true;
 		}
 #endif
@@ -2904,14 +2905,14 @@ bool Window::is_layout_rtl() const {
 			return TS->is_locale_right_to_left(locale);
 		}
 	} else if (layout_dir == LAYOUT_DIRECTION_APPLICATION_LOCALE) {
-		if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
+		if (GLOBAL_GET_CACHED(bool, "internationalization/rendering/force_right_to_left_layout_direction")) {
 			return true;
 		} else {
 			String locale = TranslationServer::get_singleton()->get_tool_locale();
 			return TS->is_locale_right_to_left(locale);
 		}
 	} else if (layout_dir == LAYOUT_DIRECTION_SYSTEM_LOCALE) {
-		if (GLOBAL_GET(SNAME("internationalization/rendering/force_right_to_left_layout_direction"))) {
+		if (GLOBAL_GET_CACHED(bool, "internationalization/rendering/force_right_to_left_layout_direction")) {
 			return true;
 		} else {
 			String locale = OS::get_singleton()->get_locale();

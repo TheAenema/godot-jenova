@@ -33,6 +33,7 @@
 #include "core/input/input_map.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
+#include "core/string/alt_codes.h"
 #include "core/string/translation_server.h"
 #include "scene/gui/label.h"
 #include "scene/main/window.h"
@@ -45,6 +46,10 @@
 #endif
 
 void LineEdit::edit() {
+	_edit(true);
+}
+
+void LineEdit::_edit(bool p_show_virtual_keyboard) {
 	if (!is_inside_tree()) {
 		return;
 	}
@@ -70,7 +75,9 @@ void LineEdit::edit() {
 	editing = true;
 	_validate_caret_can_draw();
 
-	show_virtual_keyboard();
+	if (p_show_virtual_keyboard) {
+		show_virtual_keyboard();
+	}
 	queue_redraw();
 }
 
@@ -1435,7 +1442,7 @@ void LineEdit::_notification(int p_what) {
 				Vector2 oofs = ofs;
 				for (int i = 0; i < gl_size; i++) {
 					for (int j = 0; j < glyphs[i].repeat; j++) {
-						if (ceil(oofs.x) >= x_ofs && (oofs.x + glyphs[i].advance) <= ofs_max) {
+						if (std::ceil(oofs.x) >= x_ofs && (oofs.x + glyphs[i].advance) <= ofs_max) {
 							if (glyphs[i].font_rid != RID()) {
 								TS->font_draw_glyph_outline(glyphs[i].font_rid, ci, glyphs[i].font_size, outline_size, oofs + Vector2(glyphs[i].x_off, glyphs[i].y_off), glyphs[i].index, font_outline_color);
 							}
@@ -1450,7 +1457,7 @@ void LineEdit::_notification(int p_what) {
 			for (int i = 0; i < gl_size; i++) {
 				bool selected = selection.enabled && glyphs[i].start >= selection.begin && glyphs[i].end <= selection.end;
 				for (int j = 0; j < glyphs[i].repeat; j++) {
-					if (ceil(ofs.x) >= x_ofs && (ofs.x + glyphs[i].advance) <= ofs_max) {
+					if (std::ceil(ofs.x) >= x_ofs && (ofs.x + glyphs[i].advance) <= ofs_max) {
 						if (glyphs[i].font_rid != RID()) {
 							TS->font_draw_glyph(glyphs[i].font_rid, ci, glyphs[i].font_size, ofs + Vector2(glyphs[i].x_off, glyphs[i].y_off), glyphs[i].index, selected ? font_selected_color : font_color);
 						} else if (((glyphs[i].flags & TextServer::GRAPHEME_IS_VIRTUAL) != TextServer::GRAPHEME_IS_VIRTUAL) && ((glyphs[i].flags & TextServer::GRAPHEME_IS_EMBEDDED_OBJECT) != TextServer::GRAPHEME_IS_EMBEDDED_OBJECT)) {
@@ -1579,7 +1586,7 @@ void LineEdit::_notification(int p_what) {
 		case NOTIFICATION_FOCUS_ENTER: {
 			// Only allow editing if the LineEdit is not focused with arrow keys.
 			if (!(Input::get_singleton()->is_action_pressed("ui_up") || Input::get_singleton()->is_action_pressed("ui_down") || Input::get_singleton()->is_action_pressed("ui_left") || Input::get_singleton()->is_action_pressed("ui_right"))) {
-				edit();
+				_edit(virtual_keyboard_show_on_focus);
 				emit_signal(SNAME("editing_toggled"), true);
 			}
 		} break;
@@ -1789,7 +1796,7 @@ void LineEdit::set_caret_at_pixel_pos(int p_x) {
 		}
 	}
 
-	int ofs = ceil(TS->shaped_text_hit_test_position(text_rid, p_x - x_ofs - scroll_offset));
+	int ofs = std::ceil(TS->shaped_text_hit_test_position(text_rid, p_x - x_ofs - scroll_offset));
 	if (!caret_mid_grapheme_enabled) {
 		ofs = TS->shaped_text_closest_character_pos(text_rid, ofs);
 	}
@@ -2720,6 +2727,14 @@ bool LineEdit::is_virtual_keyboard_enabled() const {
 	return virtual_keyboard_enabled;
 }
 
+void LineEdit::set_virtual_keyboard_show_on_focus(bool p_show_on_focus) {
+	virtual_keyboard_show_on_focus = p_show_on_focus;
+}
+
+bool LineEdit::get_virtual_keyboard_show_on_focus() const {
+	return virtual_keyboard_show_on_focus;
+}
+
 void LineEdit::set_virtual_keyboard_type(VirtualKeyboardType p_type) {
 	virtual_keyboard_type = p_type;
 }
@@ -3160,6 +3175,8 @@ void LineEdit::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("is_backspace_deletes_composite_character_enabled"), &LineEdit::is_backspace_deletes_composite_character_enabled);
 	ClassDB::bind_method(D_METHOD("set_virtual_keyboard_enabled", "enable"), &LineEdit::set_virtual_keyboard_enabled);
 	ClassDB::bind_method(D_METHOD("is_virtual_keyboard_enabled"), &LineEdit::is_virtual_keyboard_enabled);
+	ClassDB::bind_method(D_METHOD("set_virtual_keyboard_show_on_focus", "show_on_focus"), &LineEdit::set_virtual_keyboard_show_on_focus);
+	ClassDB::bind_method(D_METHOD("get_virtual_keyboard_show_on_focus"), &LineEdit::get_virtual_keyboard_show_on_focus);
 	ClassDB::bind_method(D_METHOD("set_virtual_keyboard_type", "type"), &LineEdit::set_virtual_keyboard_type);
 	ClassDB::bind_method(D_METHOD("get_virtual_keyboard_type"), &LineEdit::get_virtual_keyboard_type);
 	ClassDB::bind_method(D_METHOD("set_clear_button_enabled", "enable"), &LineEdit::set_clear_button_enabled);
@@ -3239,6 +3256,7 @@ void LineEdit::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "emoji_menu_enabled"), "set_emoji_menu_enabled", "is_emoji_menu_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "backspace_deletes_composite_character_enabled"), "set_backspace_deletes_composite_character_enabled", "is_backspace_deletes_composite_character_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "virtual_keyboard_enabled"), "set_virtual_keyboard_enabled", "is_virtual_keyboard_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "virtual_keyboard_show_on_focus"), "set_virtual_keyboard_show_on_focus", "get_virtual_keyboard_show_on_focus");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "virtual_keyboard_type", PROPERTY_HINT_ENUM, "Default,Multiline,Number,Decimal,Phone,Email,Password,URL"), "set_virtual_keyboard_type", "get_virtual_keyboard_type");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "clear_button_enabled"), "set_clear_button_enabled", "is_clear_button_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "shortcut_keys_enabled"), "set_shortcut_keys_enabled", "is_shortcut_keys_enabled");
