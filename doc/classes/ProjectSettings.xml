@@ -51,6 +51,7 @@
 				ProjectSettings.AddPropertyInfo(propertyInfo);
 				[/csharp]
 				[/codeblocks]
+				[b]Note:[/b] Setting [code]"usage"[/code] for the property is not supported. Use [method set_as_basic], [method set_restart_if_changed], and [method set_as_internal] to modify usage flags.
 			</description>
 		</method>
 		<method name="clear">
@@ -3094,6 +3095,9 @@
 		</member>
 		<member name="rendering/reflections/sky_reflections/texture_array_reflections.mobile" type="bool" setter="" getter="" default="false">
 			Lower-end override for [member rendering/reflections/sky_reflections/texture_array_reflections] on mobile devices, due to performance concerns or driver support.
+		</member>
+		<member name="rendering/reflections/specular_occlusion/enabled" type="bool" setter="" getter="" default="true">
+			If [code]true[/code], reduces reflections based on ambient light.
 		</member>
 		<member name="rendering/renderer/rendering_method" type="String" setter="" getter="" default="&quot;forward_plus&quot;">
 			Sets the renderer that will be used by the project. Options are:
