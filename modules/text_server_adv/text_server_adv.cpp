@@ -4961,7 +4961,8 @@ bool TextServerAdvanced::_shaped_text_resize_object(const RID &p_shaped, const V
 				} else if (sd->preserve_invalid || (sd->preserve_control && is_control(gl.index))) {
 					// Glyph not found, replace with hex code box.
 					if (sd->orientation == ORIENTATION_HORIZONTAL) {
-						sd->ascent = MAX(sd->ascent, get_hex_code_box_size(gl.font_size, gl.index).y);
+						sd->ascent = MAX(sd->ascent, get_hex_code_box_size(gl.font_size, gl.index).y * 0.85);
+						sd->descent = MAX(sd->descent, get_hex_code_box_size(gl.font_size, gl.index).y * 0.15);
 					} else {
 						sd->ascent = MAX(sd->ascent, Math::round(get_hex_code_box_size(gl.font_size, gl.index).x * 0.5));
 						sd->descent = MAX(sd->descent, Math::round(get_hex_code_box_size(gl.font_size, gl.index).x * 0.5));
@@ -5204,7 +5205,8 @@ bool TextServerAdvanced::_shape_substr(ShapedTextDataAdvanced *p_new_sd, const S
 				int32_t bidi_run_end = _convert_pos(p_sd, ov_start + start + _bidi_run_start + _bidi_run_length);
 
 				for (int j = 0; j < sd_size; j++) {
-					if ((sd_glyphs[j].start >= bidi_run_start) && (sd_glyphs[j].end <= bidi_run_end)) {
+					int col_key_off = (sd_glyphs[j].start == sd_glyphs[j].end) ? 1 : 0;
+					if ((sd_glyphs[j].start >= bidi_run_start) && (sd_glyphs[j].end <= bidi_run_end - col_key_off)) {
 						// Copy glyphs.
 						Glyph gl = sd_glyphs[j];
 						if (gl.span_index >= 0) {
@@ -5241,7 +5243,8 @@ bool TextServerAdvanced::_shape_substr(ShapedTextDataAdvanced *p_new_sd, const S
 							} else if (p_new_sd->preserve_invalid || (p_new_sd->preserve_control && is_control(gl.index))) {
 								// Glyph not found, replace with hex code box.
 								if (p_new_sd->orientation == ORIENTATION_HORIZONTAL) {
-									p_new_sd->ascent = MAX(p_new_sd->ascent, get_hex_code_box_size(gl.font_size, gl.index).y);
+									p_new_sd->ascent = MAX(p_new_sd->ascent, get_hex_code_box_size(gl.font_size, gl.index).y * 0.85);
+									p_new_sd->descent = MAX(p_new_sd->descent, get_hex_code_box_size(gl.font_size, gl.index).y * 0.15);
 								} else {
 									p_new_sd->ascent = MAX(p_new_sd->ascent, Math::round(get_hex_code_box_size(gl.font_size, gl.index).x * 0.5));
 									p_new_sd->descent = MAX(p_new_sd->descent, Math::round(get_hex_code_box_size(gl.font_size, gl.index).x * 0.5));
@@ -5994,7 +5997,11 @@ bool TextServerAdvanced::_shaped_text_update_breaks(const RID &p_shaped) {
 		while (i < span_size) {
 			String language = sd->spans[i].language;
 			int r_start = sd->spans[i].start;
-			while (i + 1 < span_size && language == sd->spans[i + 1].language) {
+			if (r_start == sd->spans[i].end) {
+				i++;
+				continue;
+			}
+			while (i + 1 < span_size && (language == sd->spans[i + 1].language || sd->spans[i + 1].start == sd->spans[i + 1].end)) {
 				i++;
 			}
 			int r_end = sd->spans[i].end;
@@ -6121,6 +6128,11 @@ bool TextServerAdvanced::_shaped_text_update_breaks(const RID &p_shaped) {
 							i += (sd_glyphs[i].count - 1);
 							continue;
 						}
+					}
+					// Do not add extra space for color picker object.
+					if (((sd_glyphs[i].flags & GRAPHEME_IS_EMBEDDED_OBJECT) == GRAPHEME_IS_EMBEDDED_OBJECT && sd_glyphs[i].start == sd_glyphs[i].end) || (uint32_t(i + 1) < sd->glyphs.size() && (sd_glyphs[i + 1].flags & GRAPHEME_IS_EMBEDDED_OBJECT) == GRAPHEME_IS_EMBEDDED_OBJECT && sd_glyphs[i + 1].start == sd_glyphs[i + 1].end)) {
+						i += (sd_glyphs[i].count - 1);
+						continue;
 					}
 					Glyph gl;
 					gl.span_index = sd_glyphs[i].span_index;
@@ -6583,7 +6595,8 @@ void TextServerAdvanced::_shape_run(ShapedTextDataAdvanced *p_sd, int64_t p_star
 					gl.index = p_sd->text[i];
 					if (p_sd->orientation == ORIENTATION_HORIZONTAL) {
 						gl.advance = get_hex_code_box_size(fs, gl.index).x;
-						p_sd->ascent = MAX(p_sd->ascent, get_hex_code_box_size(fs, gl.index).y);
+						p_sd->ascent = MAX(p_sd->ascent, get_hex_code_box_size(fs, gl.index).y * 0.85);
+						p_sd->descent = MAX(p_sd->descent, get_hex_code_box_size(fs, gl.index).y * 0.15);
 					} else {
 						gl.advance = get_hex_code_box_size(fs, gl.index).y;
 						gl.y_off = get_hex_code_box_size(fs, gl.index).y;
@@ -6991,7 +7004,8 @@ bool TextServerAdvanced::_shaped_text_shape(const RID &p_shaped) {
 
 					for (int k = spn_from; k != spn_to; k += spn_delta) {
 						const ShapedTextDataAdvanced::Span &span = sd->spans[k];
-						if (span.start - sd->start >= script_run_end || span.end - sd->start <= script_run_start) {
+						int col_key_off = (span.start == span.end) ? 1 : 0;
+						if (span.start - sd->start >= script_run_end || span.end - sd->start <= script_run_start - col_key_off) {
 							continue;
 						}
 						if (span.embedded_key != Variant()) {

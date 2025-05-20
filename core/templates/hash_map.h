@@ -66,14 +66,13 @@ template <typename TKey, typename TValue,
 		typename Hasher = HashMapHasherDefault,
 		typename Comparator = HashMapComparatorDefault<TKey>,
 		typename Allocator = DefaultTypedAllocator<HashMapElement<TKey, TValue>>>
-class HashMap {
+class HashMap : private Allocator {
 public:
 	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; // Use a prime.
 	static constexpr float MAX_OCCUPANCY = 0.75;
 	static constexpr uint32_t EMPTY_HASH = 0;
 
 private:
-	Allocator element_alloc;
 	HashMapElement<TKey, TValue> **elements = nullptr;
 	uint32_t *hashes = nullptr;
 	HashMapElement<TKey, TValue> *head_element = nullptr;
@@ -170,13 +169,9 @@ private:
 		uint32_t *old_hashes = hashes;
 
 		num_elements = 0;
-		hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
-		elements = reinterpret_cast<HashMapElement<TKey, TValue> **>(Memory::alloc_static(sizeof(HashMapElement<TKey, TValue> *) * capacity));
-
-		for (uint32_t i = 0; i < capacity; i++) {
-			hashes[i] = 0;
-			elements[i] = nullptr;
-		}
+		static_assert(EMPTY_HASH == 0, "Assuming EMPTY_HASH = 0 for alloc_static_zeroed call");
+		hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static_zeroed(sizeof(uint32_t) * capacity));
+		elements = reinterpret_cast<HashMapElement<TKey, TValue> **>(Memory::alloc_static_zeroed(sizeof(HashMapElement<TKey, TValue> *) * capacity));
 
 		if (old_capacity == 0) {
 			// Nothing to do.
@@ -200,13 +195,9 @@ private:
 		if (unlikely(elements == nullptr)) {
 			// Allocate on demand to save memory.
 
-			hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static(sizeof(uint32_t) * capacity));
-			elements = reinterpret_cast<HashMapElement<TKey, TValue> **>(Memory::alloc_static(sizeof(HashMapElement<TKey, TValue> *) * capacity));
-
-			for (uint32_t i = 0; i < capacity; i++) {
-				hashes[i] = EMPTY_HASH;
-				elements[i] = nullptr;
-			}
+			static_assert(EMPTY_HASH == 0, "Assuming EMPTY_HASH = 0 for alloc_static_zeroed call");
+			hashes = reinterpret_cast<uint32_t *>(Memory::alloc_static_zeroed(sizeof(uint32_t) * capacity));
+			elements = reinterpret_cast<HashMapElement<TKey, TValue> **>(Memory::alloc_static_zeroed(sizeof(HashMapElement<TKey, TValue> *) * capacity));
 		}
 
 		if (num_elements + 1 > MAX_OCCUPANCY * capacity) {
@@ -214,7 +205,7 @@ private:
 			_resize_and_rehash(capacity_index + 1);
 		}
 
-		HashMapElement<TKey, TValue> *elem = element_alloc.new_allocation(HashMapElement<TKey, TValue>(p_key, p_value));
+		HashMapElement<TKey, TValue> *elem = Allocator::new_allocation(HashMapElement<TKey, TValue>(p_key, p_value));
 
 		if (tail_element == nullptr) {
 			head_element = elem;
@@ -254,7 +245,7 @@ public:
 			}
 
 			hashes[i] = EMPTY_HASH;
-			element_alloc.delete_allocation(elements[i]);
+			Allocator::delete_allocation(elements[i]);
 			elements[i] = nullptr;
 		}
 
@@ -379,7 +370,7 @@ public:
 			elements[pos]->next->prev = elements[pos]->prev;
 		}
 
-		element_alloc.delete_allocation(elements[pos]);
+		Allocator::delete_allocation(elements[pos]);
 		elements[pos] = nullptr;
 
 		num_elements--;

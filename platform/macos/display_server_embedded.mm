@@ -135,6 +135,7 @@ DisplayServerEmbedded::DisplayServerEmbedded(const String &p_rendering_driver, W
 		if (err != OK) {
 			ERR_FAIL_MSG("Could not create OpenGL context.");
 		}
+		gl_manager->set_vsync_enabled(p_vsync_mode != DisplayServer::VSYNC_DISABLED);
 	}
 #endif
 
@@ -192,7 +193,8 @@ DisplayServerEmbedded::DisplayServerEmbedded(const String &p_rendering_driver, W
 	layer.contentsScale = scale;
 	layer.magnificationFilter = kCAFilterNearest;
 	layer.minificationFilter = kCAFilterNearest;
-	layer.opaque = NO; // Never opaque when embedded, clear color is drawn by control under the view.
+	transparent = ((p_flags & WINDOW_FLAG_TRANSPARENT_BIT) == WINDOW_FLAG_TRANSPARENT_BIT);
+	layer.opaque = !(OS::get_singleton()->is_layered_allowed() && transparent);
 	layer.actions = @{ @"contents" : [NSNull null] }; // Disable implicit animations for contents.
 	// AppKit frames, bounds and positions are always in points.
 	CGRect bounds = CGRectMake(0, 0, p_resolution.width, p_resolution.height);
@@ -426,7 +428,10 @@ void DisplayServerEmbedded::_dispatch_input_events(const Ref<InputEvent> &p_even
 
 void DisplayServerEmbedded::send_input_event(const Ref<InputEvent> &p_event, WindowID p_id) const {
 	if (p_id != INVALID_WINDOW_ID) {
-		_window_callback(input_event_callbacks[p_id], p_event);
+		const Callable *cb = input_event_callbacks.getptr(p_id);
+		if (cb) {
+			_window_callback(*cb, p_event);
+		}
 	} else {
 		for (const KeyValue<WindowID, Callable> &E : input_event_callbacks) {
 			_window_callback(E.value, p_event);
@@ -654,10 +659,16 @@ bool DisplayServerEmbedded::window_is_maximize_allowed(WindowID p_window) const 
 }
 
 void DisplayServerEmbedded::window_set_flag(WindowFlags p_flag, bool p_enabled, WindowID p_window) {
-	// Not supported
+	if (p_flag == WINDOW_FLAG_TRANSPARENT && p_window == MAIN_WINDOW_ID) {
+		transparent = p_enabled;
+		layer.opaque = !(OS::get_singleton()->is_layered_allowed() && transparent);
+	}
 }
 
 bool DisplayServerEmbedded::window_get_flag(WindowFlags p_flag, WindowID p_window) const {
+	if (p_flag == WINDOW_FLAG_TRANSPARENT && p_window == MAIN_WINDOW_ID) {
+		return transparent;
+	}
 	return false;
 }
 
@@ -698,15 +709,44 @@ void DisplayServerEmbedded::window_set_ime_position(const Point2i &p_pos, Window
 }
 
 void DisplayServerEmbedded::set_state(const DisplayServerEmbeddedState &p_state) {
+	if (state == p_state) {
+		return;
+	}
+
+	uint32_t old_display_id = state.display_id;
+
 	state = p_state;
+
+	if (state.display_id != old_display_id) {
+#if defined(GLES3_ENABLED)
+		if (gl_manager) {
+			gl_manager->set_display_id(state.display_id);
+		}
+#endif
+	}
 }
 
 void DisplayServerEmbedded::window_set_vsync_mode(DisplayServer::VSyncMode p_vsync_mode, WindowID p_window) {
-	// Not supported
+#if defined(GLES3_ENABLED)
+	if (gl_manager) {
+		gl_manager->set_vsync_enabled(p_vsync_mode != DisplayServer::VSYNC_DISABLED);
+	}
+#endif
+
+#if defined(RD_ENABLED)
+	if (rendering_context) {
+		rendering_context->window_set_vsync_mode(p_window, p_vsync_mode);
+	}
+#endif
 }
 
 DisplayServer::VSyncMode DisplayServerEmbedded::window_get_vsync_mode(WindowID p_window) const {
 	_THREAD_SAFE_METHOD_
+#if defined(GLES3_ENABLED)
+	if (gl_manager) {
+		return (gl_manager->is_vsync_enabled() ? DisplayServer::VSyncMode::VSYNC_ENABLED : DisplayServer::VSyncMode::VSYNC_DISABLED);
+	}
+#endif
 #if defined(RD_ENABLED)
 	if (rendering_context) {
 		return rendering_context->window_get_vsync_mode(p_window);
@@ -752,14 +792,15 @@ void DisplayServerEmbedded::swap_buffers() {
 }
 
 void DisplayServerEmbeddedState::serialize(PackedByteArray &r_data) {
-	r_data.resize(8);
+	r_data.resize(12);
 
 	uint8_t *data = r_data.ptrw();
 	data += encode_float(screen_max_scale, data);
 	data += encode_float(screen_dpi, data);
+	data += encode_uint32(display_id, data);
 
 	// Assert we had enough space.
-	DEV_ASSERT(data - r_data.ptrw() >= r_data.size());
+	DEV_ASSERT((data - r_data.ptrw()) >= r_data.size());
 }
 
 Error DisplayServerEmbeddedState::deserialize(const PackedByteArray &p_data) {
@@ -768,6 +809,8 @@ Error DisplayServerEmbeddedState::deserialize(const PackedByteArray &p_data) {
 	screen_max_scale = decode_float(data);
 	data += sizeof(float);
 	screen_dpi = decode_float(data);
+	data += sizeof(float);
+	display_id = decode_uint32(data);
 
 	return OK;
 }

@@ -47,6 +47,7 @@
 #include "editor/editor_undo_redo_manager.h"
 #include "editor/editor_vcs_interface.h"
 #include "editor/export/editor_export_platform.h"
+#include "editor/export/editor_export_platform_apple_embedded.h"
 #include "editor/export/editor_export_platform_extension.h"
 #include "editor/export/editor_export_platform_pc.h"
 #include "editor/export/editor_export_plugin.h"
@@ -84,6 +85,7 @@
 #include "editor/plugins/editor_context_menu_plugin.h"
 #include "editor/plugins/editor_debugger_plugin.h"
 #include "editor/plugins/editor_resource_tooltip_plugins.h"
+#include "editor/plugins/editor_script_plugin.h"
 #include "editor/plugins/font_config_plugin.h"
 #include "editor/plugins/gpu_particles_collision_sdf_editor_plugin.h"
 #include "editor/plugins/gradient_editor_plugin.h"
@@ -162,6 +164,7 @@ void register_editor_types() {
 	GDREGISTER_CLASS(EditorExportPlugin);
 	GDREGISTER_ABSTRACT_CLASS(EditorExportPlatform);
 	GDREGISTER_ABSTRACT_CLASS(EditorExportPlatformPC);
+	GDREGISTER_ABSTRACT_CLASS(EditorExportPlatformAppleEmbedded);
 	GDREGISTER_CLASS(EditorExportPlatformExtension);
 	GDREGISTER_ABSTRACT_CLASS(EditorExportPreset);
 
@@ -218,6 +221,7 @@ void register_editor_types() {
 	if (!Engine::get_singleton()->is_recovery_mode_hint()) {
 		EditorPlugins::add_by_type<DebugAdapterServer>();
 	}
+	EditorPlugins::add_by_type<EditorScriptPlugin>();
 	EditorPlugins::add_by_type<FontEditorPlugin>();
 	EditorPlugins::add_by_type<GPUParticles3DEditorPlugin>();
 	EditorPlugins::add_by_type<GPUParticlesCollisionSDF3DEditorPlugin>();

@@ -62,7 +62,7 @@ Files extracted from upstream source:
 ## astcenc
 
 - Upstream: https://github.com/ARM-software/astc-encoder
-- Version: 4.8.0 (0d6c9047c5ad19640e2d60fdb8f11a16675e7938, 2024)
+- Version: 5.3.0 (bf32abd05eccaf3042170b2a85cebdf0bfee5873, 2025)
 - License: Apache 2.0
 
 Files extracted from upstream source:
@@ -108,8 +108,8 @@ Files extracted from upstream source:
 ## certs
 
 - Upstream: Mozilla, via https://github.com/bagder/ca-bundle
-- Version: git (4d3fe6683f651d96be1bbef316b201e9b33b274d, 2024),
-  generated from mozilla-release changeset b8ea2342548b8571e58f9176d9555ccdb5ec199f
+- Version: git (bcc414c5b5282f9321651bf71dc1e254ae87e3f8, 2025),
+  generated from mozilla-release changeset 60d4997d339bb7ac6d033819ac50dcad4b9be09d
 - License: MPL 2.0
 
 Files extracted from upstream source:
@@ -792,7 +792,7 @@ Collection of single-file libraries used in Godot components.
     - `polypartition-0002-shadow-warning.patch` (GH-66808)
 - `qoa.{c,h}`
   * Upstream: https://github.com/phoboslab/qoa
-  * Version: git (a2d927f8ce78a85e903676a33e0f956e53b89f7d, 2024)
+  * Version: git (ae07b57deb98127a5b40916cb57775823d7437d2, 2025)
   * License: MIT
   * Modifications: Added implementation through `qoa.c`.
 - `r128.{c,h}`

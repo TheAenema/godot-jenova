@@ -69,6 +69,7 @@ void SceneShaderForwardMobile::ShaderData::set_code(const String &p_code) {
 	uses_normal = false;
 	uses_tangent = false;
 	uses_normal_map = false;
+	uses_bent_normal_map = false;
 	wireframe = false;
 
 	unshaded = false;
@@ -126,6 +127,7 @@ void SceneShaderForwardMobile::ShaderData::set_code(const String &p_code) {
 	actions.usage_flag_pointers["ROUGHNESS"] = &uses_roughness;
 	actions.usage_flag_pointers["NORMAL"] = &uses_normal;
 	actions.usage_flag_pointers["NORMAL_MAP"] = &uses_normal_map;
+	actions.usage_flag_pointers["BENT_NORMAL_MAP"] = &uses_bent_normal_map;
 
 	actions.usage_flag_pointers["TANGENT"] = &uses_tangent;
 	actions.usage_flag_pointers["BINORMAL"] = &uses_tangent;
@@ -165,7 +167,9 @@ void SceneShaderForwardMobile::ShaderData::set_code(const String &p_code) {
 	uses_depth_texture = gen_code.uses_depth_texture;
 	uses_normal_texture = gen_code.uses_normal_roughness_texture;
 	uses_normal |= uses_normal_map;
+	uses_normal |= uses_bent_normal_map;
 	uses_tangent |= uses_normal_map;
+	uses_tangent |= uses_bent_normal_map;
 
 #ifdef DEBUG_ENABLED
 	if (uses_sss) {
@@ -245,7 +249,6 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 			"SPEC PACKED #0:", p_pipeline_key.shader_specialization.packed_0,
 			"SPEC PACKED #1:", p_pipeline_key.shader_specialization.packed_1,
 			"SPEC PACKED #2:", p_pipeline_key.shader_specialization.packed_2,
-			"SPEC PACKED #3:", p_pipeline_key.shader_specialization.packed_3,
 			"RENDER PASS:", p_pipeline_key.render_pass,
 			"WIREFRAME:", p_pipeline_key.wireframe);
 #endif
@@ -336,12 +339,7 @@ void SceneShaderForwardMobile::ShaderData::_create_pipeline(PipelineKey p_pipeli
 	specialization_constants.push_back(sc);
 
 	sc.constant_id = 2;
-	sc.int_value = p_pipeline_key.shader_specialization.packed_2;
-	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_INT;
-	specialization_constants.push_back(sc);
-
-	sc.constant_id = 3;
-	sc.float_value = p_pipeline_key.shader_specialization.packed_3;
+	sc.float_value = p_pipeline_key.shader_specialization.packed_2;
 	sc.type = RD::PIPELINE_SPECIALIZATION_CONSTANT_TYPE_FLOAT;
 	specialization_constants.push_back(sc);
 
@@ -563,6 +561,7 @@ void SceneShaderForwardMobile::init(const String p_defines) {
 		actions.renames["FRONT_FACING"] = "gl_FrontFacing";
 		actions.renames["NORMAL_MAP"] = "normal_map";
 		actions.renames["NORMAL_MAP_DEPTH"] = "normal_map_depth";
+		actions.renames["BENT_NORMAL_MAP"] = "bent_normal_map";
 		actions.renames["ALBEDO"] = "albedo";
 		actions.renames["ALPHA"] = "alpha";
 		actions.renames["PREMUL_ALPHA_FACTOR"] = "premul_alpha";
@@ -640,6 +639,7 @@ void SceneShaderForwardMobile::init(const String p_defines) {
 		actions.usage_defines["CUSTOM3"] = "#define CUSTOM3_USED\n";
 		actions.usage_defines["NORMAL_MAP"] = "#define NORMAL_MAP_USED\n";
 		actions.usage_defines["NORMAL_MAP_DEPTH"] = "@NORMAL_MAP";
+		actions.usage_defines["BENT_NORMAL_MAP"] = "#define BENT_NORMAL_MAP_USED\n";
 		actions.usage_defines["COLOR"] = "#define COLOR_USED\n";
 		actions.usage_defines["INSTANCE_CUSTOM"] = "#define ENABLE_INSTANCE_CUSTOM\n";
 		actions.usage_defines["POSITION"] = "#define OVERRIDE_POSITION\n";
