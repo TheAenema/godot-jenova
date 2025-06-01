@@ -1931,7 +1931,7 @@ Ref<Image> DisplayServerMacOS::screen_get_image_rect(const Rect2i &p_rect) const
 			NSUInteger height = CGImageGetHeight(image);
 
 			Vector<uint8_t> img_data;
-			img_data.resize_zeroed(height * width * 4);
+			img_data.resize_initialized(height * width * 4);
 			CGContextRef context = CGBitmapContextCreate(img_data.ptrw(), width, height, 8, 4 * width, color_space, (uint32_t)kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
 			if (context) {
 				CGContextDrawImage(context, CGRectMake(0, 0, width, height), image);
@@ -2537,7 +2537,13 @@ void DisplayServerMacOS::window_set_mode(WindowMode p_mode, WindowID p_window) {
 		} break;
 		case WINDOW_MODE_MAXIMIZED: {
 			if (NSEqualRects([wd.window_object frame], [[wd.window_object screen] visibleFrame])) {
-				[wd.window_object zoom:nil];
+				if (wd.borderless) {
+					if (wd.pre_zoom_rect.size.width > 0 && wd.pre_zoom_rect.size.height > 0) {
+						[wd.window_object setFrame:wd.pre_zoom_rect display:NO animate:YES];
+					}
+				} else {
+					[wd.window_object zoom:nil];
+				}
 			}
 		} break;
 	}
@@ -2570,7 +2576,12 @@ void DisplayServerMacOS::window_set_mode(WindowMode p_mode, WindowID p_window) {
 		} break;
 		case WINDOW_MODE_MAXIMIZED: {
 			if (!NSEqualRects([wd.window_object frame], [[wd.window_object screen] visibleFrame])) {
-				[wd.window_object zoom:nil];
+				wd.pre_zoom_rect = [wd.window_object frame];
+				if (wd.borderless) {
+					[wd.window_object setFrame:[[wd.window_object screen] visibleFrame] display:NO animate:YES];
+				} else {
+					[wd.window_object zoom:nil];
+				}
 			}
 		} break;
 	}
@@ -2770,6 +2781,7 @@ void DisplayServerMacOS::window_set_flag(WindowFlags p_flag, bool p_enabled, Win
 				[wd.window_object orderOut:nil];
 			}
 			wd.borderless = p_enabled;
+			bool was_maximized = (NSEqualRects([wd.window_object frame], [[wd.window_object screen] visibleFrame]));
 			if (p_enabled) {
 				[wd.window_object setStyleMask:NSWindowStyleMaskBorderless];
 				[wd.window_object setHasShadow:NO];
@@ -2799,6 +2811,9 @@ void DisplayServerMacOS::window_set_flag(WindowFlags p_flag, bool p_enabled, Win
 				} else {
 					[wd.window_object makeKeyAndOrderFront:nil];
 				}
+			}
+			if (was_maximized) {
+				[wd.window_object setFrame:[[wd.window_object screen] visibleFrame] display:NO];
 			}
 		} break;
 		case WINDOW_FLAG_ALWAYS_ON_TOP: {

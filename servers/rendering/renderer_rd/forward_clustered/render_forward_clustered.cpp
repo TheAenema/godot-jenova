@@ -2744,6 +2744,7 @@ void RenderForwardClustered::_render_shadow_append(RID p_framebuffer, const Page
 	scene_data.time = time;
 	scene_data.time_step = time_step;
 	scene_data.main_cam_transform = p_main_cam_transform;
+	scene_data.shadow_pass = true;
 
 	RenderDataRD render_data;
 	render_data.scene_data = &scene_data;
@@ -2836,6 +2837,7 @@ void RenderForwardClustered::_render_particle_collider_heightfield(RID p_fb, con
 	scene_data.time = time;
 	scene_data.time_step = time_step;
 	scene_data.main_cam_transform = p_cam_transform;
+	scene_data.shadow_pass = true; // Not a shadow pass, but should be treated like one.
 
 	RenderDataRD render_data;
 	render_data.scene_data = &scene_data;
@@ -4819,6 +4821,24 @@ uint32_t RenderForwardClustered::get_pipeline_compilations(RS::PipelineSource p_
 	return scene_shader.get_pipeline_compilations(p_source);
 }
 
+void RenderForwardClustered::enable_features(BitField<FeatureBits> p_feature_bits) {
+	if (p_feature_bits.has_flag(FEATURE_MULTIVIEW_BIT)) {
+		scene_shader.enable_multiview_shader_group();
+	}
+
+	if (p_feature_bits.has_flag(FEATURE_ADVANCED_BIT)) {
+		scene_shader.enable_advanced_shader_group(p_feature_bits.has_flag(FEATURE_MULTIVIEW_BIT));
+	}
+
+	if (p_feature_bits.has_flag(FEATURE_VRS_BIT)) {
+		gi.enable_vrs_shader_group();
+	}
+}
+
+String RenderForwardClustered::get_name() const {
+	return "forward_clustered";
+}
+
 void RenderForwardClustered::GeometryInstanceForwardClustered::pair_voxel_gi_instances(const RID *p_voxel_gi_instances, uint32_t p_voxel_gi_instance_count) {
 	if (p_voxel_gi_instance_count > 0) {
 		voxel_gi_instances[0] = p_voxel_gi_instances[0];
@@ -4955,8 +4975,6 @@ RenderForwardClustered::RenderForwardClustered() {
 		RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set, 0);
 		RD::get_singleton()->compute_list_dispatch_threads(compute_list, tformat.width, tformat.height, 1);
 		RD::get_singleton()->compute_list_end();
-
-		best_fit_normal.shader.version_free(best_fit_normal.shader_version);
 	}
 
 	/* DFG LUT */
@@ -4994,8 +5012,6 @@ RenderForwardClustered::RenderForwardClustered() {
 		RD::get_singleton()->compute_list_bind_uniform_set(compute_list, uniform_set, 0);
 		RD::get_singleton()->compute_list_dispatch_threads(compute_list, tformat.width, tformat.height, 1);
 		RD::get_singleton()->compute_list_end();
-
-		dfg_lut.shader.version_free(dfg_lut.shader_version);
 	}
 
 	_update_shader_quality_settings();
@@ -5046,8 +5062,14 @@ RenderForwardClustered::~RenderForwardClustered() {
 
 	RD::get_singleton()->free(shadow_sampler);
 	RSG::light_storage->directional_shadow_atlas_set_size(0);
+
+	RD::get_singleton()->free(best_fit_normal.pipeline);
 	RD::get_singleton()->free(best_fit_normal.texture);
+	best_fit_normal.shader.version_free(best_fit_normal.shader_version);
+
+	RD::get_singleton()->free(dfg_lut.pipeline);
 	RD::get_singleton()->free(dfg_lut.texture);
+	dfg_lut.shader.version_free(dfg_lut.shader_version);
 
 	{
 		for (const RID &rid : scene_state.uniform_buffers) {

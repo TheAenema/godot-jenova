@@ -397,6 +397,12 @@ void TextServerAdvanced::_free_rid(const RID &p_rid) {
 		MutexLock ftlock(ft_mutex);
 
 		FontAdvanced *fd = font_owner.get_or_null(p_rid);
+		for (const KeyValue<Vector2i, FontForSizeAdvanced *> &ffsd : fd->cache) {
+			OversamplingLevel *ol = oversampling_levels.getptr(ffsd.value->viewport_oversampling);
+			if (ol != nullptr) {
+				ol->fonts.erase(ffsd.value);
+			}
+		}
 		{
 			MutexLock lock(fd->mutex);
 			font_owner.free(p_rid);
@@ -1829,6 +1835,18 @@ bool TextServerAdvanced::_ensure_cache_for_size(FontAdvanced *p_font_data, const
 			}
 			p_font_data->face_init = true;
 		}
+
+#if defined(MACOS_ENABLED) || defined(IOS_ENABLED)
+		if (p_font_data->font_name == ".Apple Color Emoji UI" || p_font_data->font_name == "Apple Color Emoji") {
+			// The baseline offset is missing from the Apple Color Emoji UI font data, so add it manually.
+			// This issue doesn't occur with other system emoji fonts.
+			if (!FT_Load_Glyph(fd->face, FT_Get_Char_Index(fd->face, 0x1F92E), FT_LOAD_DEFAULT | FT_LOAD_COLOR)) {
+				if (fd->face->glyph->metrics.horiBearingY == fd->face->glyph->metrics.height) {
+					p_font_data->baseline_offset = 0.15;
+				}
+			}
+		}
+#endif
 
 		// Write variations.
 		if (fd->face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
@@ -6289,7 +6307,7 @@ bool TextServerAdvanced::_shaped_text_update_justification_ops(const RID &p_shap
 			// No data - use fallback.
 			int limit = 0;
 			for (int i = 0; i < sd->text.length(); i++) {
-				if (is_whitespace(data[i])) {
+				if (is_whitespace(sd->text[i])) {
 					int ks = _generate_kashida_justification_opportunities(sd->text, limit, i) + sd->start;
 					if (ks != -1) {
 						sd->jstops[ks] = true;
