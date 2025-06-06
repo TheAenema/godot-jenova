@@ -148,6 +148,8 @@ static void _add_qualifiers_to_rt(const String &p_qualifiers, RichTextLabel *p_r
 			hint = TTR("This method supports a variable number of arguments.");
 		} else if (qualifier == "virtual") {
 			hint = TTR("This method is called by the engine.\nIt can be overridden to customize built-in behavior.");
+		} else if (qualifier == "required") {
+			hint = TTR("This method is required to be overridden when extending its base class.");
 		} else if (qualifier == "const") {
 			hint = TTR("This method has no side effects.\nIt does not modify the object in any way.");
 		} else if (qualifier == "static") {
@@ -3249,9 +3251,26 @@ void EditorHelp::_notification(int p_what) {
 			update_toggle_files_button();
 		} break;
 
-		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
-		case NOTIFICATION_TRANSLATION_CHANGED:
 		case NOTIFICATION_VISIBILITY_CHANGED: {
+			if (update_pending && is_visible_in_tree()) {
+				_update_doc();
+			}
+			update_toggle_files_button();
+		} break;
+
+		case NOTIFICATION_TRANSLATION_CHANGED: {
+			if (!is_ready()) {
+				break;
+			}
+
+			if (is_visible_in_tree()) {
+				_update_doc();
+			} else {
+				update_pending = true;
+			}
+			[[fallthrough]];
+		}
+		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED: {
 			update_toggle_files_button();
 		} break;
 	}
@@ -3372,6 +3391,7 @@ EditorHelp::EditorHelp() {
 
 	toggle_files_button = memnew(Button);
 	toggle_files_button->set_accessibility_name(TTRC("Scripts"));
+	toggle_files_button->set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	toggle_files_button->set_flat(true);
 	toggle_files_button->connect(SceneStringName(pressed), callable_mp(this, &EditorHelp::_toggle_files_pressed));
 	status_bar->add_child(toggle_files_button);
