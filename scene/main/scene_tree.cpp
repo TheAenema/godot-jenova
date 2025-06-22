@@ -1817,7 +1817,7 @@ void SceneTree::set_multiplayer(Ref<MultiplayerAPI> p_multiplayer, const NodePat
 						break;
 					}
 				}
-				ERR_FAIL_COND_MSG(valid, "Multiplayer is already configured for a parent of this path: '" + p_root_path + "' in '" + E.key + "'.");
+				ERR_FAIL_COND_MSG(valid, "Multiplayer is already configured for a parent of this path: '" + String(p_root_path) + "' in '" + String(E.key) + "'.");
 			}
 		}
 		if (p_multiplayer.is_valid()) {
@@ -2018,13 +2018,17 @@ SceneTree::SceneTree() {
 	root = memnew(Window);
 	root->set_min_size(Size2i(64, 64)); // Define a very small minimum window size to prevent bugs such as GH-37242.
 	root->set_process_mode(Node::PROCESS_MODE_PAUSABLE);
-	root->set_auto_translate_mode(GLOBAL_GET("internationalization/rendering/root_node_auto_translate") ? Node::AUTO_TRANSLATE_MODE_ALWAYS : Node::AUTO_TRANSLATE_MODE_DISABLED);
 	root->set_name("root");
-	root->set_title(GLOBAL_GET("application/config/name"));
 
 	if (Engine::get_singleton()->is_editor_hint()) {
 		root->set_wrap_controls(true);
+		root->set_auto_translate_mode(Node::AUTO_TRANSLATE_MODE_ALWAYS);
+	} else {
+		root->set_auto_translate_mode(GLOBAL_GET("internationalization/rendering/root_node_auto_translate") ? Node::AUTO_TRANSLATE_MODE_ALWAYS : Node::AUTO_TRANSLATE_MODE_DISABLED);
 	}
+
+	// Set after auto translate mode to avoid changing the displayed title back and forth.
+	root->set_title(GLOBAL_GET("application/config/name"));
 
 #ifndef _3D_DISABLED
 	if (root->get_world_3d().is_null()) {

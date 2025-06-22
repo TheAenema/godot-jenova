@@ -2436,7 +2436,7 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 					CanvasItem *item = selection_results[i].item;
 
 					Ref<Texture2D> icon = EditorNode::get_singleton()->get_object_icon(item, "Node");
-					String node_path = "/" + root_name + "/" + root_path.rel_path_to(item->get_path());
+					String node_path = "/" + root_name + "/" + String(root_path.rel_path_to(item->get_path()));
 
 					int locked = 0;
 					if (_is_node_locked(item)) {
@@ -2503,7 +2503,7 @@ bool CanvasItemEditor::_gui_input_select(const Ref<InputEvent> &p_event) {
 				String *paths_write = paths.ptrw();
 
 				for (int i = 0; i < paths.size(); i++) {
-					paths_write[i] = selection_results[i].item->get_path();
+					paths_write[i] = String(selection_results[i].item->get_path());
 				}
 				EditorContextMenuPluginManager::get_singleton()->add_options_from_plugins(add_node_menu, EditorContextMenuPlugin::CONTEXT_SLOT_2D_EDITOR, paths);
 			}
@@ -2802,6 +2802,11 @@ void CanvasItemEditor::_gui_input_viewport(const Ref<InputEvent> &p_event) {
 }
 
 void CanvasItemEditor::_update_cursor() {
+	if (cursor_shape_override != CURSOR_ARROW) {
+		set_default_cursor_shape(cursor_shape_override);
+		return;
+	}
+
 	// Choose the correct default cursor.
 	CursorShape c = CURSOR_ARROW;
 	switch (tool) {
@@ -2863,6 +2868,14 @@ void CanvasItemEditor::_update_lock_and_group_button() {
 	group_button->set_disabled(!has_canvas_item);
 	ungroup_button->set_visible(all_group);
 	ungroup_button->set_disabled(!has_canvas_item);
+}
+
+void CanvasItemEditor::set_cursor_shape_override(CursorShape p_shape) {
+	if (cursor_shape_override == p_shape) {
+		return;
+	}
+	cursor_shape_override = p_shape;
+	_update_cursor();
 }
 
 Control::CursorShape CanvasItemEditor::get_cursor_shape(const Point2 &p_pos) const {
@@ -5714,7 +5727,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	key_loc_button->set_theme_type_variation(SceneStringName(FlatButton));
 	key_loc_button->set_toggle_mode(true);
 	key_loc_button->set_pressed(true);
-	key_loc_button->set_focus_mode(FOCUS_NONE);
+	key_loc_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	key_loc_button->connect(SceneStringName(pressed), callable_mp(this, &CanvasItemEditor::_popup_callback).bind(ANIM_INSERT_POS));
 	key_loc_button->set_tooltip_text(TTRC("Translation mask for inserting keys."));
 	key_loc_button->set_accessibility_name(TTRC("Translation Mask"));
@@ -5724,7 +5737,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	key_rot_button->set_theme_type_variation(SceneStringName(FlatButton));
 	key_rot_button->set_toggle_mode(true);
 	key_rot_button->set_pressed(true);
-	key_rot_button->set_focus_mode(FOCUS_NONE);
+	key_rot_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	key_rot_button->connect(SceneStringName(pressed), callable_mp(this, &CanvasItemEditor::_popup_callback).bind(ANIM_INSERT_ROT));
 	key_rot_button->set_tooltip_text(TTRC("Rotation mask for inserting keys."));
 	key_rot_button->set_accessibility_name(TTRC("Rotation Mask"));
@@ -5733,7 +5746,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	key_scale_button = memnew(Button);
 	key_scale_button->set_theme_type_variation(SceneStringName(FlatButton));
 	key_scale_button->set_toggle_mode(true);
-	key_scale_button->set_focus_mode(FOCUS_NONE);
+	key_scale_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	key_scale_button->connect(SceneStringName(pressed), callable_mp(this, &CanvasItemEditor::_popup_callback).bind(ANIM_INSERT_SCALE));
 	key_scale_button->set_tooltip_text(TTRC("Scale mask for inserting keys."));
 	key_scale_button->set_accessibility_name(TTRC("Scale Mask"));
@@ -5741,7 +5754,7 @@ CanvasItemEditor::CanvasItemEditor() {
 
 	key_insert_button = memnew(Button);
 	key_insert_button->set_theme_type_variation(SceneStringName(FlatButton));
-	key_insert_button->set_focus_mode(FOCUS_NONE);
+	key_insert_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	key_insert_button->connect(SceneStringName(pressed), callable_mp(this, &CanvasItemEditor::_popup_callback).bind(ANIM_INSERT_KEY));
 	key_insert_button->set_tooltip_text(TTRC("Insert keys (based on mask)."));
 	key_insert_button->set_shortcut(ED_SHORTCUT("canvas_item_editor/anim_insert_key", TTRC("Insert Key"), Key::INSERT));
@@ -5752,7 +5765,7 @@ CanvasItemEditor::CanvasItemEditor() {
 	key_auto_insert_button = memnew(Button);
 	key_auto_insert_button->set_theme_type_variation(SceneStringName(FlatButton));
 	key_auto_insert_button->set_toggle_mode(true);
-	key_auto_insert_button->set_focus_mode(FOCUS_NONE);
+	key_auto_insert_button->set_focus_mode(FOCUS_ACCESSIBILITY);
 	key_auto_insert_button->set_tooltip_text(TTRC("Auto insert keys when objects are translated, rotated or scaled (based on mask).\nKeys are only added to existing tracks, no new tracks will be created.\nKeys must be inserted manually for the first time."));
 	key_auto_insert_button->set_shortcut(ED_SHORTCUT("canvas_item_editor/anim_auto_insert_key", TTRC("Auto Insert Key")));
 	key_auto_insert_button->set_accessibility_name(TTRC("Auto Insert Keys"));

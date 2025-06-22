@@ -4,6 +4,9 @@
 
 #VERSION_DEFINES
 
+/* Include half precision types. */
+#include "../half_inc.glsl"
+
 #include "scene_forward_clustered_inc.glsl"
 
 #define SHADER_IS_SRGB false
@@ -145,6 +148,7 @@ ivec3 multiview_uv(ivec2 uv) {
 }
 layout(location = 11) out vec4 combined_projected;
 #else // USE_MULTIVIEW
+#define ViewIndex 0
 vec2 multiview_uv(vec2 uv) {
 	return uv;
 }
@@ -154,8 +158,8 @@ ivec2 multiview_uv(ivec2 uv) {
 #endif //USE_MULTIVIEW
 
 #if !defined(MODE_RENDER_DEPTH) && !defined(MODE_UNSHADED) && defined(USE_VERTEX_LIGHTING)
-layout(location = 12) highp out vec4 diffuse_light_interp;
-layout(location = 13) highp out vec4 specular_light_interp;
+layout(location = 12) out vec4 diffuse_light_interp;
+layout(location = 13) out vec4 specular_light_interp;
 
 #include "../scene_forward_vertex_lights_inc.glsl"
 
@@ -335,7 +339,7 @@ void vertex_shader(vec3 vertex_input,
 
 	vec3 vertex = vertex_input;
 #ifdef NORMAL_USED
-	vec3 normal = normal_input;
+	vec3 normal_highp = normal_input;
 #endif
 
 #ifdef TANGENT_USED
@@ -383,7 +387,7 @@ void vertex_shader(vec3 vertex_input,
 	vertex = (model_matrix * vec4(vertex, 1.0)).xyz;
 
 #ifdef NORMAL_USED
-	normal = model_normal_matrix * normal;
+	normal_highp = model_normal_matrix * normal_highp;
 #endif
 
 #ifdef TANGENT_USED
@@ -398,7 +402,7 @@ void vertex_shader(vec3 vertex_input,
 	float z_clip_scale = 1.0;
 #endif
 
-	float roughness = 1.0;
+	float roughness_highp = 1.0;
 
 	mat4 modelview = scene_data.view_matrix * model_matrix;
 	mat3 modelview_normal = mat3(scene_data.view_matrix) * model_normal_matrix;
@@ -408,6 +412,11 @@ void vertex_shader(vec3 vertex_input,
 	{
 #CODE : VERTEX
 	}
+
+	float roughness = roughness_highp;
+#ifdef NORMAL_USED
+	vec3 normal = normal_highp;
+#endif
 
 // using local coordinates (default)
 #if !defined(SKIP_TRANSFORM_USED) && !defined(VERTEX_WORLD_COORDS_USED)
@@ -807,6 +816,9 @@ void main() {
 #define SHADER_IS_SRGB false
 #define SHADER_SPACE_FAR 0.0
 
+/* Include half precision types. */
+#include "../half_inc.glsl"
+
 #include "scene_forward_clustered_inc.glsl"
 
 /* Varyings */
@@ -919,6 +931,7 @@ ivec3 multiview_uv(ivec2 uv) {
 }
 layout(location = 11) in vec4 combined_projected;
 #else // USE_MULTIVIEW
+#define ViewIndex 0
 vec2 multiview_uv(vec2 uv) {
 	return uv;
 }
@@ -927,8 +940,8 @@ ivec2 multiview_uv(ivec2 uv) {
 }
 #endif // !USE_MULTIVIEW
 #if !defined(MODE_RENDER_DEPTH) && !defined(MODE_UNSHADED) && defined(USE_VERTEX_LIGHTING)
-layout(location = 12) highp in vec4 diffuse_light_interp;
-layout(location = 13) highp in vec4 specular_light_interp;
+layout(location = 12) in vec4 diffuse_light_interp;
+layout(location = 13) in vec4 specular_light_interp;
 #endif
 //defines to keep compatibility with vertex
 
@@ -1125,24 +1138,24 @@ void fragment_shader(in SceneData scene_data) {
 	vec3 vertex = vertex_interp;
 #ifdef USE_MULTIVIEW
 	vec3 eye_offset = scene_data.eye_offset[ViewIndex].xyz;
-	vec3 view = -normalize(vertex_interp - eye_offset);
+	vec3 view_highp = -normalize(vertex_interp - eye_offset);
 
 	// UV in our combined frustum space is used for certain screen uv processes where it's
 	// overkill to render separate left and right eye views
 	vec2 combined_uv = (combined_projected.xy / combined_projected.w) * 0.5 + 0.5;
 #else
 	vec3 eye_offset = vec3(0.0, 0.0, 0.0);
-	vec3 view = -normalize(vertex_interp);
+	vec3 view_highp = -normalize(vertex_interp);
 #endif
-	vec3 albedo = vec3(1.0);
+	vec3 albedo_highp = vec3(1.0);
 	vec3 backlight = vec3(0.0);
 	vec4 transmittance_color = vec4(0.0, 0.0, 0.0, 1.0);
 	float transmittance_depth = 0.0;
 	float transmittance_boost = 0.0;
-	float metallic = 0.0;
+	float metallic_highp = 0.0;
 	float specular = 0.5;
 	vec3 emission = vec3(0.0);
-	float roughness = 1.0;
+	float roughness_highp = 1.0;
 	float rim = 0.0;
 	float rim_tint = 0.0;
 	float clearcoat = 0.0;
@@ -1163,7 +1176,7 @@ void fragment_shader(in SceneData scene_data) {
 	float ao = 1.0;
 	float ao_light_affect = 0.0;
 
-	float alpha = float(instances.data[instance_index].flags >> INSTANCE_FLAGS_FADE_SHIFT) / float(255.0);
+	float alpha_highp = float(instances.data[instance_index].flags >> INSTANCE_FLAGS_FADE_SHIFT) / float(255.0);
 
 #ifdef TANGENT_USED
 	vec3 binormal = binormal_interp;
@@ -1174,10 +1187,10 @@ void fragment_shader(in SceneData scene_data) {
 #endif
 
 #ifdef NORMAL_USED
-	vec3 normal = normal_interp;
+	vec3 normal_highp = normal_interp;
 #if defined(DO_SIDE_CHECK)
 	if (!gl_FrontFacing) {
-		normal = -normal;
+		normal_highp = -normal_highp;
 	}
 #endif // DO_SIDE_CHECK
 #endif // NORMAL_USED
@@ -1247,9 +1260,18 @@ void fragment_shader(in SceneData scene_data) {
 
 	mat4 read_view_matrix = scene_data.view_matrix;
 	vec2 read_viewport_size = scene_data.viewport_size;
+
 	{
 #CODE : FRAGMENT
 	}
+
+	float roughness = roughness_highp;
+	float metallic = metallic_highp;
+	vec3 albedo = albedo_highp;
+	float alpha = alpha_highp;
+#ifdef NORMAL_USED
+	vec3 normal = normal_highp;
+#endif
 
 #ifdef LIGHT_TRANSMITTANCE_USED
 	transmittance_color.a *= sss_strength;
@@ -1258,10 +1280,12 @@ void fragment_shader(in SceneData scene_data) {
 #ifdef LIGHT_VERTEX_USED
 	vertex = light_vertex;
 #ifdef USE_MULTIVIEW
-	view = -normalize(vertex - eye_offset);
+	vec3 view = -normalize(vertex - eye_offset);
 #else
-	view = -normalize(vertex);
+	vec3 view = -normalize(vertex);
 #endif //USE_MULTIVIEW
+#else
+	vec3 view = view_highp;
 #endif //LIGHT_VERTEX_USED
 
 #ifdef NORMAL_USED
@@ -2061,11 +2085,6 @@ void fragment_shader(in SceneData scene_data) {
 #endif // !AMBIENT_LIGHT_DISABLED
 #endif //GI !defined(MODE_RENDER_DEPTH) && !defined(MODE_UNSHADED)
 
-#if !defined(MODE_RENDER_DEPTH)
-	//this saves some VGPRs
-	uint orms = packUnorm4x8(vec4(ao, roughness, metallic, specular));
-#endif
-
 // LIGHTING
 #if !defined(MODE_RENDER_DEPTH) && !defined(MODE_UNSHADED)
 
@@ -2453,7 +2472,7 @@ void fragment_shader(in SceneData scene_data) {
 #else
 					directional_lights.data[i].color * directional_lights.data[i].energy * tint,
 #endif
-					true, shadow, f0, orms, directional_lights.data[i].specular, albedo, alpha, screen_uv, energy_compensation,
+					true, shadow, f0, roughness, metallic, directional_lights.data[i].specular, albedo, alpha, screen_uv, energy_compensation,
 #ifdef LIGHT_BACKLIGHT_USED
 					backlight,
 #endif
@@ -2517,7 +2536,7 @@ void fragment_shader(in SceneData scene_data) {
 					continue; // Statically baked light and object uses lightmap, skip
 				}
 
-				light_process_omni(light_index, vertex, view, normal, vertex_ddx, vertex_ddy, f0, orms, scene_data.taa_frame_count, albedo, alpha, screen_uv, energy_compensation,
+				light_process_omni(light_index, vertex, view, normal, vertex_ddx, vertex_ddy, f0, roughness, metallic, scene_data.taa_frame_count, albedo, alpha, screen_uv, energy_compensation,
 #ifdef LIGHT_BACKLIGHT_USED
 						backlight,
 #endif
@@ -2534,7 +2553,7 @@ void fragment_shader(in SceneData scene_data) {
 						clearcoat, clearcoat_roughness, geo_normal,
 #endif // LIGHT_CLEARCOAT_USED
 #ifdef LIGHT_ANISOTROPY_USED
-						tangent, binormal, anisotropy,
+						binormal, tangent, anisotropy,
 #endif
 						diffuse_light, direct_specular_light);
 			}
@@ -2578,7 +2597,7 @@ void fragment_shader(in SceneData scene_data) {
 					continue; // Statically baked light and object uses lightmap, skip
 				}
 
-				light_process_spot(light_index, vertex, view, normal, vertex_ddx, vertex_ddy, f0, orms, scene_data.taa_frame_count, albedo, alpha, screen_uv, energy_compensation,
+				light_process_spot(light_index, vertex, view, normal, vertex_ddx, vertex_ddy, f0, roughness, metallic, scene_data.taa_frame_count, albedo, alpha, screen_uv, energy_compensation,
 #ifdef LIGHT_BACKLIGHT_USED
 						backlight,
 #endif
@@ -2595,8 +2614,7 @@ void fragment_shader(in SceneData scene_data) {
 						clearcoat, clearcoat_roughness, geo_normal,
 #endif // LIGHT_CLEARCOAT_USED
 #ifdef LIGHT_ANISOTROPY_USED
-						tangent,
-						binormal, anisotropy,
+						binormal, tangent, anisotropy,
 #endif
 						diffuse_light, direct_specular_light);
 			}
@@ -2773,12 +2791,10 @@ void fragment_shader(in SceneData scene_data) {
 	diffuse_light *= albedo; // ambient must be multiplied by albedo at the end
 
 	// apply direct light AO
-	ao = unpackUnorm4x8(orms).x;
 	diffuse_light *= ao;
 	direct_specular_light *= ao;
 
 	// apply metallic
-	metallic = unpackUnorm4x8(orms).z;
 	diffuse_light *= 1.0 - metallic;
 	ambient_light *= 1.0 - metallic;
 
