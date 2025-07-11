@@ -654,14 +654,13 @@ File extracted from upstream source:
 ## mbedtls
 
 - Upstream: https://github.com/Mbed-TLS/mbedtls
-- Version: 3.6.3 (22098d41c6620ce07cf8a0134d37302355e1e5ef, 2025)
+- Version: 3.6.4 (c765c831e5c2a0971410692f92f7a81d6ec65ec2, 2025)
 - License: Apache 2.0
 
 File extracted from upstream release tarball:
 
 - All `.h` from `include/mbedtls/` to `thirdparty/mbedtls/include/mbedtls/`
   and all `.h` from `include/psa/` to `thirdparty/mbedtls/include/psa/`
-- All `.c` and `.h` from `library/` to `thirdparty/mbedtls/library/`
 - From `library/` to `thirdparty/mbedtls/library/`:
   - All `.c` and `.h` files
   - Except `bignum_mod.c`, `block_cipher.c`, `ecp_curves_new.c`, `lmots.c`,
@@ -978,7 +977,7 @@ Its version and license is described in this file under `hidapi`.
 ## spirv-cross
 
 - Upstream: https://github.com/KhronosGroup/SPIRV-Cross
-- Version: git (6173e24b31f09a0c3217103a130e74c4ddec14a6, 2024)
+- Version: git (d7440cbc6c50332600fdf21c45e6a5df0b07e54c, 2025)
 - License: Apache 2.0
 
 Files extracted from upstream source:
