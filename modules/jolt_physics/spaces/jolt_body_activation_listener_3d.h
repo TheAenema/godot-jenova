@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  world_3d.h                                                            */
+/*  jolt_body_activation_listener_3d.h                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,68 +30,13 @@
 
 #pragma once
 
-#include "core/io/resource.h"
-#include "scene/resources/compositor.h"
-#include "scene/resources/environment.h"
-#ifndef PHYSICS_3D_DISABLED
-#include "servers/physics_server_3d.h"
-#endif // PHYSICS_3D_DISABLED
+#include "Jolt/Jolt.h"
 
-class CameraAttributes;
-class Camera3D;
-class VisibleOnScreenNotifier3D;
-struct SpatialIndexer;
+#include "Jolt/Physics/Body/BodyActivationListener.h"
 
-class World3D : public Resource {
-	GDCLASS(World3D, Resource);
-
-private:
-	RID scenario;
-	mutable RID space;
-#ifndef NAVIGATION_3D_DISABLED
-	mutable RID navigation_map;
-#endif // NAVIGATION_3D_DISABLED
-
-	Ref<Environment> environment;
-	Ref<Environment> fallback_environment;
-	Ref<CameraAttributes> camera_attributes;
-	Ref<Compositor> compositor;
-
-	HashSet<Camera3D *> cameras;
-
-protected:
-	static void _bind_methods();
-
-	friend class Camera3D;
-
-	void _register_camera(Camera3D *p_camera);
-	void _remove_camera(Camera3D *p_camera);
-
+class JoltBodyActivationListener3D final
+		: public JPH::BodyActivationListener {
 public:
-	RID get_space() const;
-#ifndef NAVIGATION_3D_DISABLED
-	RID get_navigation_map() const;
-#endif // NAVIGATION_3D_DISABLED
-	RID get_scenario() const;
-
-	void set_environment(const Ref<Environment> &p_environment);
-	Ref<Environment> get_environment() const;
-
-	void set_fallback_environment(const Ref<Environment> &p_environment);
-	Ref<Environment> get_fallback_environment() const;
-
-	void set_camera_attributes(const Ref<CameraAttributes> &p_camera_attributes);
-	Ref<CameraAttributes> get_camera_attributes() const;
-
-	void set_compositor(const Ref<Compositor> &p_compositor);
-	Ref<Compositor> get_compositor() const;
-
-	_FORCE_INLINE_ const HashSet<Camera3D *> &get_cameras() const { return cameras; }
-
-#ifndef PHYSICS_3D_DISABLED
-	PhysicsDirectSpaceState3D *get_direct_space_state();
-#endif // PHYSICS_3D_DISABLED
-
-	World3D();
-	~World3D();
+	virtual void OnBodyActivated(const JPH::BodyID &p_body_id, JPH::uint64 p_body_user_data) override;
+	virtual void OnBodyDeactivated(const JPH::BodyID &p_body_id, JPH::uint64 p_body_user_data) override {}
 };
