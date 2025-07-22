@@ -4476,7 +4476,7 @@
 		<constant name="CANVAS_ITEM_Z_MAX" value="4096">
 			The maximum Z-layer for canvas items.
 		</constant>
-		<constant name="CANVAS_LAYER_MIN" value="-2147483648">
+		<constant name="CANVAS_LAYER_MIN" value="-2147483647">
 			The minimum canvas layer.
 		</constant>
 		<constant name="CANVAS_LAYER_MAX" value="2147483647">
