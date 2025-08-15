@@ -5,7 +5,8 @@
     <img src="logo_outlined.svg" width="400" alt="Godot Engine logo">
   </a>
 </p>
-A **1:1** fork of [Godot Engine](https://godotengine.org) with added support for **[Jenova Framework](https://github.com/Jenova-Framework) Nested Extensions Hot-Reloading**, While basic hot-reloading works on all Godot forks, Nested Extension (NE) support requires a compatible distribution, this repository is the officially supported **Godot Jenova Compatible** builds, preserving all upstream engine behavior and workflows.
+
+A **1:1** fork of [Godot Engine](https://godotengine.org) with added support for [Jenova Framework](https://github.com/Jenova-Framework) **Nested Extensions Hot-Reloading**, While basic hot-reloading works on all Godot forks, Nested Extension (NE) support requires a compatible distribution, this repository is the officially supported **Godot with Jenova Compatibility**, preserving all upstream engine behavior and workflows.
 
 [📚 Read More in the Documentation](https://jenova-framework.github.io/docs/pages/Advanced/Hot-Reload/) 
 
