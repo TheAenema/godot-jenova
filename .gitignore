@@ -390,3 +390,6 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 *.generated.props
+
+# Jenova Core
+/modules/jenova_core

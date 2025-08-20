@@ -1,9 +1,9 @@
-short_name = "godot"
-name = "Godot Engine"
+short_name = "godot-jnvc"
+name = "Godot Engine Jenova Compatible"
 major = 4
 minor = 5
 patch = 0
 status = "beta"
 module_config = ""
-website = "https://godotengine.org"
+website = "https://jenova-framework.github.io"
 docs = "latest"
