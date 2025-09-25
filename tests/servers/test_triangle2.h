@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  remote_debugger_peer_websocket.h                                      */
+/*  test_triangle2.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,32 +30,41 @@
 
 #pragma once
 
-#include "websocket_peer.h"
+#include "modules/navigation_2d/triangle2.h"
 
-#include "core/debugger/remote_debugger_peer.h"
+#include "tests/test_macros.h"
 
-class RemoteDebuggerPeerWebSocket : public RemoteDebuggerPeer {
-	GDSOFTCLASS(RemoteDebuggerPeerWebSocket, RemoteDebuggerPeer);
+namespace TestTriangle2 {
+TEST_SUITE("[Triangle2]") {
+	TEST_CASE("[Triangle2] Test get_area") {
+		const Vector2 p0(5.0, 5.0);
+		const Vector2 p1(6.0, 7.0);
+		const Vector2 p2(7.0, 6.0);
 
-	Ref<WebSocketPeer> ws_peer;
-	List<Array> in_queue;
-	List<Array> out_queue;
+		CHECK_EQ(Triangle2(p0, p1, p2).get_area(), doctest::Approx(1.5));
+		CHECK_EQ(Triangle2(p0, p2, p1).get_area(), doctest::Approx(1.5));
 
-	int max_queued_messages;
+		CHECK_EQ(Triangle2(p0, p2, p2).get_area(), doctest::Approx(0.0));
+		CHECK_EQ(Triangle2(p0, p1, p1).get_area(), doctest::Approx(0.0));
+	}
 
-public:
-	static RemoteDebuggerPeer *create(const String &p_uri);
+	TEST_CASE("[Triangle2] Test get_closest_point_to") {
+		const Vector2 p0(5.0, 5.0);
+		const Vector2 p1(6.0, 7.0);
+		const Vector2 p2(7.0, 6.0);
 
-	Error connect_to_host(const String &p_uri);
+		const Vector2 p3(0.0, 0.0);
+		const Vector2 p4(6.0, 6.5);
 
-	bool is_peer_connected() override;
-	int get_max_message_size() const override;
-	bool has_message() override;
-	Error put_message(const Array &p_arr) override;
-	Array get_message() override;
-	void close() override;
-	void poll() override;
-	bool can_block() const override;
+		const Triangle2 t(p0, p1, p2);
 
-	RemoteDebuggerPeerWebSocket(Ref<WebSocketPeer> p_peer = Ref<WebSocketPeer>());
-};
+		CHECK(t.get_closest_point_to(p0).is_equal_approx(p0));
+		CHECK(t.get_closest_point_to(p1).is_equal_approx(p1));
+		CHECK(t.get_closest_point_to(p2).is_equal_approx(p2));
+
+		CHECK(t.get_closest_point_to(p3).is_equal_approx(p0));
+
+		CHECK(t.get_closest_point_to(p4).is_equal_approx(p4));
+	}
+}
+} // namespace TestTriangle2

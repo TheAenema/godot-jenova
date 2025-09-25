@@ -362,6 +362,7 @@ public:
 	bool is_selectable(int p_column) const;
 
 	bool is_selected(int p_column);
+	bool is_any_column_selected() const;
 	void select(int p_column);
 	void deselect(int p_column);
 	void set_as_cursor(int p_column);
@@ -570,6 +571,7 @@ private:
 	void item_changed(int p_column, TreeItem *p_item);
 	void item_selected(int p_column, TreeItem *p_item);
 	void item_deselected(int p_column, TreeItem *p_item);
+	void update_min_size_for_item_change();
 
 	void propagate_set_columns(TreeItem *p_item);
 
