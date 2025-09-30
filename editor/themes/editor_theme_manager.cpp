@@ -320,8 +320,8 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 				preset_draw_extra_borders = true;
 			} else { // Default
 				preset_accent_color = Color("#2ebc78");
-				preset_base_color = Color("#212128");
-				preset_contrast = -0.3;
+				preset_base_color = Color("#16161a");
+				preset_contrast = -0.4;
 			}
 
 			config.accent_color = preset_accent_color;
