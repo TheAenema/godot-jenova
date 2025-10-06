@@ -37,6 +37,7 @@
 #include "core/io/file_access_encrypted.h"
 #include "core/io/file_access_pack.h"
 #include "core/io/marshalls.h"
+#include "core/io/resource_uid.h"
 #include "core/os/os.h"
 #include "core/os/time.h"
 
@@ -445,7 +446,7 @@ class CharBuffer {
 public:
 	_FORCE_INLINE_ CharBuffer() :
 			buffer(stack_buffer),
-			capacity(std::size(stack_buffer)) {
+			capacity(std_size(stack_buffer)) {
 	}
 
 	_FORCE_INLINE_ void push_back(char c) {
@@ -569,6 +570,7 @@ Vector<uint8_t> FileAccess::get_buffer(int64_t p_length) const {
 		return data;
 	}
 
+	data.reserve_exact(p_length);
 	Error err = data.resize(p_length);
 	ERR_FAIL_COND_V_MSG(err != OK, data, vformat("Can't resize data to %d elements.", p_length));
 
@@ -863,6 +865,7 @@ Vector<uint8_t> FileAccess::get_file_as_bytes(const String &p_path, Error *r_err
 		ERR_FAIL_V_MSG(Vector<uint8_t>(), vformat("Can't open file from path '%s'.", String(p_path)));
 	}
 	Vector<uint8_t> data;
+	data.reserve_exact(f->get_length());
 	data.resize(f->get_length());
 	f->get_buffer(data.ptrw(), data.size());
 	return data;
