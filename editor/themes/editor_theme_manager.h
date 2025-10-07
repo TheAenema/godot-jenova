@@ -74,7 +74,7 @@ class EditorThemeManager {
 		int color_picker_button_height = 28;
 		float subresource_hue_tint = 0.0;
 
-		float default_contrast = 1.0;
+		float default_contrast = -0.6;
 
 		// Generated properties.
 
