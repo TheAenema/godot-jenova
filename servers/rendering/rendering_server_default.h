@@ -693,7 +693,10 @@ public:
 
 	FUNCRIDSPLIT(viewport)
 
+#ifndef XR_DISABLED
 	FUNC2(viewport_set_use_xr, RID, bool)
+#endif // XR_DISABLED
+
 	FUNC3(viewport_set_size, RID, int, int)
 
 	FUNC2(viewport_set_active, RID, bool)
@@ -853,6 +856,7 @@ public:
 	FUNC1(decals_set_filter, RS::DecalFilter);
 	FUNC1(light_projectors_set_filter, RS::LightProjectorFilter);
 	FUNC1(lightmaps_set_bicubic_filter, bool);
+	FUNC1(material_set_use_debanding, bool);
 
 	/* CAMERA ATTRIBUTES */
 

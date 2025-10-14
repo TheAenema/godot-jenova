@@ -67,7 +67,7 @@ def get_doc_path():
 def get_flags():
     return {
         "arch": detect_arch(),
-        "supported": ["mono"],
+        "supported": ["library", "mono"],
     }
 
 
@@ -181,6 +181,9 @@ def configure(env: "SConsEnvironment"):
             env.Append(LINKFLAGS=["-fsanitize=memory"])
 
     env.Append(CCFLAGS=["-ffp-contract=off"])
+
+    if env["library_type"] == "shared_library":
+        env.Append(CCFLAGS=["-fPIC"])
 
     # LTO
 
