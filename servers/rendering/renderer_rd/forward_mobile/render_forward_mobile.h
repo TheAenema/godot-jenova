@@ -413,8 +413,7 @@ protected:
 	/* setup */
 	virtual void _update_shader_quality_settings() override;
 
-	virtual float _render_buffers_get_luminance_multiplier() override;
-	virtual RD::DataFormat _render_buffers_get_color_format() override;
+	virtual RD::DataFormat _render_buffers_get_preferred_color_format() override;
 	virtual bool _render_buffers_can_be_storage() override;
 
 	virtual RID _render_buffers_get_normal_texture(Ref<RenderSceneBuffersRD> p_render_buffers) override;
@@ -422,6 +421,7 @@ protected:
 
 	virtual void environment_set_ssao_quality(RS::EnvironmentSSAOQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override {}
 	virtual void environment_set_ssil_quality(RS::EnvironmentSSILQuality p_quality, bool p_half_size, float p_adaptive_target, int p_blur_passes, float p_fadeout_from, float p_fadeout_to) override {}
+	virtual void environment_set_ssr_half_size(bool p_half_size) override {}
 	virtual void environment_set_ssr_roughness_quality(RS::EnvironmentSSRRoughnessQuality p_quality) override {}
 
 	virtual void sub_surface_scattering_set_quality(RS::SubSurfaceScatteringQuality p_quality) override {}

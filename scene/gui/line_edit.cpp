@@ -31,6 +31,7 @@
 #include "line_edit.h"
 #include "line_edit.compat.inc"
 
+#include "core/config/project_settings.h"
 #include "core/input/input_map.h"
 #include "core/os/keyboard.h"
 #include "core/os/os.h"
@@ -1349,7 +1350,7 @@ void LineEdit::_notification(int p_what) {
 				style->draw(ci, Rect2(Point2(), size));
 			}
 
-			if (has_focus(true)) {
+			if (has_focus(Engine::get_singleton()->is_editor_hint() || GLOBAL_GET_CACHED(int, "gui/common/show_focus_state_on_pointer_event") != 1)) {
 				theme_cache.focus->draw(ci, Rect2(Point2(), size));
 			}
 
@@ -1644,6 +1645,9 @@ void LineEdit::_notification(int p_what) {
 				const String &new_ime_text = DisplayServer::get_singleton()->ime_get_text();
 				const Vector2i &new_ime_selection = DisplayServer::get_singleton()->ime_get_selection();
 				if (ime_text == new_ime_text && ime_selection == new_ime_selection) {
+					break;
+				}
+				if (!window_has_focus && !new_ime_text.is_empty()) {
 					break;
 				}
 
