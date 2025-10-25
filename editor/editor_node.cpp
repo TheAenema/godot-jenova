@@ -936,6 +936,12 @@ void EditorNode::_notification(int p_what) {
 			CanvasItemEditor::ThemePreviewMode theme_preview_mode = (CanvasItemEditor::ThemePreviewMode)(int)EditorSettings::get_singleton()->get_project_metadata("2d_editor", "theme_preview", CanvasItemEditor::THEME_PREVIEW_PROJECT);
 			update_preview_themes(theme_preview_mode);
 
+			// Remember the selected locale to preview node translations.
+			const String preview_locale = EditorSettings::get_singleton()->get_project_metadata("editor_metadata", "preview_locale", String());
+			if (!preview_locale.is_empty() && TranslationServer::get_singleton()->get_loaded_locales().has(preview_locale)) {
+				set_preview_locale(preview_locale);
+			}
+
 			if (Engine::get_singleton()->is_recovery_mode_hint()) {
 				EditorToaster::get_singleton()->popup_str(TTR("Recovery Mode is enabled. Editor functionality has been restricted."), EditorToaster::SEVERITY_WARNING);
 			}
@@ -3536,7 +3542,7 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			about->popup_centered(Size2(780, 500) * EDSCALE);
 		} break;
 		case HELP_SUPPORT_GODOT_DEVELOPMENT: {
-			OS::get_singleton()->shell_open("https://fund.godotengine.org");
+			OS::get_singleton()->shell_open("https://fund.godotengine.org/?ref=help_menu");
 		} break;
 	}
 }
@@ -4220,6 +4226,8 @@ void EditorNode::set_preview_locale(const String &p_locale) {
 		main_domain->set_enabled(true);
 		main_domain->set_locale_override(p_locale);
 	}
+
+	EditorSettings::get_singleton()->set_project_metadata("editor_metadata", "preview_locale", p_locale);
 
 	_translation_resources_changed();
 }
