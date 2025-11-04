@@ -355,8 +355,9 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 				preset_base_color = Color(0.89, 0.86, 0.79);
 				preset_contrast = light_contrast;
 			} else { // Default
-				preset_accent_color = Color(0.337, 0.62, 1.0);
-				preset_base_color = Color(0.153, 0.153, 0.153);
+				preset_accent_color = Color("#2ebc78");
+				preset_base_color = Color("#1b1b20");
+				preset_contrast = -0.2;
 			}
 
 			config.accent_color = preset_accent_color;
