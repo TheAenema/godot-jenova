@@ -86,6 +86,7 @@ void ThemeClassic::populate_shared_styles(const Ref<EditorTheme> &p_theme, Edito
 		p_theme->set_color("success_color", EditorStringName(Editor), p_config.success_color);
 		p_theme->set_color("warning_color", EditorStringName(Editor), p_config.warning_color);
 		p_theme->set_color("error_color", EditorStringName(Editor), p_config.error_color);
+		p_theme->set_color("ruler_color", EditorStringName(Editor), p_config.dark_color_2);
 #ifndef DISABLE_DEPRECATED // Used before 4.3.
 		p_theme->set_color("disabled_highlight_color", EditorStringName(Editor), p_config.highlight_disabled_color);
 #endif
@@ -1587,9 +1588,11 @@ void ThemeClassic::populate_editor_styles(const Ref<EditorTheme> &p_theme, Edito
 		p_theme->set_stylebox("ScriptEditor", EditorStringName(EditorStyles), EditorThemeManager::make_empty_stylebox(0, 0, 0, 0));
 
 		// Game view.
-		p_theme->set_type_variation("GamePanel", "Panel");
+		p_theme->set_type_variation("GamePanel", "PanelContainer");
 		Ref<StyleBoxFlat> game_panel = p_theme->get_stylebox(SceneStringName(panel), SNAME("Panel"))->duplicate();
 		game_panel->set_corner_radius_all(0);
+		game_panel->set_content_margin_all(0);
+		game_panel->set_draw_center(true);
 		p_theme->set_stylebox(SceneStringName(panel), "GamePanel", game_panel);
 
 		// Main menu.

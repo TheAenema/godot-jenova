@@ -578,8 +578,7 @@ void EditorNode::_gdextensions_reloaded() {
 void EditorNode::_update_translations() {
 	Ref<TranslationDomain> main = TranslationServer::get_singleton()->get_main_domain();
 
-	main->clear();
-	TranslationServer::get_singleton()->load_translations();
+	TranslationServer::get_singleton()->load_project_translations(main);
 
 	if (main->is_enabled()) {
 		// Check for the exact locale.
@@ -2919,16 +2918,6 @@ void EditorNode::hide_unused_editors(const Object *p_editing_owner) {
 	}
 }
 
-static bool overrides_external_editor(Object *p_object) {
-	Script *script = Object::cast_to<Script>(p_object);
-
-	if (!script) {
-		return false;
-	}
-
-	return script->get_language()->overrides_external_editor();
-}
-
 void EditorNode::_add_to_history(const Object *p_object, const String &p_property, bool p_inspector_only) {
 	ObjectID id = p_object->get_instance_id();
 	ObjectID history_id = editor_history.get_current();
@@ -3117,15 +3106,17 @@ void EditorNode::_edit_current(bool p_skip_foreign, bool p_skip_inspector_update
 
 		ObjectID editor_owner_id = editor_owner->get_instance_id();
 		if (main_plugin && !skip_main_plugin) {
-			// Special case if use of external editor is true.
-			Resource *current_res = Object::cast_to<Resource>(current_obj);
-			if (main_plugin->get_plugin_name() == "Script" && current_res && !current_res->is_built_in() && (bool(EDITOR_GET("text_editor/external/use_external_editor")) || overrides_external_editor(current_obj))) {
+			// Special case if current_obj is a script.
+			Script *current_script = Object::cast_to<Script>(current_obj);
+			if (current_script) {
 				if (!changing_scene) {
-					main_plugin->edit(current_obj);
+					// Only update main editor screen if using in-engine editor.
+					if (current_script->is_built_in() || (!bool(EDITOR_GET("text_editor/external/use_external_editor")) && !current_script->get_language()->overrides_external_editor())) {
+						editor_main_screen->select(plugin_index);
+					}
+
+					main_plugin->edit(current_script);
 				}
-			} else if (Object::cast_to<Script>(current_obj)) {
-				editor_main_screen->select(plugin_index);
-				main_plugin->edit(current_obj);
 			} else if (main_plugin != editor_plugin_screen) {
 				// Unedit previous plugin.
 				editor_plugin_screen->edit(nullptr);
@@ -6021,9 +6012,6 @@ void EditorNode::_load_editor_layout() {
 void EditorNode::_save_central_editor_layout_to_config(Ref<ConfigFile> p_config_file) {
 	// Bottom panel.
 
-	int center_split_offset = center_split->get_split_offset();
-	p_config_file->set_value(EDITOR_NODE_CONFIG_SECTION, "center_split_offset", center_split_offset);
-
 	bottom_panel->save_layout_to_config(p_config_file, EDITOR_NODE_CONFIG_SECTION);
 
 	// Debugger tab.
@@ -6040,11 +6028,6 @@ void EditorNode::_load_central_editor_layout_from_config(Ref<ConfigFile> p_confi
 	// Bottom panel.
 
 	bottom_panel->load_layout_from_config(p_config_file, EDITOR_NODE_CONFIG_SECTION);
-
-	if (p_config_file->has_section_key(EDITOR_NODE_CONFIG_SECTION, "center_split_offset")) {
-		int center_split_offset = p_config_file->get_value(EDITOR_NODE_CONFIG_SECTION, "center_split_offset");
-		center_split->set_split_offset(center_split_offset);
-	}
 
 	// Debugger tab.
 
@@ -7731,6 +7714,10 @@ void EditorNode::_add_to_main_menu(const String &p_name, PopupMenu *p_menu) {
 	}
 }
 
+void EditorNode::_bottom_panel_resized() {
+	bottom_panel->set_bottom_panel_offset(center_split->get_split_offset());
+}
+
 #ifdef ANDROID_ENABLED
 void EditorNode::_touch_actions_panel_mode_changed() {
 	int panel_mode = EDITOR_GET("interface/touchscreen/touch_actions_panel");
@@ -8180,6 +8167,7 @@ EditorNode::EditorNode() {
 	center_split->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	center_split->set_collapsed(true);
 	center_vb->add_child(center_split);
+	center_split->connect("drag_ended", callable_mp(this, &EditorNode::_bottom_panel_resized));
 
 	right_hsplit = memnew(DockSplitContainer);
 	right_hsplit->set_name("DockHSplitRight");
@@ -8309,6 +8297,7 @@ EditorNode::EditorNode() {
 
 	editor_settings_dialog = memnew(EditorSettingsDialog);
 	gui_base->add_child(editor_settings_dialog);
+	editor_settings_dialog->connect("restart_requested", callable_mp(this, &EditorNode::_restart_editor).bind(false));
 
 	project_settings_editor = memnew(ProjectSettingsEditor(&editor_data));
 	gui_base->add_child(project_settings_editor);
