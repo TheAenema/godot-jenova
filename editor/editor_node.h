@@ -294,9 +294,6 @@ private:
 
 	ConfirmationDialog *video_restart_dialog = nullptr;
 
-	int renderer_current = 0;
-	String renderer_request;
-
 	// Split containers.
 	DockSplitContainer *left_l_hsplit = nullptr;
 	DockSplitContainer *left_l_vsplit = nullptr;
@@ -362,7 +359,6 @@ private:
 
 	Ref<Theme> theme;
 
-	Timer *system_theme_timer = nullptr;
 	bool follow_system_theme = false;
 	bool use_system_accent_color = false;
 	bool last_dark_mode_state = false;
@@ -453,6 +449,8 @@ private:
 	bool requested_first_scan = false;
 	bool waiting_for_first_scan = true;
 	bool load_editor_layout_done = false;
+
+	bool select_current_scene_file_requested = false;
 
 	HashSet<Ref<Translation>> tracked_translations;
 	bool pending_translation_notification = false;
@@ -592,6 +590,7 @@ private:
 
 	void _set_current_scene(int p_idx);
 	void _set_current_scene_nocheck(int p_idx);
+	void _nav_to_selected_scene();
 	bool _validate_scene_recursive(const String &p_filename, Node *p_node);
 	void _save_scene(String p_file, int idx = -1);
 	void _save_all_scenes();
@@ -629,10 +628,10 @@ private:
 	void _queue_translation_notification();
 	void _propagate_translation_notification();
 
-	void _renderer_selected(int);
+	void _renderer_selected(int p_index);
 	void _update_renderer_color();
-	void _add_renderer_entry(const String &p_renderer_name, bool p_mark_overridden);
-	void _set_renderer_name_save_and_restart();
+	String _to_rendering_method_display_name(const String &p_rendering_method) const;
+	void _set_renderer_name_save_and_restart(const String &p_rendering_method);
 
 	void _exit_editor(int p_exit_code);
 
@@ -1032,35 +1031,6 @@ public:
 	bool ensure_main_scene(bool p_from_native);
 	bool validate_custom_directory();
 	void run_editor_script(const Ref<Script> &p_script);
-};
-
-class EditorPluginList : public Object {
-	GDSOFTCLASS(EditorPluginList, Object);
-
-private:
-	Vector<EditorPlugin *> plugins_list;
-
-public:
-	void set_plugins_list(Vector<EditorPlugin *> p_plugins_list) {
-		plugins_list = p_plugins_list;
-	}
-
-	Vector<EditorPlugin *> &get_plugins_list() {
-		return plugins_list;
-	}
-
-	void make_visible(bool p_visible);
-	void edit(Object *p_object);
-	bool forward_gui_input(const Ref<InputEvent> &p_event);
-	void forward_canvas_draw_over_viewport(Control *p_overlay);
-	void forward_canvas_force_draw_over_viewport(Control *p_overlay);
-	EditorPlugin::AfterGUIInput forward_3d_gui_input(Camera3D *p_camera, const Ref<InputEvent> &p_event, bool serve_when_force_input_enabled);
-	void forward_3d_draw_over_viewport(Control *p_overlay);
-	void forward_3d_force_draw_over_viewport(Control *p_overlay);
-	void add_plugin(EditorPlugin *p_plugin);
-	void remove_plugin(EditorPlugin *p_plugin);
-	void clear();
-	bool is_empty();
 };
 
 struct EditorProgressBG {

@@ -3756,6 +3756,8 @@ void AnimationTrackEditGroup::_notification(int p_what) {
 			const Color v_line_color = get_theme_color(SNAME("v_line_color"), SNAME("AnimationTrackEditGroup"));
 			const int h_separation = get_theme_constant(SNAME("h_separation"), SNAME("AnimationTrackEditGroup"));
 
+			const Ref<StyleBox> &stylebox_hover = get_theme_stylebox(SceneStringName(hover), SNAME("AnimationTrackEditGroup"));
+
 			if (root) {
 				Node *n = root->get_node_or_null(node);
 				if (n && EditorNode::get_singleton()->get_editor_selection()->is_selected(n)) {
@@ -3764,6 +3766,13 @@ void AnimationTrackEditGroup::_notification(int p_what) {
 			}
 
 			draw_style_box(stylebox_header, Rect2(Point2(), get_size()));
+
+			if (hovered) {
+				// Draw hover feedback for AnimationTrackEditGroup.
+				// Add a limit to just show hover over portion with text.
+				int limit = timeline->get_name_limit();
+				draw_style_box(stylebox_hover, Rect2(Point2(1 * EDSCALE, 0), Size2(limit - 1 * EDSCALE, get_size().height)));
+			}
 
 			int limit = timeline->get_name_limit();
 
@@ -3839,6 +3848,14 @@ void AnimationTrackEditGroup::_notification(int p_what) {
 				draw_line(Point2(px, 0), Point2(px, get_size().height), accent, Math::round(2 * EDSCALE));
 			}
 		} break;
+
+		case NOTIFICATION_MOUSE_EXIT: {
+			if (hovered) {
+				hovered = false;
+				// When the mouse cursor exits the AnimationTrackEditGroup, we're no longer hovering the group.
+				queue_redraw();
+			}
+		} break;
 	}
 }
 
@@ -3857,6 +3874,18 @@ void AnimationTrackEditGroup::gui_input(const Ref<InputEvent> &p_event) {
 			if (n) {
 				editor_selection->add_node(n);
 			}
+		}
+	}
+	Ref<InputEventMouseMotion> mm = p_event;
+	if (mm.is_valid()) {
+		Point2 pos = mm->get_position();
+		Rect2 node_name_rect = Rect2(0, 0, timeline->get_name_limit(), get_size().height);
+
+		bool was_hovered = hovered;
+		hovered = node_name_rect.has_point(pos);
+
+		if (was_hovered != hovered) {
+			queue_redraw();
 		}
 	}
 }
@@ -7293,6 +7322,13 @@ void AnimationTrackEditor::_edit_menu_pressed(int p_option) {
 			goto_prev_step(false);
 		} break;
 
+		case EDIT_GOTO_NEXT_KEYFRAME: {
+			AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(false);
+		} break;
+		case EDIT_GOTO_PREV_KEYFRAME: {
+			AnimationPlayerEditor::get_singleton()->go_to_nearest_keyframe(true);
+		} break;
+
 		case EDIT_APPLY_RESET: {
 			AnimationPlayerEditor::get_singleton()->get_player()->apply_reset(true);
 		} break;
@@ -8122,6 +8158,9 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	edit->get_popup()->add_separator();
 	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/goto_next_step", TTRC("Go to Next Step"), KeyModifierMask::CMD_OR_CTRL | Key::RIGHT), EDIT_GOTO_NEXT_STEP);
 	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/goto_prev_step", TTRC("Go to Previous Step"), KeyModifierMask::CMD_OR_CTRL | Key::LEFT), EDIT_GOTO_PREV_STEP);
+	edit->get_popup()->add_separator();
+	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/go_to_next_keyframe", TTRC("Go to Next Keyframe"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::D), EDIT_GOTO_NEXT_KEYFRAME);
+	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/go_to_previous_keyframe", TTRC("Go to Previous Keyframe"), KeyModifierMask::SHIFT | KeyModifierMask::ALT | Key::A), EDIT_GOTO_PREV_KEYFRAME);
 	edit->get_popup()->add_separator();
 	edit->get_popup()->add_shortcut(ED_SHORTCUT("animation_editor/apply_reset", TTRC("Apply Reset")), EDIT_APPLY_RESET);
 	edit->get_popup()->add_separator();

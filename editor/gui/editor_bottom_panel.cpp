@@ -57,7 +57,7 @@ void EditorBottomPanel::_on_tab_changed(int p_idx) {
 }
 
 void EditorBottomPanel::_theme_changed() {
-	Ref<StyleBox> bottom_tabbar_style = get_theme_stylebox("tabbar_background", "BottomPanel")->duplicate();
+	Ref<StyleBox> bottom_tabbar_style = EditorNode::get_singleton()->get_editor_theme()->get_stylebox("tabbar_background", "BottomPanel")->duplicate();
 	bottom_tabbar_style->set_content_margin(SIDE_RIGHT, bottom_hbox->get_minimum_size().x + bottom_tabbar_style->get_content_margin(SIDE_LEFT));
 	add_theme_style_override("tabbar_background", bottom_tabbar_style);
 
@@ -238,7 +238,7 @@ void EditorBottomPanel::_on_button_visibility_changed(Button *p_button, Control 
 }
 
 EditorBottomPanel::EditorBottomPanel() {
-	get_tab_bar()->connect(SceneStringName(gui_input), callable_mp(EditorDockManager::get_singleton(), &EditorDockManager::_dock_container_gui_input).bind(this));
+	get_tab_bar()->connect("tab_rmb_clicked", callable_mp(EditorDockManager::get_singleton(), &EditorDockManager::_dock_container_popup).bind(this));
 	get_tab_bar()->connect("tab_changed", callable_mp(this, &EditorBottomPanel::_on_tab_changed));
 	set_tabs_position(TabPosition::POSITION_BOTTOM);
 	set_deselect_enabled(true);
