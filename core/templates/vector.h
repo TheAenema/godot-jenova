@@ -248,31 +248,8 @@ public:
 		return result;
 	}
 
-	bool operator==(const Vector<T> &p_arr) const {
-		Size s = size();
-		if (s != p_arr.size()) {
-			return false;
-		}
-		for (Size i = 0; i < s; i++) {
-			if (operator[](i) != p_arr[i]) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	bool operator!=(const Vector<T> &p_arr) const {
-		Size s = size();
-		if (s != p_arr.size()) {
-			return true;
-		}
-		for (Size i = 0; i < s; i++) {
-			if (operator[](i) != p_arr[i]) {
-				return true;
-			}
-		}
-		return false;
-	}
+	bool operator==(const Vector<T> &p_arr) const { return span() == p_arr.span(); }
+	bool operator!=(const Vector<T> &p_arr) const { return span() != p_arr.span(); }
 
 	struct Iterator {
 		_FORCE_INLINE_ T &operator*() const {
@@ -343,8 +320,6 @@ public:
 			_cowdata(p_init) {}
 	_FORCE_INLINE_ Vector(const Vector &p_from) = default;
 	_FORCE_INLINE_ Vector(Vector &&p_from) = default;
-
-	_FORCE_INLINE_ ~Vector() {}
 };
 
 template <typename T>

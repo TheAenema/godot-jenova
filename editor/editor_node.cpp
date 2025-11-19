@@ -206,6 +206,8 @@ static const String EDITOR_NODE_CONFIG_SECTION = "EditorNode";
 static const String REMOVE_ANDROID_BUILD_TEMPLATE_MESSAGE = TTRC("The Android build template is already installed in this project and it won't be overwritten.\nRemove the \"%s\" directory manually before attempting this operation again.");
 static const String INSTALL_ANDROID_BUILD_TEMPLATE_MESSAGE = TTRC("This will set up your project for gradle Android builds by installing the source template to \"%s\".\nNote that in order to make gradle builds instead of using pre-built APKs, the \"Use Gradle Build\" option should be enabled in the Android export preset.");
 
+constexpr int LARGE_RESOURCE_WARNING_SIZE_THRESHOLD = 512'000; // 500 KB
+
 bool EditorProgress::step(const String &p_state, int p_step, bool p_force_refresh) {
 	if (!force_background && Thread::is_main_thread()) {
 		return EditorNode::progress_task_step(task, p_state, p_step, p_force_refresh);
@@ -679,7 +681,7 @@ void EditorNode::_update_theme(bool p_skip_creation) {
 		editor_main_screen->add_theme_style_override(SceneStringName(panel), theme->get_stylebox(SNAME("Content"), EditorStringName(EditorStyles)));
 		bottom_panel->_theme_changed();
 		distraction_free->set_button_icon(theme->get_icon(SNAME("DistractionFree"), EditorStringName(EditorIcons)));
-		distraction_free->add_theme_style_override(SceneStringName(pressed), theme->get_stylebox(CoreStringName(normal), "FlatMenuButton"));
+		update_distraction_free_button_theme();
 
 		help_menu->set_item_icon(help_menu->get_item_index(HELP_SEARCH), _get_editor_theme_native_menu_icon(SNAME("HelpSearch"), global_menu, dark_mode));
 		help_menu->set_item_icon(help_menu->get_item_index(HELP_COPY_SYSTEM_INFO), _get_editor_theme_native_menu_icon(SNAME("ActionCopy"), global_menu, dark_mode));
@@ -1657,6 +1659,18 @@ void EditorNode::save_resource_in_path(const Ref<Resource> &p_resource, const St
 	clear_node_reference(p_resource); // // Check if Resource is saved to disk to potentially remove it from resource_count
 	emit_signal(SNAME("resource_saved"), p_resource);
 	editor_data.notify_resource_saved(p_resource);
+
+	if (EDITOR_GET("filesystem/on_save/warn_on_saving_large_text_resources")) {
+		if (p_path.ends_with(".tres")) {
+			const int64_t file_size = FileAccess::get_size(p_path);
+			if (file_size >= LARGE_RESOURCE_WARNING_SIZE_THRESHOLD) {
+				// File is larger than 500 KiB, likely because it contains binary data serialized as Base64.
+				// This is slow to save and load, so warn the user.
+				EditorToaster::get_singleton()->popup_str(
+						vformat(TTR("The text-based resource at path \"%s\" is large on disk (%s), likely because it has embedded binary data.\nThis slows down resource saving and loading.\nConsider saving its binary subresource(s) to a binary `.res` file or saving the resource as a binary `.res` file.\nThis warning can be disabled in the Editor Settings (FileSystem > On Save > Warn on Saving Large Text Resources)."), p_path, String::humanize_size(file_size)), EditorToaster::SEVERITY_WARNING);
+			}
+		}
+	}
 }
 
 void EditorNode::save_resource(const Ref<Resource> &p_resource) {
@@ -2404,6 +2418,18 @@ void EditorNode::_save_scene(String p_file, int idx) {
 		editor_data.set_scene_as_saved(idx);
 		editor_data.set_scene_modified_time(idx, FileAccess::get_modified_time(p_file));
 
+		if (EDITOR_GET("filesystem/on_save/warn_on_saving_large_text_resources")) {
+			if (p_file.ends_with(".tscn") || p_file.ends_with(".tres")) {
+				const int64_t file_size = FileAccess::get_size(p_file);
+				if (file_size >= LARGE_RESOURCE_WARNING_SIZE_THRESHOLD) {
+					// File is larger than 500 KiB, likely because it contains binary data serialized as Base64.
+					// This is slow to save and load, so warn the user.
+					EditorToaster::get_singleton()->popup_str(
+							vformat(TTR("The text-based scene at path \"%s\" is large on disk (%s), likely because it has embedded binary data.\nThis slows down scene saving and loading.\nConsider saving its binary subresource(s) to a binary `.res` file or saving the scene as a binary `.scn` file.\nThis warning can be disabled in the Editor Settings (FileSystem > On Save > Warn on Saving Large Text Resources)."), p_file, String::humanize_size(file_size)), EditorToaster::SEVERITY_WARNING);
+				}
+			}
+		}
+
 		editor_folding.save_scene_folding(scene, p_file);
 
 		_update_title();
@@ -2610,6 +2636,11 @@ void EditorNode::_dialog_action(String p_file) {
 				_save_scene_with_preview(p_file);
 				project_run_bar->play_main_scene((bool)pick_main_scene->get_meta("from_native", false));
 			}
+		} break;
+
+		case SAVE_AND_SET_MAIN_SCENE: {
+			_save_scene(p_file);
+			_menu_option_confirm(SCENE_TAB_SET_AS_MAIN_SCENE, true);
 		} break;
 
 		case FILE_EXPORT_MESH_LIBRARY: {
@@ -3342,6 +3373,19 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			file->set_title(TTR("Save Scene As..."));
 			file->popup_file_dialog();
 
+		} break;
+
+		case SCENE_TAB_SET_AS_MAIN_SCENE: {
+			const String scene_path = editor_data.get_scene_path(editor_data.get_edited_scene());
+			if (scene_path.is_empty()) {
+				current_menu_option = SAVE_AND_SET_MAIN_SCENE;
+				_menu_option_confirm(SCENE_SAVE_AS_SCENE, true);
+				file->set_title(TTR("Save new main scene..."));
+			} else {
+				ProjectSettings::get_singleton()->set("application/run/main_scene", ResourceUID::path_to_uid(scene_path));
+				ProjectSettings::get_singleton()->save();
+				FileSystemDock::get_singleton()->update_all();
+			}
 		} break;
 
 		case SCENE_SAVE_ALL_SCENES: {
@@ -6550,6 +6594,16 @@ bool EditorNode::is_distraction_free_mode_enabled() const {
 	return distraction_free->is_pressed();
 }
 
+void EditorNode::update_distraction_free_button_theme() {
+	if (distraction_free->get_meta("_scene_tabs_owned", true)) {
+		distraction_free->set_theme_type_variation("FlatMenuButton");
+		distraction_free->add_theme_style_override(SceneStringName(pressed), theme->get_stylebox(CoreStringName(normal), "FlatMenuButton"));
+	} else {
+		distraction_free->set_theme_type_variation("BottomPanelButton");
+		distraction_free->remove_theme_style_override(SceneStringName(pressed));
+	}
+}
+
 void EditorNode::set_center_split_offset(int p_offset) {
 	center_split->set_split_offset(p_offset);
 }
@@ -8370,7 +8424,7 @@ EditorNode::EditorNode() {
 
 	warning = memnew(AcceptDialog);
 	warning->set_unparent_when_invisible(true);
-	warning->add_button(TTR("Copy Text"), true, "copy");
+	warning->add_button(TTRC("Copy Text"), true, "copy");
 	warning->connect("custom_action", callable_mp(this, &EditorNode::_copy_warning));
 
 	ED_SHORTCUT("editor/next_tab", TTRC("Next Scene Tab"), KeyModifierMask::CTRL + Key::TAB);
@@ -8405,7 +8459,7 @@ EditorNode::EditorNode() {
 
 	file_menu->add_separator();
 	export_as_menu = memnew(PopupMenu);
-	file_menu->add_submenu_node_item(TTRC("Export As..."), export_as_menu);
+	file_menu->add_submenu_node_item(TTRC("Export As..."), export_as_menu, SCENE_EXPORT_AS);
 	export_as_menu->add_shortcut(ED_SHORTCUT("editor/export_as_mesh_library", TTRC("MeshLibrary...")), FILE_EXPORT_MESH_LIBRARY);
 	export_as_menu->connect("index_pressed", callable_mp(this, &EditorNode::_export_as_menu_option));
 

@@ -65,7 +65,7 @@ class ProjectListItemControl : public HBoxContainer {
 	bool icon_needs_reload = true;
 	bool is_selected = false;
 	bool is_hovering = false;
-	bool is_favourite = false;
+	bool is_favorite = false;
 
 	void _update_favorite_button_focus_color();
 	void _favorite_button_pressed();
@@ -323,7 +323,7 @@ public:
 
 	void set_search_term(String p_search_term);
 	void add_search_tag(const String &p_tag);
-	void set_order_option(int p_option);
+	void set_order_option(int p_option, bool p_save);
 
 	// Global menu integration.
 

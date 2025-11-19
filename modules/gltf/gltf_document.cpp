@@ -3209,16 +3209,20 @@ void GLTFDocument::_set_texture_transform_uv1(const Dictionary &p_dict, Ref<Base
 		if (extensions.has("KHR_texture_transform")) {
 			if (p_material.is_valid()) {
 				const Dictionary &texture_transform = extensions["KHR_texture_transform"];
-				const Array &offset_arr = texture_transform["offset"];
-				if (offset_arr.size() == 2) {
-					const Vector3 offset_vector3 = Vector3(offset_arr[0], offset_arr[1], 0.0f);
-					p_material->set_uv1_offset(offset_vector3);
+				if (texture_transform.has("offset")) {
+					const Array offset_arr = texture_transform["offset"];
+					if (offset_arr.size() == 2) {
+						const Vector3 offset_vector3 = Vector3(offset_arr[0], offset_arr[1], 0.0f);
+						p_material->set_uv1_offset(offset_vector3);
+					}
 				}
 
-				const Array &scale_arr = texture_transform["scale"];
-				if (scale_arr.size() == 2) {
-					const Vector3 scale_vector3 = Vector3(scale_arr[0], scale_arr[1], 1.0f);
-					p_material->set_uv1_scale(scale_vector3);
+				if (texture_transform.has("scale")) {
+					const Array scale_arr = texture_transform["scale"];
+					if (scale_arr.size() == 2) {
+						const Vector3 scale_vector3 = Vector3(scale_arr[0], scale_arr[1], 1.0f);
+						p_material->set_uv1_scale(scale_vector3);
+					}
 				}
 			}
 		}
@@ -3764,9 +3768,10 @@ Error GLTFDocument::_serialize_animations(Ref<GLTFState> p_state) {
 				Dictionary sampler;
 				sampler["input"] = GLTFAccessor::encode_new_accessor_from_float64s(p_state, pointer_track.times);
 				sampler["interpolation"] = interpolation_to_string(pointer_track.interpolation);
+				GLTFAccessor::GLTFComponentType component_type = obj_model_prop->get_component_type(pointer_track.values);
 				// TODO: This can be made faster after this pull request is merged: https://github.com/godotengine/godot/pull/109003
 				Array values_arr = GLTFTemplateConvert::to_array(pointer_track.values);
-				sampler["output"] = GLTFAccessor::encode_new_accessor_from_variants(p_state, values_arr, obj_model_prop->get_variant_type(), obj_model_prop->get_accessor_type());
+				sampler["output"] = GLTFAccessor::encode_new_accessor_from_variants(p_state, values_arr, obj_model_prop->get_variant_type(), obj_model_prop->get_accessor_type(), component_type);
 				samplers.push_back(sampler);
 			}
 		}
