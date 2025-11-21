@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  taa.h                                                                 */
+/*  editor_shader_language_plugin.h                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,31 +30,28 @@
 
 #pragma once
 
-#include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "shader_editor.h"
 
-namespace RendererRD {
+class EditorShaderLanguagePlugin : public RefCounted {
+	GDCLASS(EditorShaderLanguagePlugin, RefCounted);
 
-class TAA {
+	static Vector<Ref<EditorShaderLanguagePlugin>> shader_languages;
+	static Vector<Vector2i> language_variation_map;
+
 public:
-	TAA();
-	~TAA();
+	static void register_shader_language(const Ref<EditorShaderLanguagePlugin> &p_shader_language);
+	static void clear_registered_shader_languages();
+	static const Vector<Ref<EditorShaderLanguagePlugin>> get_shader_languages_read_only();
+	static int get_shader_language_variation_count();
+	static Ref<EditorShaderLanguagePlugin> get_shader_language_for_index(int p_index);
+	static String get_file_extension_for_index(int p_index);
 
-	void process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_format, float p_z_near, float p_z_far);
-
-private:
-	struct TAAResolvePushConstant {
-		float resolution_width;
-		float resolution_height;
-		float disocclusion_threshold;
-		float variance_dynamic;
-	};
-
-	TaaResolveShaderRD taa_shader;
-	RID shader_version;
-	RID pipeline;
-
-	void resolve(RID p_frame, RID p_temp, RID p_depth, RID p_velocity, RID p_prev_velocity, RID p_history, Size2 p_resolution, float p_z_near, float p_z_far);
+	virtual bool handles_shader(const Ref<Shader> &p_shader) const = 0;
+	virtual bool handles_shader_include(const Ref<ShaderInclude> &p_shader_inc) const { return false; }
+	virtual ShaderEditor *edit_shader(const Ref<Shader> &p_shader) = 0;
+	virtual ShaderEditor *edit_shader_include(const Ref<ShaderInclude> &p_shader_inc) { return nullptr; }
+	virtual Ref<Shader> create_new_shader(int p_variation_index, Shader::Mode p_shader_mode, int p_template_index) = 0;
+	virtual Ref<ShaderInclude> create_new_shader_include() { return Ref<ShaderInclude>(); }
+	virtual PackedStringArray get_language_variations() const = 0;
+	virtual String get_file_extension(int p_variation_index) const { return "tres"; }
 };
-
-} // namespace RendererRD

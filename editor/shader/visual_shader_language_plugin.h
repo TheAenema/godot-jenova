@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  taa.h                                                                 */
+/*  visual_shader_language_plugin.h                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,31 +30,14 @@
 
 #pragma once
 
-#include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "editor/shader/editor_shader_language_plugin.h"
 
-namespace RendererRD {
+class VisualShaderLanguagePlugin : public EditorShaderLanguagePlugin {
+	GDCLASS(VisualShaderLanguagePlugin, EditorShaderLanguagePlugin);
 
-class TAA {
 public:
-	TAA();
-	~TAA();
-
-	void process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_format, float p_z_near, float p_z_far);
-
-private:
-	struct TAAResolvePushConstant {
-		float resolution_width;
-		float resolution_height;
-		float disocclusion_threshold;
-		float variance_dynamic;
-	};
-
-	TaaResolveShaderRD taa_shader;
-	RID shader_version;
-	RID pipeline;
-
-	void resolve(RID p_frame, RID p_temp, RID p_depth, RID p_velocity, RID p_prev_velocity, RID p_history, Size2 p_resolution, float p_z_near, float p_z_far);
+	virtual bool handles_shader(const Ref<Shader> &p_shader) const override;
+	virtual ShaderEditor *edit_shader(const Ref<Shader> &p_shader) override;
+	virtual Ref<Shader> create_new_shader(int p_variation_index, Shader::Mode p_shader_mode, int p_template_index) override;
+	virtual PackedStringArray get_language_variations() const override;
 };
-
-} // namespace RendererRD

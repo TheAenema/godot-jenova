@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  taa.h                                                                 */
+/*  visual_shader_language_plugin.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,33 +28,31 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+#include "visual_shader_language_plugin.h"
 
-#include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+#include "visual_shader_editor_plugin.h"
 
-namespace RendererRD {
+bool VisualShaderLanguagePlugin::handles_shader(const Ref<Shader> &p_shader) const {
+	return Object::cast_to<VisualShader>(p_shader.ptr()) != nullptr;
+}
 
-class TAA {
-public:
-	TAA();
-	~TAA();
+ShaderEditor *VisualShaderLanguagePlugin::edit_shader(const Ref<Shader> &p_shader) {
+	const Ref<VisualShader> shader = p_shader;
+	ERR_FAIL_COND_V(shader.is_null(), nullptr);
+	VisualShaderEditor *editor = memnew(VisualShaderEditor);
+	editor->edit_shader(shader);
+	return editor;
+}
 
-	void process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_format, float p_z_near, float p_z_far);
+Ref<Shader> VisualShaderLanguagePlugin::create_new_shader(int p_variation_index, Shader::Mode p_shader_mode, int p_template_index) {
+	Ref<VisualShader> shader;
+	shader.instantiate();
+	shader->set_mode(p_shader_mode);
+	return shader;
+}
 
-private:
-	struct TAAResolvePushConstant {
-		float resolution_width;
-		float resolution_height;
-		float disocclusion_threshold;
-		float variance_dynamic;
-	};
-
-	TaaResolveShaderRD taa_shader;
-	RID shader_version;
-	RID pipeline;
-
-	void resolve(RID p_frame, RID p_temp, RID p_depth, RID p_velocity, RID p_prev_velocity, RID p_history, Size2 p_resolution, float p_z_near, float p_z_far);
-};
-
-} // namespace RendererRD
+PackedStringArray VisualShaderLanguagePlugin::get_language_variations() const {
+	PackedStringArray variations;
+	variations.push_back("VisualShader");
+	return variations;
+}

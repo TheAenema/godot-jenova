@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  taa.h                                                                 */
+/*  editor_shader_language_plugin.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,33 +28,43 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+#include "editor_shader_language_plugin.h"
 
-#include "servers/rendering/renderer_rd/shaders/effects/taa_resolve.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/render_scene_buffers_rd.h"
+Vector<Ref<EditorShaderLanguagePlugin>> EditorShaderLanguagePlugin::shader_languages;
+Vector<Vector2i> EditorShaderLanguagePlugin::language_variation_map;
 
-namespace RendererRD {
+void EditorShaderLanguagePlugin::register_shader_language(const Ref<EditorShaderLanguagePlugin> &p_shader_language) {
+	// Allows one ShaderLanguageEditorPlugin to provide multiple dropdown options in
+	// the language selection menu. For example, ShaderInclude is handled this way.
+	// X is the plugin index, and Y is the language variation index.
+	for (int i = 0; i < p_shader_language->get_language_variations().size(); i++) {
+		language_variation_map.push_back(Vector2i(shader_languages.size(), i));
+	}
+	shader_languages.push_back(p_shader_language);
+}
 
-class TAA {
-public:
-	TAA();
-	~TAA();
+void EditorShaderLanguagePlugin::clear_registered_shader_languages() {
+	shader_languages.clear();
+	language_variation_map.clear();
+}
 
-	void process(Ref<RenderSceneBuffersRD> p_render_buffers, RD::DataFormat p_format, float p_z_near, float p_z_far);
+const Vector<Ref<EditorShaderLanguagePlugin>> EditorShaderLanguagePlugin::get_shader_languages_read_only() {
+	return shader_languages;
+}
 
-private:
-	struct TAAResolvePushConstant {
-		float resolution_width;
-		float resolution_height;
-		float disocclusion_threshold;
-		float variance_dynamic;
-	};
+int EditorShaderLanguagePlugin::get_shader_language_variation_count() {
+	return language_variation_map.size();
+}
 
-	TaaResolveShaderRD taa_shader;
-	RID shader_version;
-	RID pipeline;
+Ref<EditorShaderLanguagePlugin> EditorShaderLanguagePlugin::get_shader_language_for_index(int p_index) {
+	ERR_FAIL_INDEX_V(p_index, language_variation_map.size(), nullptr);
+	Vector2i lang_var_indices = language_variation_map[p_index];
+	return shader_languages[lang_var_indices.x];
+}
 
-	void resolve(RID p_frame, RID p_temp, RID p_depth, RID p_velocity, RID p_prev_velocity, RID p_history, Size2 p_resolution, float p_z_near, float p_z_far);
-};
-
-} // namespace RendererRD
+String EditorShaderLanguagePlugin::get_file_extension_for_index(int p_index) {
+	ERR_FAIL_INDEX_V(p_index, language_variation_map.size(), "tres");
+	Vector2i lang_var_indices = language_variation_map[p_index];
+	EditorShaderLanguagePlugin *lang = shader_languages[lang_var_indices.x].ptr();
+	return lang->get_file_extension(lang_var_indices.y);
+}
