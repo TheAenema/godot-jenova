@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  node_dock.h                                                           */
+/*  split_container.compat.inc                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,45 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+#ifndef DISABLE_DEPRECATED
 
-#include "editor/docks/editor_dock.h"
-#include "groups_editor.h"
+void SplitContainer::_clamp_split_offset_compat_90411() {
+	clamp_split_offset(0);
+}
 
-class ConfigFile;
-class ConnectionsDock;
+void SplitContainer::_bind_compatibility_methods() {
+	ClassDB::bind_compatibility_method(D_METHOD("clamp_split_offset"), &SplitContainer::_clamp_split_offset_compat_90411);
+}
 
-class NodeDock : public EditorDock {
-	GDCLASS(NodeDock, EditorDock);
-
-	Button *connections_button = nullptr;
-	Button *groups_button = nullptr;
-
-	ConnectionsDock *connections = nullptr;
-	GroupsEditor *groups = nullptr;
-
-	HBoxContainer *mode_hb = nullptr;
-
-private:
-	inline static NodeDock *singleton = nullptr;
-
-public:
-	static NodeDock *get_singleton() { return singleton; }
-
-protected:
-	void _notification(int p_what);
-
-	virtual void save_layout_to_config(Ref<ConfigFile> &p_layout, const String &p_section) const override;
-	virtual void load_layout_from_config(const Ref<ConfigFile> &p_layout, const String &p_section) override;
-
-public:
-	void set_selection(const Vector<Object *> &p_objects);
-
-	void show_groups();
-	void show_connections();
-
-	void update_lists();
-
-	NodeDock();
-	~NodeDock();
-};
+#endif
