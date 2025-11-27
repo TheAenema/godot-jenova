@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  DeviceUtils.kt                                                        */
+/*  delta_encoding.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,33 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-/**
- * Contains utility methods for detecting specific devices.
- */
-@file:JvmName("DeviceUtils")
+#pragma once
 
-package org.godotengine.godot.utils
+#include "core/io/file_access.h"
 
-import android.content.Context
-import android.os.Build
-
-/**
- * Returns true if running on Meta Horizon OS.
- */
-fun isHorizonOSDevice(context: Context): Boolean {
-	return context.packageManager.hasSystemFeature("oculus.hardware.standalone_vr")
-}
-
-/**
- * Returns true if running on PICO OS.
- */
-fun isPicoOSDevice(): Boolean {
-	return ("Pico".equals(Build.BRAND, true))
-}
-
-/**
- * Returns true if running on a native Android XR device.
- */
-fun isNativeXRDevice(context: Context): Boolean {
-	return isHorizonOSDevice(context) || isPicoOSDevice()
-}
+class DeltaEncoding {
+public:
+	static Error encode_delta(Span<uint8_t> p_old_data, Span<uint8_t> p_new_data, Vector<uint8_t> &r_delta, int p_compression_level = 19);
+	static Error decode_delta(Span<uint8_t> p_old_data, Span<uint8_t> p_delta, Vector<uint8_t> &r_new_data);
+};
