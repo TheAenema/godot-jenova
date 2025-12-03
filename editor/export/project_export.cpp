@@ -203,11 +203,15 @@ void ProjectExportDialog::_update_presets() {
 	}
 
 	int current_idx = -1;
+	int preset_count = EditorExport::get_singleton()->get_export_preset_count();
 	presets->clear();
-	for (int i = 0; i < EditorExport::get_singleton()->get_export_preset_count(); i++) {
+	for (int i = 0; i < preset_count; i++) {
 		Ref<EditorExportPreset> preset = EditorExport::get_singleton()->get_export_preset(i);
 		if (preset == current) {
 			current_idx = i;
+		} else if (current.is_null()) {
+			current_idx = i;
+			_edit_preset(i);
 		}
 
 		String preset_name = preset->get_name();
@@ -217,6 +221,9 @@ void ProjectExportDialog::_update_presets() {
 		preset->update_files();
 		presets->add_item(preset_name, preset->get_platform()->get_logo());
 	}
+
+	settings_vb->set_visible(current_idx != -1);
+	empty_label->set_visible(current_idx == -1);
 
 	if (current_idx != -1) {
 		presets->select(current_idx);
@@ -249,19 +256,14 @@ void ProjectExportDialog::_update_export_all() {
 
 void ProjectExportDialog::_edit_preset(int p_index) {
 	if (p_index < 0 || p_index >= presets->get_item_count()) {
-		name->set_text("");
-		name->set_editable(false);
-		export_path->hide();
-		advanced_options->set_disabled(true);
-		runnable->set_disabled(true);
 		parameters->edit(nullptr);
 		presets->deselect_all();
 		duplicate_preset->set_disabled(true);
 		delete_preset->set_disabled(true);
-		sections->hide();
 		patches->clear();
 		export_error->hide();
 		export_templates_error->hide();
+		export_texture_format_error->hide();
 		return;
 	}
 
@@ -271,10 +273,6 @@ void ProjectExportDialog::_edit_preset(int p_index) {
 	updating = true;
 
 	presets->select(p_index);
-	sections->show();
-
-	name->set_editable(true);
-	export_path->show();
 	duplicate_preset->set_disabled(false);
 	delete_preset->set_disabled(false);
 	get_ok_button()->set_disabled(false);
@@ -289,8 +287,6 @@ void ProjectExportDialog::_edit_preset(int p_index) {
 	export_path->get_path_edit()->clear();
 	export_path->setup(extension_vector, false, true, false);
 	export_path->update_property();
-	advanced_options->set_disabled(false);
-	runnable->set_disabled(false);
 	runnable->set_pressed(current->is_runnable());
 	if (parameters->get_edited_object() != current.ptr()) {
 		current->update_value_overrides();
@@ -437,7 +433,7 @@ void ProjectExportDialog::_edit_preset(int p_index) {
 		script_key_error->hide();
 	}
 
-	int script_export_mode = current->get_script_export_mode();
+	int script_export_mode = int(current->get_script_export_mode());
 	script_mode->select(script_export_mode);
 
 	updating = false;
@@ -707,7 +703,7 @@ bool ProjectExportDialog::_validate_script_encryption_key(const String &p_key) {
 	return is_valid;
 }
 
-void ProjectExportDialog::_script_export_mode_changed(int p_mode) {
+void ProjectExportDialog::_script_export_mode_changed(EditorExportPreset::ScriptExportMode p_mode) {
 	if (updating) {
 		return;
 	}
@@ -795,7 +791,7 @@ void ProjectExportDialog::_delete_preset() {
 
 void ProjectExportDialog::_delete_preset_confirm() {
 	int idx = presets->get_current();
-	_edit_preset(-1);
+	_edit_preset(idx - 1);
 	export_button->set_disabled(true);
 	get_ok_button()->set_disabled(true);
 	EditorExport::get_singleton()->remove_export_preset(idx);
@@ -1405,27 +1401,6 @@ void ProjectExportDialog::_open_export_template_manager() {
 	EditorNode::get_singleton()->open_export_template_manager();
 }
 
-void ProjectExportDialog::_validate_export_path(const String &p_path) {
-	// Disable export via OK button or Enter key if LineEdit has an empty filename
-	bool invalid_path = (p_path.get_file().get_basename().is_empty());
-
-	// Check if state change before needlessly messing with signals
-	if (invalid_path && export_project->get_ok_button()->is_disabled()) {
-		return;
-	}
-	if (!invalid_path && !export_project->get_ok_button()->is_disabled()) {
-		return;
-	}
-
-	if (invalid_path) {
-		export_project->get_ok_button()->set_disabled(true);
-		export_project->get_line_edit()->disconnect(SceneStringName(text_submitted), callable_mp(export_project, &EditorFileDialog::_file_submitted));
-	} else {
-		export_project->get_ok_button()->set_disabled(false);
-		export_project->get_line_edit()->connect(SceneStringName(text_submitted), callable_mp(export_project, &EditorFileDialog::_file_submitted));
-	}
-}
-
 void ProjectExportDialog::_export_project() {
 	Ref<EditorExportPreset> current = get_current_preset();
 	ERR_FAIL_COND(current.is_null());
@@ -1450,16 +1425,6 @@ void ProjectExportDialog::_export_project() {
 			export_project->set_current_file(default_filename);
 		}
 	}
-
-	// Ensure that signal is connected if previous attempt left it disconnected
-	// with _validate_export_path.
-	// FIXME: This is a hack, we should instead change EditorFileDialog to allow
-	// disabling validation by the "text_submitted" signal.
-	if (!export_project->get_line_edit()->is_connected(SceneStringName(text_submitted), callable_mp(export_project, &EditorFileDialog::_file_submitted))) {
-		export_project->get_ok_button()->set_disabled(false);
-		export_project->get_line_edit()->connect(SceneStringName(text_submitted), callable_mp(export_project, &EditorFileDialog::_file_submitted));
-	}
-
 	export_project->set_file_mode(EditorFileDialog::FILE_MODE_SAVE_FILE);
 	export_project->popup_file_dialog();
 }
@@ -1597,6 +1562,7 @@ ProjectExportDialog::ProjectExportDialog() {
 	presets = memnew(ItemList);
 	presets->set_theme_type_variation("ItemListSecondary");
 	presets->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
+	presets->set_custom_minimum_size(Size2(0, 200 * EDSCALE));
 	SET_DRAG_FORWARDING_GCD(presets, ProjectExportDialog);
 	mc->add_child(presets);
 	presets->connect(SceneStringName(item_selected), callable_mp(this, &ProjectExportDialog::_edit_preset));
@@ -1613,12 +1579,21 @@ ProjectExportDialog::ProjectExportDialog() {
 
 	// Preset settings.
 
-	VBoxContainer *settings_vb = memnew(VBoxContainer);
+	settings_vb = memnew(VBoxContainer);
+	settings_vb->hide();
 	settings_vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	hbox->add_child(settings_vb);
 
+	PanelContainer *panel = memnew(PanelContainer);
+	panel->set_theme_type_variation(SNAME("PanelForeground"));
+	settings_vb->add_child(panel);
+
+	VBoxContainer *top_settings = memnew(VBoxContainer);
+	top_settings->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	panel->add_child(top_settings);
+
 	name = memnew(LineEdit);
-	settings_vb->add_margin_child(TTR("Name:"), name);
+	top_settings->add_margin_child(TTR("Name:"), name);
 	name->connect(SceneStringName(text_submitted), callable_mp(this, &ProjectExportDialog::_name_changed));
 	name->connect(SceneStringName(focus_exited), callable_mp(this, &ProjectExportDialog::_name_editing_finished));
 
@@ -1637,10 +1612,10 @@ ProjectExportDialog::ProjectExportDialog() {
 	preset_configs_container->add_spacer(true);
 	preset_configs_container->add_child(advanced_options);
 	preset_configs_container->add_child(runnable);
-	settings_vb->add_child(preset_configs_container);
+	top_settings->add_child(preset_configs_container);
 
 	export_path = memnew(EditorPropertyPath);
-	settings_vb->add_child(export_path);
+	top_settings->add_child(export_path);
 	export_path->set_label(TTR("Export Path"));
 	export_path->set_object_and_property(this, "export_path");
 	export_path->set_save_mode();
@@ -1925,15 +1900,22 @@ ProjectExportDialog::ProjectExportDialog() {
 	sections->connect("tab_changed", callable_mp(this, &ProjectExportDialog::_tab_changed));
 
 	// Disable by default.
-	name->set_editable(false);
-	export_path->hide();
-	advanced_options->set_disabled(true);
-	runnable->set_disabled(true);
 	duplicate_preset->set_disabled(true);
 	delete_preset->set_disabled(true);
 	script_key_error->hide();
-	sections->hide();
 	parameters->edit(nullptr);
+
+	// Label shown when no presets are present.
+
+	empty_label = memnew(Label(TTRC("No presets found.\nCreate one so that its parameters can be edited here.")));
+	empty_label->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
+	empty_label->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
+	empty_label->set_autowrap_mode(TextServer::AUTOWRAP_WORD_SMART);
+	empty_label->set_clip_text(true); // Necessary to avoid overexpanding the dialog vertically.
+	empty_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	empty_label->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	empty_label->hide();
+	hbox->add_child(empty_label);
 
 	// Deletion dialog.
 
@@ -1952,7 +1934,7 @@ ProjectExportDialog::ProjectExportDialog() {
 	export_button = add_button(TTR("Export Project..."), !DisplayServer::get_singleton()->get_swap_cancel_ok(), "export");
 	export_button->set_tooltip_text(TTR("Export the project as a playable build (Godot executable and project data) for the selected preset."));
 	export_button->connect(SceneStringName(pressed), callable_mp(this, &ProjectExportDialog::_export_project));
-	// Disable initially before we select a valid preset
+	// Disable initially before we select a valid preset.
 	export_button->set_disabled(true);
 
 	export_all_dialog = memnew(ConfirmationDialog);
@@ -2028,7 +2010,6 @@ ProjectExportDialog::ProjectExportDialog() {
 	export_project->set_access(EditorFileDialog::ACCESS_FILESYSTEM);
 	add_child(export_project);
 	export_project->connect("file_selected", callable_mp(this, &ProjectExportDialog::_export_project_to_path));
-	export_project->get_line_edit()->connect(SceneStringName(text_changed), callable_mp(this, &ProjectExportDialog::_validate_export_path));
 
 	export_project->add_option(TTR("Export With Debug"), Vector<String>(), EditorSettings::get_singleton()->get_project_metadata("export_options", "export_debug", true));
 	export_pck_zip->add_option(TTR("Export With Debug"), Vector<String>(), EditorSettings::get_singleton()->get_project_metadata("export_options", "export_debug", true));

@@ -146,7 +146,7 @@ class SceneTreeDock : public EditorDock {
 	List<Node *> node_clipboard;
 	HashSet<Node *> node_clipboard_edited_scene_owned;
 	String clipboard_source_scene;
-	HashMap<String, HashMap<Ref<Resource>, Ref<Resource>>> clipboard_resource_remap;
+	HashMap<String, HashMap<Node *, HashMap<Ref<Resource>, Ref<Resource>>>> clipboard_resource_remap;
 
 	ScriptCreateDialog *script_create_dialog = nullptr;
 	ShaderCreateDialog *shader_create_dialog = nullptr;
@@ -274,7 +274,7 @@ class SceneTreeDock : public EditorDock {
 	void _filter_changed(const String &p_filter);
 	void _filter_gui_input(const Ref<InputEvent> &p_event);
 	void _filter_option_selected(int option);
-	void _append_filter_options_to(PopupMenu *p_menu, bool p_include_separator = true);
+	void _append_filter_options_to(PopupMenu *p_menu);
 
 	void _perform_instantiate_scenes(const Vector<String> &p_files, Node *p_parent, int p_pos);
 	void _perform_create_audio_stream_players(const Vector<String> &p_files, Node *p_parent, int p_pos);

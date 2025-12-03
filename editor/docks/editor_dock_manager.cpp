@@ -333,7 +333,7 @@ void EditorDockManager::update_docks_menu() {
 	// Add docks.
 	docks_menu_docks.clear();
 	int id = 0;
-	const Callable icon_fetch = callable_mp((Window *)docks_menu, &Window::get_editor_theme_native_menu_icon).bind(global_menu, dark_mode);
+	const Callable icon_fetch = callable_mp(EditorNode::get_singleton(), &EditorNode::get_editor_theme_native_menu_icon).bind(global_menu, dark_mode);
 	for (EditorDock *dock : all_docks) {
 		if (!dock->enabled || !dock->global) {
 			continue;
@@ -600,6 +600,13 @@ void EditorDockManager::save_docks_to_config(Ref<ConfigFile> p_layout, const Str
 		}
 	}
 
+	// Clear the special dock slot for docks without default slots (index -1 = dock_0).
+	// This prevents closed docks from being infinitely appended to the config on each save.
+	const String no_slot_config_key = "dock_0";
+	if (p_layout->has_section_key(p_section, no_slot_config_key)) {
+		p_layout->erase_section_key(p_section, no_slot_config_key);
+	}
+
 	// Save docks in windows.
 	Dictionary floating_docks_dump;
 	for (WindowWrapper *wrapper : dock_windows) {
@@ -703,26 +710,21 @@ void EditorDockManager::load_docks_from_config(Ref<ConfigFile> p_layout, const S
 				dock->load_layout_from_config(p_layout, section_name);
 				continue;
 			}
+
 			if (allow_floating_docks && floating_docks_dump.has(name)) {
 				_restore_dock_to_saved_window(dock, floating_docks_dump[name]);
-			} else if (i >= 0) {
-				if (dock->transient && !dock->is_open) {
-					dock->dock_slot_index = i;
+			} else if (i >= 0 && !(dock->transient && !dock->is_open)) {
+				// Safe to include transient open docks here because they won't be in the closed dock dump.
+				if (closed_docks.has(name)) {
+					dock->is_open = false;
+					dock->hide();
+					_move_dock(dock, closed_dock_parent);
 				} else {
+					dock->is_open = true;
 					_move_dock(dock, dock_slots[i].container, 0);
 				}
 			}
 			dock->load_layout_from_config(p_layout, section_name);
-
-			if (!dock->transient) {
-				if (closed_docks.has(name)) {
-					_move_dock(dock, closed_dock_parent);
-					dock->is_open = false;
-					dock->hide();
-				} else {
-					dock->is_open = true;
-				}
-			}
 
 			dock->dock_slot_index = i;
 			dock->previous_tab_index = i >= 0 ? j : 0;
@@ -830,6 +832,15 @@ void EditorDockManager::open_dock(EditorDock *p_dock, bool p_set_current) {
 	}
 
 	_update_layout();
+}
+
+void EditorDockManager::make_dock_floating(EditorDock *p_dock) {
+	ERR_FAIL_NULL(p_dock);
+	ERR_FAIL_COND_MSG(!all_docks.has(p_dock), vformat("Cannot make unknown dock '%s' floating.", p_dock->get_display_title()));
+
+	if (!p_dock->dock_window) {
+		_open_dock_in_window(p_dock);
+	}
 }
 
 TabContainer *EditorDockManager::get_dock_tab_container(Control *p_dock) const {
@@ -1049,6 +1060,7 @@ void DockContextPopup::_tab_move_right() {
 
 void DockContextPopup::_close_dock() {
 	hide();
+	context_dock->emit_signal("closed");
 	dock_manager->close_dock(context_dock);
 }
 
@@ -1204,7 +1216,7 @@ void DockContextPopup::_dock_select_draw() {
 
 void DockContextPopup::_update_buttons() {
 	TabContainer *context_tab_container = dock_manager->get_dock_tab_container(context_dock);
-	if (context_dock->global) {
+	if (context_dock->global || context_dock->closable) {
 		close_button->set_tooltip_text(TTRC("Close this dock."));
 		close_button->set_disabled(false);
 	} else {
