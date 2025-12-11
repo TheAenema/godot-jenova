@@ -39,7 +39,6 @@
 #include "editor/gui/editor_version_button.h"
 #include "editor/scene/editor_scene_tabs.h"
 #include "editor/settings/editor_command_palette.h"
-#include "editor/themes/editor_scale.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/separator.h"
@@ -64,10 +63,17 @@ void EditorBottomPanel::_on_tab_changed(int p_idx) {
 }
 
 void EditorBottomPanel::_theme_changed() {
-	// Add margin to make space for the right side buttons.
-	icon_spacer->set_custom_minimum_size(Vector2(get_theme_constant("class_icon_size", EditorStringName(Editor)), 0));
-	Ref<StyleBox> bottom_tabbar_style = EditorNode::get_singleton()->get_editor_theme()->get_stylebox("tabbar_background", "BottomPanel")->duplicate();
-	bottom_tabbar_style->set_content_margin(SIDE_RIGHT, bottom_hbox->get_minimum_size().x + bottom_tabbar_style->get_content_margin(SIDE_LEFT));
+	int icon_width = get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor));
+	int margin = bottom_hbox->get_minimum_size().x;
+	if (get_popup()) {
+		margin -= icon_width;
+	}
+
+	// Add margin to make space for the right side popup button.
+	icon_spacer->set_custom_minimum_size(Vector2(icon_width, 0));
+
+	Ref<StyleBox> bottom_tabbar_style = get_theme_stylebox(SNAME("tabbar_background"), SNAME("BottomPanel"))->duplicate();
+	bottom_tabbar_style->set_content_margin(is_layout_rtl() ? SIDE_LEFT : SIDE_RIGHT, margin + bottom_tabbar_style->get_content_margin(is_layout_rtl() ? SIDE_RIGHT : SIDE_LEFT));
 	add_theme_style_override("tabbar_background", bottom_tabbar_style);
 
 	if (get_current_tab() == -1) {
@@ -115,10 +121,10 @@ void EditorBottomPanel::_repaint() {
 	pin_button->set_visible(!panel_collapsed);
 	expand_button->set_visible(!panel_collapsed);
 	if (expand_button->is_pressed()) {
-		EditorNode::get_top_split()->set_visible(panel_collapsed);
+		_expand_button_toggled(!panel_collapsed);
+	} else {
+		_theme_changed();
 	}
-
-	_theme_changed();
 }
 
 void EditorBottomPanel::save_layout_to_config(Ref<ConfigFile> p_config_file, const String &p_section) const {
@@ -148,12 +154,6 @@ void EditorBottomPanel::make_item_visible(Control *p_item, bool p_visible, bool 
 	EditorDock *dock = _get_dock_from_control(p_item);
 	ERR_FAIL_NULL(dock);
 	dock->set_visible(p_visible);
-}
-
-void EditorBottomPanel::move_item_to_end(Control *p_item) {
-	EditorDock *dock = _get_dock_from_control(p_item);
-	ERR_FAIL_NULL(dock);
-	move_child(dock, -1);
 }
 
 void EditorBottomPanel::hide_bottom_panel() {
@@ -254,7 +254,6 @@ EditorBottomPanel::EditorBottomPanel() {
 	bottom_hbox = memnew(HBoxContainer);
 	bottom_hbox->set_mouse_filter(MOUSE_FILTER_IGNORE);
 	bottom_hbox->set_anchors_and_offsets_preset(Control::PRESET_RIGHT_WIDE);
-	bottom_hbox->set_h_grow_direction(Control::GROW_DIRECTION_END);
 	get_tab_bar()->add_child(bottom_hbox);
 
 	icon_spacer = memnew(Control);

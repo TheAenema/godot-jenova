@@ -375,7 +375,7 @@ void EditorRunBar::_run_native(const Ref<EditorExportPreset> &p_preset) {
 
 void EditorRunBar::_profiler_autostart_indicator_pressed() {
 	// Switch to the first profiler tab in the bottom panel.
-	EditorNode::get_singleton()->get_bottom_panel()->make_item_visible(EditorDebuggerNode::get_singleton(), true);
+	EditorDebuggerNode::get_singleton()->make_visible();
 
 	if (EditorSettings::get_singleton()->get_project_metadata("debug_options", "autostart_profiler", false)) {
 		EditorDebuggerNode::get_singleton()->get_current_debugger()->switch_to_debugger(3);
@@ -706,4 +706,5 @@ EditorRunBar::EditorRunBar() {
 	write_movie_button->set_focus_mode(Control::FOCUS_ACCESSIBILITY);
 	write_movie_button->set_tooltip_text(TTRC("Enable Movie Maker mode.\nThe project will run at stable FPS and the visual and audio output will be recorded to a video file."));
 	write_movie_button->set_accessibility_name(TTRC("Enable Movie Maker Mode"));
+	write_movie_button->set_flat(false);
 }

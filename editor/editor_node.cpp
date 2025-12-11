@@ -1713,20 +1713,27 @@ void EditorNode::save_resource(const Ref<Resource> &p_resource) {
 }
 
 void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String &p_at_path) {
+	String resource_path = p_resource->get_path();
+	bool is_resource = resource_path.is_resource_file();
+
 	{
-		String path = p_resource->get_path();
-		if (!path.is_resource_file()) {
-			int srpos = path.find("::");
-			if (srpos != -1) {
-				String base = path.substr(0, srpos);
-				if (!get_edited_scene() || get_edited_scene()->get_scene_file_path() != base) {
+		// Early exit checks.
+
+		if (is_resource) {
+			if (FileAccess::exists(resource_path + ".import")) {
+				show_warning(TTR("This resource can't be saved because it was imported from another file. Make it unique first."));
+				return;
+			}
+		} else {
+			int separator_pos = resource_path.find("::");
+			if (separator_pos != -1) {
+				String base = resource_path.substr(0, separator_pos);
+				String base_resource_type = ResourceLoader::get_resource_type(base);
+				if (base_resource_type == "PackedScene" && (!get_edited_scene() || get_edited_scene()->get_scene_file_path() != base)) {
 					show_warning(TTR("This resource can't be saved because it does not belong to the edited scene. Make it unique first."));
 					return;
 				}
 			}
-		} else if (FileAccess::exists(path + ".import")) {
-			show_warning(TTR("This resource can't be saved because it was imported from another file. Make it unique first."));
-			return;
 		}
 	}
 
@@ -1735,7 +1742,6 @@ void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String 
 
 	current_menu_option = RESOURCE_SAVE_AS;
 	List<String> extensions;
-	Ref<PackedScene> sd = memnew(PackedScene);
 	ResourceSaver::get_recognized_extensions(p_resource, &extensions);
 	file->clear_filters();
 
@@ -1754,30 +1760,33 @@ void EditorNode::save_resource_as(const Ref<Resource> &p_resource, const String 
 		preferred.move_to_back(res_element);
 	}
 
+	String resource_name_snake_case = p_resource->get_class().to_snake_case();
+	String new_resource_name_snake_case;
+	if (!preferred.is_empty()) {
+		new_resource_name_snake_case = "new_" + resource_name_snake_case + "." + preferred.front()->get().to_lower();
+	}
+
 	if (!p_at_path.is_empty()) {
 		file->set_current_dir(p_at_path);
-		if (p_resource->get_path().is_resource_file()) {
-			file->set_current_file(p_resource->get_path().get_file());
+		if (is_resource) {
+			file->set_current_file(resource_path.get_file());
 		} else {
-			if (!preferred.is_empty()) {
-				String resource_name_snake_case = p_resource->get_class().to_snake_case();
-				file->set_current_file("new_" + resource_name_snake_case + "." + preferred.front()->get().to_lower());
-			} else {
-				file->set_current_file(String());
-			}
+			file->set_current_file(new_resource_name_snake_case);
 		}
 	} else if (!p_resource->get_path().get_base_dir().is_empty()) {
-		file->set_current_path(p_resource->get_path());
-		if (!extensions.is_empty()) {
-			const String ext = p_resource->get_path().get_extension().to_lower();
-			if (extensions.find(ext) == nullptr) {
-				file->set_current_path(p_resource->get_path().replacen("." + ext, "." + extensions.front()->get()));
+		if (is_resource) {
+			if (!extensions.is_empty()) {
+				const String ext = resource_path.get_extension().to_lower();
+				if (extensions.find(ext) == nullptr) {
+					file->set_current_path(resource_path.replacen("." + ext, "." + extensions.front()->get()));
+				}
 			}
+		} else {
+			file->set_current_file(new_resource_name_snake_case);
 		}
 	} else if (!preferred.is_empty()) {
-		const String resource_name_snake_case = p_resource->get_class().to_snake_case();
-		const String existing = "new_" + resource_name_snake_case + "." + preferred.front()->get().to_lower();
-		file->set_current_path(existing);
+		file->set_current_file(new_resource_name_snake_case);
+		file->set_current_path(new_resource_name_snake_case);
 	}
 	file->set_title(TTR("Save Resource As..."));
 	file->popup_file_dialog();
@@ -7764,7 +7773,6 @@ void EditorNode::_update_main_menu_type() {
 
 #ifdef ANDROID_ENABLED
 		// Align main menu icon visually with TouchActionsPanel buttons.
-		main_menu_button->get_popup()->add_theme_constant_override("v_separation", 16 * EDSCALE);
 		menu_btn_spacer = memnew(Control);
 		menu_btn_spacer->set_custom_minimum_size(Vector2(8, 0) * EDSCALE);
 		title_bar->add_child(menu_btn_spacer);
@@ -7778,13 +7786,6 @@ void EditorNode::_update_main_menu_type() {
 		}
 		memdelete_notnull(main_menu_bar);
 		main_menu_bar = nullptr;
-
-		if (project_run_bar != nullptr) {
-			// Adjust spacers to center 2D / 3D / Script buttons.
-			int max_w = MAX(project_run_bar->get_minimum_size().x + right_menu_hb->get_minimum_size().x, main_menu_button->get_minimum_size().x);
-			left_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - main_menu_button->get_minimum_size().x), 0));
-			right_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - project_run_bar->get_minimum_size().x - right_menu_hb->get_minimum_size().x), 0));
-		}
 	} else {
 		main_menu_bar = memnew(MenuBar);
 		main_menu_bar->set_mouse_filter(Control::MOUSE_FILTER_STOP);
@@ -7815,13 +7816,6 @@ void EditorNode::_update_main_menu_type() {
 		memdelete_notnull(main_menu_button);
 		menu_btn_spacer = nullptr;
 		main_menu_button = nullptr;
-
-		if (project_run_bar != nullptr) {
-			// Adjust spacers to center 2D / 3D / Script buttons.
-			int max_w = MAX(project_run_bar->get_minimum_size().x + right_menu_hb->get_minimum_size().x, main_menu_bar->get_minimum_size().x);
-			left_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - main_menu_bar->get_minimum_size().x), 0));
-			right_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - project_run_bar->get_minimum_size().x - right_menu_hb->get_minimum_size().x), 0));
-		}
 	}
 }
 
@@ -8235,16 +8229,15 @@ EditorNode::EditorNode() {
 	main_vbox->add_child(title_bar);
 #endif
 
-	left_l_hsplit = memnew(DockSplitContainer);
-	left_l_hsplit->set_name("DockHSplitLeftL");
-	main_vbox->add_child(left_l_hsplit);
-
-	left_l_hsplit->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	main_hsplit = memnew(DockSplitContainer);
+	main_hsplit->set_name("DockHSplitMain");
+	main_hsplit->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+	main_vbox->add_child(main_hsplit);
 
 	left_l_vsplit = memnew(DockSplitContainer);
 	left_l_vsplit->set_name("DockVSplitLeftL");
 	left_l_vsplit->set_vertical(true);
-	left_l_hsplit->add_child(left_l_vsplit);
+	main_hsplit->add_child(left_l_vsplit);
 
 	TabContainer *dock_slot[DockConstants::DOCK_SLOT_MAX];
 	dock_slot[DockConstants::DOCK_SLOT_LEFT_UL] = memnew(TabContainer);
@@ -8254,13 +8247,10 @@ EditorNode::EditorNode() {
 	dock_slot[DockConstants::DOCK_SLOT_LEFT_BL]->set_name("DockSlotLeftBL");
 	left_l_vsplit->add_child(dock_slot[DockConstants::DOCK_SLOT_LEFT_BL]);
 
-	left_r_hsplit = memnew(DockSplitContainer);
-	left_r_hsplit->set_name("DockHSplitLeftR");
-	left_l_hsplit->add_child(left_r_hsplit);
 	left_r_vsplit = memnew(DockSplitContainer);
 	left_r_vsplit->set_name("DockVSplitLeftR");
 	left_r_vsplit->set_vertical(true);
-	left_r_hsplit->add_child(left_r_vsplit);
+	main_hsplit->add_child(left_r_vsplit);
 	dock_slot[DockConstants::DOCK_SLOT_LEFT_UR] = memnew(TabContainer);
 	dock_slot[DockConstants::DOCK_SLOT_LEFT_UR]->set_name("DockSlotLeftUR");
 	left_r_vsplit->add_child(dock_slot[DockConstants::DOCK_SLOT_LEFT_UR]);
@@ -8268,13 +8258,9 @@ EditorNode::EditorNode() {
 	dock_slot[DockConstants::DOCK_SLOT_LEFT_BR]->set_name("DockSlotLeftBR");
 	left_r_vsplit->add_child(dock_slot[DockConstants::DOCK_SLOT_LEFT_BR]);
 
-	main_hsplit = memnew(DockSplitContainer);
-	main_hsplit->set_name("DockHSplitMain");
-	left_r_hsplit->add_child(main_hsplit);
 	VBoxContainer *center_vb = memnew(VBoxContainer);
-	main_hsplit->add_child(center_vb);
-
 	center_vb->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	main_hsplit->add_child(center_vb);
 
 	center_split = memnew(DockSplitContainer);
 	center_split->set_name("DockVSplitCenter");
@@ -8284,14 +8270,10 @@ EditorNode::EditorNode() {
 	center_vb->add_child(center_split);
 	center_split->connect("drag_ended", callable_mp(this, &EditorNode::_bottom_panel_resized));
 
-	right_hsplit = memnew(DockSplitContainer);
-	right_hsplit->set_name("DockHSplitRight");
-	main_hsplit->add_child(right_hsplit);
-
 	right_l_vsplit = memnew(DockSplitContainer);
 	right_l_vsplit->set_name("DockVSplitRightL");
 	right_l_vsplit->set_vertical(true);
-	right_hsplit->add_child(right_l_vsplit);
+	main_hsplit->add_child(right_l_vsplit);
 	dock_slot[DockConstants::DOCK_SLOT_RIGHT_UL] = memnew(TabContainer);
 	dock_slot[DockConstants::DOCK_SLOT_RIGHT_UL]->set_name("DockSlotRightUL");
 	right_l_vsplit->add_child(dock_slot[DockConstants::DOCK_SLOT_RIGHT_UL]);
@@ -8302,7 +8284,7 @@ EditorNode::EditorNode() {
 	right_r_vsplit = memnew(DockSplitContainer);
 	right_r_vsplit->set_name("DockVSplitRightR");
 	right_r_vsplit->set_vertical(true);
-	right_hsplit->add_child(right_r_vsplit);
+	main_hsplit->add_child(right_r_vsplit);
 	dock_slot[DockConstants::DOCK_SLOT_RIGHT_UR] = memnew(TabContainer);
 	dock_slot[DockConstants::DOCK_SLOT_RIGHT_UR]->set_name("DockSlotRightUR");
 	right_r_vsplit->add_child(dock_slot[DockConstants::DOCK_SLOT_RIGHT_UR]);
@@ -8318,10 +8300,7 @@ EditorNode::EditorNode() {
 	editor_dock_manager->add_vsplit(right_l_vsplit);
 	editor_dock_manager->add_vsplit(right_r_vsplit);
 
-	editor_dock_manager->add_hsplit(left_l_hsplit);
-	editor_dock_manager->add_hsplit(left_r_hsplit);
-	editor_dock_manager->add_hsplit(main_hsplit);
-	editor_dock_manager->add_hsplit(right_hsplit);
+	editor_dock_manager->set_hsplit(main_hsplit);
 
 	for (int i = 0; i < DockConstants::DOCK_SLOT_BOTTOM; i++) {
 		editor_dock_manager->register_dock_slot((DockConstants::DockSlot)i, dock_slot[i], DockConstants::DOCK_LAYOUT_VERTICAL);
@@ -8781,9 +8760,11 @@ EditorNode::EditorNode() {
 	history_dock = memnew(HistoryDock);
 	editor_dock_manager->add_dock(history_dock);
 
-	// Add some offsets to left_r and main hsplits to make LEFT_R and RIGHT_L docks wider than minsize.
-	left_r_hsplit->set_split_offset(270 * EDSCALE);
-	main_hsplit->set_split_offset(-360 * EDSCALE);
+	// Add some offsets to make LEFT_R and RIGHT_L docks wider than minsize.
+	const int dock_hsize = 280;
+	// By default there is only 3 visible, so set 2 split offsets for them.
+	const int dock_hsize_scaled = dock_hsize * EDSCALE;
+	main_hsplit->set_split_offsets({ dock_hsize_scaled, -dock_hsize_scaled });
 
 	// Define corresponding default layout.
 
@@ -8794,9 +8775,8 @@ EditorNode::EditorNode() {
 	default_layout->set_value(docks_section, "dock_4", "FileSystem,History");
 	default_layout->set_value(docks_section, "dock_5", "Inspector,Signals,Groups");
 
-	int hsplits[] = { 0, 270, -270, 0 };
-	DEV_ASSERT((int)std_size(hsplits) == editor_dock_manager->get_hsplit_count());
-	for (int i = 0; i < editor_dock_manager->get_hsplit_count(); i++) {
+	int hsplits[] = { 0, dock_hsize, -dock_hsize, 0 };
+	for (int i = 0; i < (int)std_size(hsplits); i++) {
 		default_layout->set_value(docks_section, "dock_hsplit_" + itos(i + 1), hsplits[i]);
 	}
 	for (int i = 0; i < editor_dock_manager->get_vsplit_count(); i++) {
@@ -8967,9 +8947,6 @@ EditorNode::EditorNode() {
 
 	gui_base->add_child(project_data_missing);
 
-	add_editor_plugin(memnew(AnimationPlayerEditorPlugin));
-	add_editor_plugin(memnew(AnimationTrackKeyEditEditorPlugin));
-	add_editor_plugin(memnew(AnimationMarkerKeyEditEditorPlugin));
 	add_editor_plugin(memnew(CanvasItemEditorPlugin));
 	add_editor_plugin(memnew(Node3DEditorPlugin));
 	add_editor_plugin(memnew(ScriptEditorPlugin));
@@ -8990,7 +8967,9 @@ EditorNode::EditorNode() {
 	}
 
 	// More visually meaningful to have this later.
-	bottom_panel->move_item_to_end(AnimationPlayerEditor::get_singleton());
+	add_editor_plugin(memnew(AnimationPlayerEditorPlugin));
+	add_editor_plugin(memnew(AnimationTrackKeyEditEditorPlugin));
+	add_editor_plugin(memnew(AnimationMarkerKeyEditEditorPlugin));
 
 	add_editor_plugin(VersionControlEditorPlugin::get_singleton());
 
@@ -9195,16 +9174,6 @@ EditorNode::EditorNode() {
 	add_child(screenshot_timer);
 	screenshot_timer->set_owner(get_owner());
 
-	// Adjust spacers to center 2D / 3D / Script buttons.
-	if (main_menu_button != nullptr) {
-		int max_w = MAX(project_run_bar->get_minimum_size().x + right_menu_hb->get_minimum_size().x, main_menu_button->get_minimum_size().x);
-		left_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - main_menu_button->get_minimum_size().x), 0));
-		right_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - project_run_bar->get_minimum_size().x - right_menu_hb->get_minimum_size().x), 0));
-	} else {
-		int max_w = MAX(project_run_bar->get_minimum_size().x + right_menu_hb->get_minimum_size().x, main_menu_bar->get_minimum_size().x);
-		left_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - main_menu_bar->get_minimum_size().x), 0));
-		right_spacer->set_custom_minimum_size(Size2(MAX(0, max_w - project_run_bar->get_minimum_size().x - right_menu_hb->get_minimum_size().x), 0));
-	}
 	// Extend menu bar to window title.
 	if (can_expand) {
 		DisplayServer::get_singleton()->process_events();

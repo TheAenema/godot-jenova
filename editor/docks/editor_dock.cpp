@@ -105,13 +105,12 @@ void EditorDock::_bind_methods() {
 }
 
 EditorDock::EditorDock() {
-	set_clip_contents(true);
 	add_user_signal(MethodInfo("tab_style_changed"));
 }
 
 void EditorDock::open() {
 	if (!is_open) {
-		EditorDockManager::get_singleton()->open_dock(this);
+		EditorDockManager::get_singleton()->open_dock(this, false);
 	}
 }
 

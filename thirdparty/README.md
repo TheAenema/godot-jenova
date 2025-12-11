@@ -90,6 +90,7 @@ Patches:
 - `0003-remove-tinydds-qoi.patch` (GH-97582)
 - `0004-clang-warning-exclude.patch` (GH-111346)
 - `0005-unused-typedef.patch` (GH-111445)
+- `0006-explicit-includes.patch` (GH-111557)
 
 
 ## brotli
@@ -131,6 +132,7 @@ Files extracted from upstream source:
 Patches:
 
 - `0001-disable-exceptions.patch` (GH-80796)
+- `0002-llvm-21-header.patch` (GH-113850)
 
 
 ## cvtt
@@ -200,6 +202,20 @@ Patches:
 - `0001-ciso646-version.patch` (GH-105913)
 
 
+## dr_libs
+
+- Upstream: https://github.com/mackron/dr_libs
+- Version: mp3-0.7.2 (547c211a87a06a42bf62c1366616aa14b57dd429, 2025)
+- License: Public Domain or Unlicense or MIT-0
+
+Files extracted from upstream source:
+
+- `dr_mp3.h`
+- `LICENSE`
+
+`dr_bridge.h` is a Godot file and should be preserved on updates.
+
+
 ## embree
 
 - Upstream: https://github.com/embree/embree
@@ -220,6 +236,7 @@ Patches:
 - `0003-emscripten-nthreads.patch` (GH-69799)
 - `0004-mingw-no-cpuidex.patch` (GH-92488)
 - `0005-mingw-llvm-arm64.patch` (GH-93364)
+- `0006-explicit-includes.patch` (GH-111557)
 
 The `modules/raycast/godot_update_embree.py` script can be used to pull the
 relevant files from the latest Embree release and apply patches automatically.
@@ -707,24 +724,7 @@ Patches:
 
 - `0001-disable-exceptions.patch` (GH-85039)
 - `0002-clang-std-replacements-leak.patch` (GH-85208)
-
-
-## minimp3
-
-- Upstream: https://github.com/lieff/minimp3
-- Version: git (afb604c06bc8beb145fecd42c0ceb5bda8795144, 2021)
-- License: CC0 1.0
-
-Files extracted from upstream repository:
-
-- `minimp3.h`
-- `minimp3_ex.h`
-- `LICENSE`
-
-Patches:
-
-- `0001-msvc-arm.patch` (GH-64921)
-- `0002-msvc-warnings.patch` (GH-66545)
+- `0003-explicit-includes.patch` (GH-111557)
 
 
 ## miniupnpc
@@ -923,7 +923,7 @@ Files extracted from upstream source:
 ## re-spirv
 
 - Upstream: https://github.com/renderbag/re-spirv
-- Version: git (2f9be81bca5882ada1b6377d2ef8c0f7d8665171, 2025)
+- Version: git (5af3b606e6aaf11bae8dc7b5cd236c943e24865e, 2025)
 - License: MIT
 
 Files extracted from upstream source:
@@ -1069,6 +1069,7 @@ Patches:
 
 - `0001-revert-tvglines-bezier-precision.patch` (GH-96658)
 - `0002-use-heap-alloc.patch` (GH-109530)
+- `0003-explicit-includes.patch` (GH-111557)
 
 
 ## tinyexr

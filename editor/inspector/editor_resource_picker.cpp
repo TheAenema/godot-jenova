@@ -46,6 +46,7 @@
 #include "editor/themes/editor_scale.h"
 #include "scene/gui/button.h"
 #include "scene/gui/texture_rect.h"
+#include "scene/property_utils.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"
 
@@ -107,19 +108,36 @@ void EditorResourcePicker::_update_resource() {
 
 			String tooltip;
 
+			String resource_name = "resource";
+			if (edited_resource.is_valid()) {
+				resource_name = edited_resource->get_class();
+
+				if (edited_resource->has_meta(SceneStringName(_custom_type_script))) {
+					const Ref<Script> custom_script = PropertyUtils::get_custom_type_script(edited_resource.ptr());
+					if (custom_script.is_valid()) {
+						const String global_name = custom_script->get_global_name();
+						if (!global_name.is_empty()) {
+							resource_name = global_name;
+						}
+					}
+				}
+			}
+
 			if (num_of_copies > 1) {
-				tooltip = vformat(TTR("This Resource is used in (%d) places."), num_of_copies);
+				tooltip = vformat(TTRN("This %s is used in %d place.", "This %s is used in %d places.", num_of_copies), resource_name, num_of_copies);
 			} else if (!is_internal) {
-				tooltip = TTR("This Resource is external to scene.");
+				tooltip = vformat(TTR("This %s is external to scene."), resource_name);
 			}
 
 			if (!editable) {
-				tooltip += "\n" + TTR("The Resource cannot be edited in the inspector and can't be made unique directly.") + "\n";
+				tooltip += "\n" + vformat(TTR("The %s cannot be edited in the inspector and can't be made unique directly."), resource_name) + "\n";
 			} else {
-				tooltip += unique_enable ? TTR(" Left-click to make it unique.") + "\n" : "\n";
+				if (unique_enable) {
+					tooltip += "\n" + TTR("Left-click to make it unique.") + "\n";
+				}
 
 				if (unique_recursive_enabled) {
-					tooltip += TTR("It is possible to make its subresources unique. Right-click to make them unique.") + "\n";
+					tooltip += TTR("It is possible to make its subresources unique.") + "\n" + TTR("Right-click to make them unique.");
 				}
 
 				if (!unique_enable && EditorNode::get_singleton()->get_editor_selection()->get_full_selected_node_list().size() == 1) {
@@ -1434,6 +1452,7 @@ EditorResourcePicker::EditorResourcePicker(bool p_hide_assign_button_controls) {
 	make_unique_button->set_tooltip_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	make_unique_button->set_button_mask(MouseButtonMask::LEFT | MouseButtonMask::RIGHT);
 	make_unique_button->set_action_mode(BaseButton::ACTION_MODE_BUTTON_PRESS);
+	make_unique_button->set_theme_type_variation(SNAME("EditorInspectorButton"));
 	add_child(make_unique_button);
 	make_unique_button->connect(SceneStringName(pressed), callable_mp(this, &EditorResourcePicker::_on_unique_button_pressed));
 
@@ -1443,6 +1462,7 @@ EditorResourcePicker::EditorResourcePicker(bool p_hide_assign_button_controls) {
 	assign_button->set_accessibility_name(TTRC("Assign Resource"));
 	assign_button->set_expand_icon(true);
 	assign_button->set_clip_text(true);
+	assign_button->set_theme_type_variation(SNAME("EditorInspectorButton"));
 	assign_button->set_auto_translate_mode(AUTO_TRANSLATE_MODE_DISABLED);
 	SET_DRAG_FORWARDING_GCD(assign_button, EditorResourcePicker);
 	add_child(assign_button);
@@ -1462,13 +1482,13 @@ EditorResourcePicker::EditorResourcePicker(bool p_hide_assign_button_controls) {
 	}
 
 	quick_load_button = memnew(Button);
-	quick_load_button->set_theme_type_variation(SceneStringName(FlatButton));
+	quick_load_button->set_theme_type_variation(SNAME("EditorInspectorFlatButton"));
 	quick_load_button->set_tooltip_text(TTRC("Quick Load"));
 	add_child(quick_load_button);
 	quick_load_button->connect(SceneStringName(pressed), callable_mp(this, &EditorResourcePicker::_edit_menu_cbk).bind(OBJ_MENU_QUICKLOAD));
 
 	edit_button = memnew(Button);
-	edit_button->set_theme_type_variation(SceneStringName(FlatButton));
+	edit_button->set_theme_type_variation(SNAME("EditorInspectorFlatButton"));
 	edit_button->set_toggle_mode(true);
 	edit_button->set_action_mode(BaseButton::ACTION_MODE_BUTTON_PRESS);
 	edit_button->set_accessibility_name(TTRC("Edit"));
