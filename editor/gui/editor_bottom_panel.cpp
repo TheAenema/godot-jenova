@@ -72,7 +72,8 @@ void EditorBottomPanel::_theme_changed() {
 	// Add margin to make space for the right side popup button.
 	icon_spacer->set_custom_minimum_size(Vector2(icon_width, 0));
 
-	Ref<StyleBox> bottom_tabbar_style = get_theme_stylebox(SNAME("tabbar_background"), SNAME("BottomPanel"))->duplicate();
+	// Need to get stylebox from EditorNode to update theme correctly.
+	Ref<StyleBox> bottom_tabbar_style = EditorNode::get_singleton()->get_editor_theme()->get_stylebox(SNAME("tabbar_background"), SNAME("BottomPanel"))->duplicate();
 	bottom_tabbar_style->set_content_margin(is_layout_rtl() ? SIDE_LEFT : SIDE_RIGHT, margin + bottom_tabbar_style->get_content_margin(is_layout_rtl() ? SIDE_RIGHT : SIDE_LEFT));
 	add_theme_style_override("tabbar_background", bottom_tabbar_style);
 
@@ -125,6 +126,12 @@ void EditorBottomPanel::_repaint() {
 	} else {
 		_theme_changed();
 	}
+}
+
+Size2 EditorBottomPanel::get_minimum_size() const {
+	Size2 min_size = TabContainer::get_minimum_size();
+	min_size.x += bottom_hbox->get_combined_minimum_size().x;
+	return min_size;
 }
 
 void EditorBottomPanel::save_layout_to_config(Ref<ConfigFile> p_config_file, const String &p_section) const {
