@@ -318,7 +318,7 @@ EditorThemeManager::ThemeConfiguration EditorThemeManager::_create_theme_config(
 			float preset_icon_saturation = config.default_icon_saturation;
 
 			// A negative contrast rate looks better for light themes, since it better follows the natural order of UI "elevation".
-			const float light_contrast = config.style == "Modern" ? -0.4 : -0.06;
+			const float light_contrast = -0.06;
 
 			// Please use alphabetical order if you're adding a new color preset here.
 			if (config.preset == "Black (OLED)") {

@@ -140,6 +140,7 @@ public:
 		Color icon_pressed_color;
 		Color icon_disabled_color;
 
+		Color surface_popup_color;
 		Color surface_lowest_color;
 		Color surface_lower_color;
 		Color surface_low_color;
