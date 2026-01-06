@@ -70,7 +70,9 @@ void AnimationPlayerEditor::_find_player() {
 	TypedArray<Node> players = edited_scene->find_children("", "AnimationPlayer");
 
 	if (players.size() == 1) {
+		// Replicating EditorNode::_plugin_over_edit to ensure an identical setup as when selecting manually.
 		plugin->edit(players.front());
+		plugin->make_visible(true);
 	}
 }
 
@@ -196,9 +198,6 @@ void AnimationPlayerEditor::_notification(int p_what) {
 			onion_skinning->set_button_icon(get_editor_theme_icon(SNAME("GuiTabMenuHl")));
 
 			pin->set_button_icon(get_editor_theme_icon(SNAME("Pin")));
-
-			tool_anim->add_theme_style_override(CoreStringName(normal), get_theme_stylebox(CoreStringName(normal), SNAME("Button")));
-			track_editor->get_edit_menu()->add_theme_style_override(CoreStringName(normal), get_theme_stylebox(CoreStringName(normal), SNAME("Button")));
 
 #define ITEM_ICON(m_item, m_icon) tool_anim->get_popup()->set_item_icon(tool_anim->get_popup()->get_item_index(m_item), get_editor_theme_icon(SNAME(m_icon)))
 
