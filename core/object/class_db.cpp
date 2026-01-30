@@ -2431,6 +2431,7 @@ void ClassDB::cleanup_defaults() {
 	default_values_cached.clear();
 }
 
+LocalVector<GDType **> ClassDB::gdtype_autorelease_pool;
 void ClassDB::cleanup() {
 	//OBJTYPE_LOCK; hah not here
 
@@ -2451,6 +2452,15 @@ void ClassDB::cleanup() {
 	resource_base_extensions.clear();
 	compat_classes.clear();
 	native_structs.clear();
+
+	for (GDType **type : gdtype_autorelease_pool) {
+		if (!type) {
+			WARN_PRINT("GDType in autorelease pool was cleaned up before being auto-released. Ignoring.");
+		}
+		memdelete(*type);
+		*type = nullptr;
+	}
+	gdtype_autorelease_pool.clear();
 }
 
 // Array to use in optional parameters on methods and the DEFVAL_ARRAY macro.

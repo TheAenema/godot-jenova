@@ -346,7 +346,7 @@ void ViewportRotationControl::_draw() {
 
 void ViewportRotationControl::_draw_axis(const Axis2D &p_axis) {
 	const bool focused = focused_axis == p_axis.axis;
-	const bool positive = p_axis.axis < 3;
+	const bool positive = p_axis.is_positive;
 	const int direction = p_axis.axis % 3;
 
 	const Color axis_color = axis_colors[direction];
@@ -404,24 +404,28 @@ void ViewportRotationControl::_get_sorted_axis(Vector<Axis2D> &r_axis) {
 		Vector3 axis_3d = camera_basis.get_column(i);
 		Vector2 axis_vector = Vector2(axis_3d.x, -axis_3d.y) * radius;
 
-		if (Math::abs(axis_3d.z) <= 1.0) {
+		if (Math::abs(axis_3d.z) < 1.0) {
 			Axis2D pos_axis;
 			pos_axis.axis = i;
 			pos_axis.screen_point = center + axis_vector;
 			pos_axis.z_axis = axis_3d.z;
+			pos_axis.is_positive = true;
 			r_axis.push_back(pos_axis);
 
 			Axis2D neg_axis;
 			neg_axis.axis = i + 3;
 			neg_axis.screen_point = center - axis_vector;
 			neg_axis.z_axis = -axis_3d.z;
+			neg_axis.is_positive = false;
 			r_axis.push_back(neg_axis);
 		} else {
-			// Special case when the camera is aligned with one axis
+			// Special case when the camera is aligned with one axis.
 			Axis2D axis;
 			axis.axis = i + (axis_3d.z <= 0 ? 0 : 3);
 			axis.screen_point = center;
 			axis.z_axis = 1.0;
+			// Invert display style to fix aligned axis rendering.
+			axis.is_positive = (axis_3d.z > 0);
 			r_axis.push_back(axis);
 		}
 	}
@@ -4602,9 +4606,34 @@ void Node3DEditorViewport::update_transform_gizmo_view() {
 		return;
 	}
 
-	bool hide_during_rotation = _is_rotation_arc_visible();
+	bool local_coords = spatial_editor->are_local_coords_enabled();
+	bool arc_visible = _is_rotation_arc_visible();
+	int show_gizmo_flags = EDITOR_GET("editors/3d/show_gizmo_during_rotation");
 
-	bool show_gizmo = spatial_editor->is_gizmo_visible() && !_edit.instant && transform_gizmo_visible && !collision_reposition && !hide_during_rotation;
+	bool keep_gizmo_visible = arc_visible && ((local_coords && (show_gizmo_flags & Node3DEditor::TRANSFORM_MODE_LOCAL)) || (!local_coords && (show_gizmo_flags & Node3DEditor::TRANSFORM_MODE_GLOBAL)));
+	bool hide_gizmo_during_rotation = arc_visible && !keep_gizmo_visible;
+
+	int arc_replaces_ring = -1;
+	if (keep_gizmo_visible) {
+		switch (_edit.plane) {
+			case TRANSFORM_X_AXIS:
+				arc_replaces_ring = 0;
+				break;
+			case TRANSFORM_Y_AXIS:
+				arc_replaces_ring = 1;
+				break;
+			case TRANSFORM_Z_AXIS:
+				arc_replaces_ring = 2;
+				break;
+			case TRANSFORM_VIEW:
+				arc_replaces_ring = 3;
+				break;
+			default:
+				break;
+		}
+	}
+
+	bool show_gizmo = spatial_editor->is_gizmo_visible() && !_edit.instant && transform_gizmo_visible && !collision_reposition && !hide_gizmo_during_rotation;
 	bool show_rotate_gizmo = show_gizmo && (spatial_editor->get_tool_mode() == Node3DEditor::TOOL_MODE_TRANSFORM || spatial_editor->get_tool_mode() == Node3DEditor::TOOL_MODE_ROTATE);
 
 	for (int i = 0; i < 3; i++) {
@@ -4619,7 +4648,7 @@ void Node3DEditorViewport::update_transform_gizmo_view() {
 		RenderingServer::get_singleton()->instance_set_transform(move_plane_gizmo_instance[i], axis_angle);
 		RenderingServer::get_singleton()->instance_set_visible(move_plane_gizmo_instance[i], show_gizmo && (spatial_editor->get_tool_mode() == Node3DEditor::TOOL_MODE_TRANSFORM || spatial_editor->get_tool_mode() == Node3DEditor::TOOL_MODE_MOVE));
 		RenderingServer::get_singleton()->instance_set_transform(rotate_gizmo_instance[i], axis_angle);
-		RenderingServer::get_singleton()->instance_set_visible(rotate_gizmo_instance[i], show_rotate_gizmo);
+		RenderingServer::get_singleton()->instance_set_visible(rotate_gizmo_instance[i], show_rotate_gizmo && i != arc_replaces_ring);
 		RenderingServer::get_singleton()->instance_set_transform(scale_gizmo_instance[i], axis_angle);
 		RenderingServer::get_singleton()->instance_set_visible(scale_gizmo_instance[i], show_gizmo && (spatial_editor->get_tool_mode() == Node3DEditor::TOOL_MODE_SCALE));
 		RenderingServer::get_singleton()->instance_set_transform(scale_plane_gizmo_instance[i], axis_angle);
@@ -4629,9 +4658,11 @@ void Node3DEditorViewport::update_transform_gizmo_view() {
 
 	Transform3D view_rotation_xform = xform;
 	view_rotation_xform.orthonormalize();
-	view_rotation_xform.basis.scale(scale);
+	bool shrink_view_ring = arc_replaces_ring >= 0 && arc_replaces_ring < 3;
+	Vector3 view_ring_scale = shrink_view_ring ? scale * (GIZMO_CIRCLE_SIZE / GIZMO_VIEW_ROTATION_SIZE) : scale;
+	view_rotation_xform.basis.scale(view_ring_scale);
 	RenderingServer::get_singleton()->instance_set_transform(rotate_gizmo_instance[3], view_rotation_xform);
-	RenderingServer::get_singleton()->instance_set_visible(rotate_gizmo_instance[3], show_rotate_gizmo);
+	RenderingServer::get_singleton()->instance_set_visible(rotate_gizmo_instance[3], show_rotate_gizmo && arc_replaces_ring != 3);
 
 	bool show_axes = spatial_editor->is_gizmo_visible() && _edit.mode != TRANSFORM_NONE;
 	RenderingServer *rs = RenderingServer::get_singleton();
@@ -5879,7 +5910,13 @@ void Node3DEditorViewport::update_transform(bool p_shift) {
 			Vector3 current_rotation_vector = (intersection - _edit.center).normalized();
 
 			if (_edit.initial_click_vector == Vector3()) {
-				_edit.initial_click_vector = (click - _edit.center).normalized();
+				Plane rotation_plane(global_axis, _edit.center);
+				Vector3 click_on_rotation_plane;
+				if (rotation_plane.intersects_ray(_edit.click_ray_pos, _edit.click_ray, &click_on_rotation_plane)) {
+					_edit.initial_click_vector = (click_on_rotation_plane - _edit.center).normalized();
+				} else {
+					_edit.initial_click_vector = (click - _edit.center).normalized();
+				}
 				_edit.previous_rotation_vector = current_rotation_vector;
 				_edit.accumulated_rotation_angle = 0.0;
 				_edit.display_rotation_angle = 0.0;

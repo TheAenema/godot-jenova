@@ -3891,8 +3891,11 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(const Re
 	const bool store_respv = use_respv && !shader_refl.specialization_constants.is_empty();
 	const int64_t stage_count = shader_refl.stages_vector.size();
 	shader_info.vk_stages_create_info.reserve(stage_count);
-	shader_info.spirv_stage_bytes.reserve(stage_count);
 	shader_info.original_stage_size.reserve(stage_count);
+
+#if RECORD_PIPELINE_STATISTICS
+	shader_info.spirv_stage_bytes.reserve(stage_count);
+#endif
 
 	if (store_respv) {
 		shader_info.respv_stage_shaders.reserve(stage_count);
@@ -3958,7 +3961,9 @@ RDD::ShaderID RenderingDeviceDriverVulkan::shader_create_from_container(const Re
 			}
 		}
 
+#if RECORD_PIPELINE_STATISTICS
 		shader_info.spirv_stage_bytes.push_back(decoded_spirv);
+#endif
 
 		VkShaderModuleCreateInfo shader_module_create_info = {};
 		shader_module_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -4224,25 +4229,28 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 		vk_writes[writes_amount] = {};
 		vk_writes[writes_amount].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 
+		bool add_write = true;
 		uint32_t num_descriptors = 1;
 
 		switch (uniform.type) {
 			case UNIFORM_TYPE_SAMPLER: {
-				if (uniform.immutable_sampler && immutable_samplers_enabled) {
-					continue; // Skipping immutable samplers.
-				}
 				num_descriptors = uniform.ids.size();
-				VkDescriptorImageInfo *vk_img_infos = ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
 
-				for (uint32_t j = 0; j < num_descriptors; j++) {
-					vk_img_infos[j] = {};
-					vk_img_infos[j].sampler = (VkSampler)uniform.ids[j].id;
-					vk_img_infos[j].imageView = VK_NULL_HANDLE;
-					vk_img_infos[j].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+				if (uniform.immutable_sampler && immutable_samplers_enabled) {
+					add_write = false;
+				} else {
+					VkDescriptorImageInfo *vk_img_infos = ALLOCA_ARRAY(VkDescriptorImageInfo, num_descriptors);
+
+					for (uint32_t j = 0; j < num_descriptors; j++) {
+						vk_img_infos[j] = {};
+						vk_img_infos[j].sampler = (VkSampler)uniform.ids[j].id;
+						vk_img_infos[j].imageView = VK_NULL_HANDLE;
+						vk_img_infos[j].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+					}
+
+					vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+					vk_writes[writes_amount].pImageInfo = vk_img_infos;
 				}
-
-				vk_writes[writes_amount].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-				vk_writes[writes_amount].pImageInfo = vk_img_infos;
 			} break;
 			case UNIFORM_TYPE_SAMPLER_WITH_TEXTURE: {
 				num_descriptors = uniform.ids.size() / 2;
@@ -4419,13 +4427,14 @@ RDD::UniformSetID RenderingDeviceDriverVulkan::uniform_set_create(VectorView<Bou
 			}
 		}
 
-		vk_writes[writes_amount].dstBinding = uniform.binding;
-		vk_writes[writes_amount].descriptorCount = num_descriptors;
+		if (add_write) {
+			vk_writes[writes_amount].dstBinding = uniform.binding;
+			vk_writes[writes_amount].descriptorCount = num_descriptors;
+			writes_amount++;
+		}
 
-		ERR_FAIL_COND_V_MSG(pool_key.uniform_type[uniform.type] == MAX_UNIFORM_POOL_ELEMENT, UniformSetID(),
-				"Uniform set reached the limit of bindings for the same type (" + itos(MAX_UNIFORM_POOL_ELEMENT) + ").");
+		ERR_FAIL_COND_V_MSG(pool_key.uniform_type[uniform.type] == MAX_UNIFORM_POOL_ELEMENT, UniformSetID(), "Uniform set reached the limit of bindings for the same type (" + itos(MAX_UNIFORM_POOL_ELEMENT) + ").");
 		pool_key.uniform_type[uniform.type] += num_descriptors;
-		writes_amount++;
 	}
 
 	bool linear_pool = p_linear_pool_index >= 0;
@@ -5672,7 +5681,7 @@ RDD::PipelineID RenderingDeviceDriverVulkan::render_pipeline_create(
 						}
 					}
 
-					print_line(vformat("re-spirv transformed the shader from %d bytes to %d bytes with constants %s (%d).", shader_info->spirv_stage_bytes[i].size(), respv_optimized_data.size(), spec_constants, p_shader.id));
+					print_line(vformat("re-spirv transformed the shader from %d bytes to %d bytes with constants %s (%d).", shader_info->respv_stage_shaders[i].inlinedSpirvWords.size() * sizeof(uint32_t), respv_optimized_data.size(), spec_constants, p_shader.id));
 #endif
 
 					// Create the shader module with the optimized output.
