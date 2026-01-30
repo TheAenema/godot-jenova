@@ -2108,9 +2108,7 @@ void PopupMenu::set_item_id(int p_idx, int p_id) {
 
 	items.write[p_idx].id = p_id;
 
-	if (global_menu.is_valid()) {
-		NativeMenu::get_singleton()->set_item_tag(global_menu, p_idx, p_id);
-	}
+	// `global_menu` does not know about IDs so there is no need to update it.
 
 	control->queue_redraw();
 	child_controls_changed();
@@ -2629,6 +2627,39 @@ void PopupMenu::set_item_shortcut_disabled(int p_idx, bool p_disabled) {
 		}
 	}
 
+	control->queue_redraw();
+	_menu_changed();
+}
+
+void PopupMenu::set_item_index(int p_idx, int p_target_idx) {
+	if (p_idx < 0) {
+		p_idx += get_item_count();
+	}
+	ERR_FAIL_INDEX(p_idx, items.size());
+
+	if (p_target_idx < 0) {
+		p_target_idx += get_item_count();
+	}
+	ERR_FAIL_INDEX(p_target_idx, items.size());
+
+	if (p_idx == p_target_idx) {
+		return;
+	}
+
+	Item item = items[p_idx];
+	items.remove_at(p_idx);
+	items.insert(p_target_idx, item);
+
+	if (global_menu.is_valid()) {
+		NativeMenu *nmenu = NativeMenu::get_singleton();
+		nmenu->set_item_index(global_menu, p_idx, p_target_idx);
+		// Update tags of all affected items to their new index.
+		for (int i = MIN(p_idx, p_target_idx); i <= MAX(p_idx, p_target_idx); i++) {
+			nmenu->set_item_tag(global_menu, i, i);
+		}
+	}
+
+	queue_accessibility_update();
 	control->queue_redraw();
 	_menu_changed();
 }
@@ -3189,6 +3220,7 @@ void PopupMenu::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_item_multistate", "index", "state"), &PopupMenu::set_item_multistate);
 	ClassDB::bind_method(D_METHOD("set_item_multistate_max", "index", "max_states"), &PopupMenu::set_item_max_states);
 	ClassDB::bind_method(D_METHOD("set_item_shortcut_disabled", "index", "disabled"), &PopupMenu::set_item_shortcut_disabled);
+	ClassDB::bind_method(D_METHOD("set_item_index", "index", "target_index"), &PopupMenu::set_item_index);
 
 	ClassDB::bind_method(D_METHOD("toggle_item_checked", "index"), &PopupMenu::toggle_item_checked);
 	ClassDB::bind_method(D_METHOD("toggle_item_multistate", "index"), &PopupMenu::toggle_item_multistate);
@@ -3415,8 +3447,9 @@ void PopupMenu::_pre_popup() {
 		p = p->get_parent();
 	}
 
-	if (scale_with_parent && p) {
-		Size2 scale = get_force_native() ? get_parent_viewport()->get_popup_base_transform_native().get_scale() : get_parent_viewport()->get_popup_base_transform().get_scale();
+	Viewport *vp = get_parent_viewport();
+	if (scale_with_parent && vp) {
+		Size2 scale = is_embedded() ? vp->get_popup_base_transform().get_scale() : vp->get_popup_base_transform_native().get_scale();
 		CanvasItem *c = Object::cast_to<CanvasItem>(get_parent());
 		if (c) {
 			scale *= c->get_global_transform_with_canvas().get_scale();

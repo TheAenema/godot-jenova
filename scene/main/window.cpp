@@ -32,6 +32,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/debugger/engine_debugger.h"
+#include "core/input/input.h"
 #include "scene/gui/control.h"
 #include "scene/theme/theme_db.h"
 #include "scene/theme/theme_owner.h"
@@ -823,6 +824,17 @@ void Window::_event_callback(DisplayServer::WindowEvent p_event) {
 			focused_window = this;
 			_propagate_window_notification(this, NOTIFICATION_WM_WINDOW_FOCUS_IN);
 			emit_signal(SceneStringName(focus_entered));
+			if (get_tree() && get_tree()->is_accessibility_enabled()) {
+				Window *w = exclusive_child;
+				while (w) {
+					if (w->exclusive_child) {
+						w = w->exclusive_child;
+					} else {
+						w->grab_focus();
+						break;
+					}
+				}
+			}
 		} break;
 		case DisplayServer::WINDOW_EVENT_FOCUS_OUT: {
 			focused = false;
