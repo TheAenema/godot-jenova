@@ -8807,7 +8807,7 @@ EditorNode::EditorNode() {
 	if (NativeMenu::get_singleton()->has_system_menu(NativeMenu::APPLICATION_MENU_ID)) {
 		apple_menu = memnew(PopupMenu);
 		apple_menu->set_system_menu(NativeMenu::APPLICATION_MENU_ID);
-		_add_to_main_menu("", apple_menu);
+		_add_to_main_menu("Apple", apple_menu);
 
 		apple_menu->add_shortcut(ED_GET_SHORTCUT("editor/editor_settings"), EDITOR_OPEN_SETTINGS);
 		apple_menu->add_separator();
@@ -9224,6 +9224,10 @@ EditorNode::EditorNode() {
 		Ref<CanvasItemMaterialConversionPlugin> canvas_item_mat_convert;
 		canvas_item_mat_convert.instantiate();
 		resource_conversion_plugins.push_back(canvas_item_mat_convert);
+
+		Ref<BlitMaterialConversionPlugin> blit_mat_convert;
+		blit_mat_convert.instantiate();
+		resource_conversion_plugins.push_back(blit_mat_convert);
 
 		Ref<ParticleProcessMaterialConversionPlugin> particles_mat_convert;
 		particles_mat_convert.instantiate();

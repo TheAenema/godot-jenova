@@ -104,6 +104,7 @@
 #include "scene/gui/subviewport_container.h"
 #include "scene/resources/3d/sky_material.h"
 #include "scene/resources/packed_scene.h"
+#include "scene/resources/sky.h"
 #include "scene/resources/surface_tool.h"
 
 constexpr real_t DISTANCE_DEFAULT = 4;
@@ -6340,8 +6341,8 @@ Node3DEditorViewport::Node3DEditorViewport(Node3DEditor *p_spatial_editor, int p
 	register_shortcut_action("spatial_editor/viewport_orbit_snap_modifier_2", TTRC("Viewport Orbit Snap Modifier 2"), Key::NONE);
 	register_shortcut_action("spatial_editor/viewport_pan_modifier_1", TTRC("Viewport Pan Modifier 1"), Key::SHIFT);
 	register_shortcut_action("spatial_editor/viewport_pan_modifier_2", TTRC("Viewport Pan Modifier 2"), Key::NONE);
-	register_shortcut_action("spatial_editor/viewport_zoom_modifier_1", TTRC("Viewport Zoom Modifier 1"), Key::SHIFT);
-	register_shortcut_action("spatial_editor/viewport_zoom_modifier_2", TTRC("Viewport Zoom Modifier 2"), Key::CTRL);
+	register_shortcut_action("spatial_editor/viewport_zoom_modifier_1", TTRC("Viewport Zoom Modifier 1"), Key::CTRL);
+	register_shortcut_action("spatial_editor/viewport_zoom_modifier_2", TTRC("Viewport Zoom Modifier 2"), Key::NONE);
 
 	register_shortcut_action("spatial_editor/freelook_left", TTRC("Freelook Left"), Key::A, true);
 	register_shortcut_action("spatial_editor/freelook_right", TTRC("Freelook Right"), Key::D, true);
