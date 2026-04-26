@@ -31,6 +31,7 @@
 #include "material_editor_plugin.h"
 
 #include "core/config/project_settings.h"
+#include "core/object/callable_mp.h"
 #include "editor/editor_node.h"
 #include "editor/editor_string_names.h"
 #include "editor/editor_undo_redo_manager.h"
@@ -46,6 +47,7 @@
 #include "scene/resources/canvas_item_material.h"
 #include "scene/resources/particle_process_material.h"
 #include "scene/resources/sky.h"
+#include "servers/rendering/rendering_server.h"
 
 // 3D.
 #include "scene/3d/camera_3d.h"
@@ -398,6 +400,9 @@ MaterialEditor::MaterialEditor() {
 
 	Vector2 stored_rot = EditorSettings::get_singleton()->get_project_metadata("inspector_options", "material_preview_rotation", Vector2());
 	_set_rotation(stored_rot.x, stored_rot.y);
+
+	EditorNode::get_singleton()->register_hdr_viewport(viewport);
+	EditorNode::get_singleton()->register_hdr_viewport(viewport_2d);
 }
 
 ///////////////////////

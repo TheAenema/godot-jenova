@@ -30,10 +30,9 @@
 
 #pragma once
 
-#include "editor/script/script_editor_base.h"
-#include "script_editor_plugin.h"
-
 #include "editor/gui/code_editor.h"
+#include "editor/script/script_editor_base.h"
+#include "editor/script/script_editor_plugin.h"
 #include "scene/gui/color_picker.h"
 #include "scene/gui/dialogs.h"
 #include "scene/gui/option_button.h"
@@ -62,6 +61,7 @@ class ScriptTextEditor : public CodeEditorBase {
 	bool script_is_valid = false;
 
 	RichTextLabel *errors_panel = nullptr;
+	Label *drag_info_label = nullptr;
 
 	Vector<String> functions;
 	List<ScriptLanguage::Warning> warnings;
@@ -93,7 +93,7 @@ class ScriptTextEditor : public CodeEditorBase {
 	Color marked_line_color = Color(1, 1, 1);
 	Color warning_line_color = Color(1, 1, 1);
 	Color folded_code_region_color = Color(1, 1, 1);
-	int previous_line = 0;
+	int previous_line = -1; // Previous caret line number when user continuously operates in this editor. Affects history state. Reset to -1 on editor switch.
 
 	PopupPanel *color_panel = nullptr;
 	ColorPicker *color_picker = nullptr;
@@ -115,6 +115,7 @@ class ScriptTextEditor : public CodeEditorBase {
 		DEBUG_GOTO_NEXT_BREAKPOINT,
 		DEBUG_GOTO_PREV_BREAKPOINT,
 
+		SHOW_TOOLTIP_AT_CARET,
 		HELP_CONTEXTUAL,
 		LOOKUP_SYMBOL,
 	};
@@ -172,6 +173,7 @@ protected:
 	void _show_warnings_panel(bool p_show);
 	void _error_clicked(const Variant &p_line);
 	virtual bool _warning_clicked(const Variant &p_line) override;
+	void _on_mouse_exited();
 
 	bool _is_valid_color_info(const Dictionary &p_info);
 	Array _inline_object_parse(const String &p_text);
@@ -191,11 +193,13 @@ protected:
 	void _lookup_symbol(const String &p_symbol, int p_row, int p_column);
 	void _validate_symbol(const String &p_symbol);
 
-	void _show_symbol_tooltip(const String &p_symbol, int p_row, int p_column);
+	void _show_symbol_tooltip(const String &p_symbol, int p_row, int p_column, bool p_shortcut = false);
 
 	Variant get_drag_data_fw(const Point2 &p_point, Control *p_from);
 	bool can_drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from) const;
 	void drop_data_fw(const Point2 &p_point, const Variant &p_data, Control *p_from);
+
+	void _set_drop_info_text(const Dictionary &p_info) const;
 
 	String _get_absolute_path(const String &rel_path);
 

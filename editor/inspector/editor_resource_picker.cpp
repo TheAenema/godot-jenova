@@ -31,6 +31,10 @@
 #include "editor_resource_picker.h"
 
 #include "core/input/input.h"
+#include "core/io/resource_loader.h"
+#include "core/object/callable_mp.h"
+#include "core/object/class_db.h"
+#include "core/os/os.h"
 #include "editor/audio/audio_stream_preview.h"
 #include "editor/doc/editor_help.h"
 #include "editor/docks/filesystem_dock.h"
@@ -50,6 +54,7 @@
 #include "scene/property_utils.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"
+#include "servers/rendering/rendering_server.h"
 
 static bool _has_sub_resources(const Ref<Resource> &p_res) {
 	List<PropertyInfo> property_list;
@@ -318,11 +323,13 @@ void EditorResourcePicker::_update_menu_items() {
 			edit_menu->add_icon_item(get_editor_theme_icon(SNAME("Search")), TTR("Inspect"), OBJ_MENU_INSPECT);
 		} else {
 			edit_menu->add_icon_item(get_editor_theme_icon(SNAME("Edit")), TTR("Edit"), OBJ_MENU_INSPECT);
+			edit_menu->set_item_disabled(-1, force_allow_unique);
 		}
 
 		if (is_editable()) {
 			if (!_is_custom_type_script()) {
 				edit_menu->add_icon_item(get_editor_theme_icon(SNAME("Clear")), TTR("Clear"), OBJ_MENU_CLEAR);
+				edit_menu->set_item_disabled(-1, force_allow_unique);
 			}
 			bool unique_enabled = _is_uniqueness_enabled();
 			edit_menu->add_icon_item(get_editor_theme_icon(SNAME("Duplicate")), TTR("Make Unique"), OBJ_MENU_MAKE_UNIQUE);
@@ -357,7 +364,9 @@ void EditorResourcePicker::_update_menu_items() {
 			}
 
 			edit_menu->add_icon_item(get_editor_theme_icon(SNAME("Save")), TTR("Save"), OBJ_MENU_SAVE);
+			edit_menu->set_item_disabled(-1, force_allow_unique);
 			edit_menu->add_icon_item(get_editor_theme_icon(SNAME("Save")), TTR("Save As..."), OBJ_MENU_SAVE_AS);
+			edit_menu->set_item_disabled(-1, force_allow_unique);
 		}
 
 		if (edited_resource->get_path().is_resource_file()) {
@@ -647,7 +656,7 @@ void EditorResourcePicker::set_create_options(Object *p_menu_node) {
 		int idx = 0;
 
 		_ensure_allowed_types();
-		HashSet<StringName> allowed_types = allowed_types_without_convert;
+		HashSet<StringName> allowed_types(allowed_types_without_convert);
 		if (!allowed_types.is_empty()) {
 			edit_menu->add_separator(TTRC("New"));
 		}
@@ -871,7 +880,7 @@ bool EditorResourcePicker::_is_drop_valid(const Dictionary &p_drag_data) const {
 	}
 
 	_ensure_allowed_types();
-	HashSet<StringName> allowed_types = allowed_types_with_convert;
+	HashSet<StringName> allowed_types(allowed_types_with_convert);
 
 	String res_type = _get_resource_type(res);
 
@@ -966,7 +975,7 @@ void EditorResourcePicker::drop_data_fw(const Point2 &p_point, const Variant &p_
 	Ref<Resource> dropped_resource = _get_dropped_resource(p_data);
 	if (dropped_resource.is_valid()) {
 		_ensure_allowed_types();
-		HashSet<StringName> allowed_types = allowed_types_without_convert;
+		HashSet<StringName> allowed_types(allowed_types_without_convert);
 
 		String res_type = _get_resource_type(dropped_resource);
 
@@ -1110,7 +1119,7 @@ void EditorResourcePicker::set_base_type(const String &p_base_type) {
 	// Keep the value, but warn the user that there is a potential mistake.
 	if (!base_type.is_empty() && edited_resource.is_valid()) {
 		_ensure_allowed_types();
-		HashSet<StringName> allowed_types = allowed_types_with_convert;
+		HashSet<StringName> allowed_types(allowed_types_with_convert);
 
 		StringName custom_class;
 		bool is_custom = false;
@@ -1132,7 +1141,7 @@ String EditorResourcePicker::get_base_type() const {
 
 Vector<String> EditorResourcePicker::get_allowed_types() const {
 	_ensure_allowed_types();
-	HashSet<StringName> allowed_types = allowed_types_without_convert;
+	HashSet<StringName> allowed_types(allowed_types_without_convert);
 
 	Vector<String> types;
 	types.resize(allowed_types.size());
@@ -1154,7 +1163,7 @@ bool EditorResourcePicker::is_resource_allowed(const Ref<Resource> &p_resource) 
 
 	if (!base_type.is_empty()) {
 		_ensure_allowed_types();
-		HashSet<StringName> allowed_types = allowed_types_with_convert;
+		HashSet<StringName> allowed_types(allowed_types_with_convert);
 
 		StringName custom_class;
 		bool is_custom = false;
@@ -1231,6 +1240,7 @@ void EditorResourcePicker::_ensure_resource_menu() {
 		return;
 	}
 	edit_menu = memnew(PopupMenu);
+	edit_menu->set_search_bar_enabled_on_item_count(10);
 	edit_menu->add_theme_constant_override("icon_max_width", get_theme_constant(SNAME("class_icon_size"), EditorStringName(Editor)));
 	add_child(edit_menu);
 	edit_menu->connect(SceneStringName(id_pressed), callable_mp(this, &EditorResourcePicker::_edit_menu_cbk));
@@ -1399,17 +1409,17 @@ bool EditorResourcePicker::_is_uniqueness_enabled(bool p_check_recursive) {
 	}
 	Ref<Resource> parent_resource = _has_parent_resource();
 	EditorNode *en = EditorNode::get_singleton();
-	bool internal_to_scene = edited_resource->is_built_in();
+	bool internal_to_scene = en->is_resource_internal_to_scene(edited_resource);
 	List<Node *> node_list = en->get_editor_selection()->get_full_selected_node_list();
 
 	// Todo: Implement a more elegant solution for multiple selected Nodes. This should suffice for the time being.
 	if (node_list.size() > 1 && !p_check_recursive) {
-		return node_list.size() != EditorNode::get_singleton()->get_resource_count(edited_resource) || !internal_to_scene;
+		return node_list.size() != en->get_resource_count(edited_resource) || !internal_to_scene;
 	}
 
 	if (!internal_to_scene) {
-		if (parent_resource.is_valid() && parent_resource->is_built_in() && (!EditorNode::get_singleton()->is_resource_internal_to_scene(parent_resource) || en->get_resource_count(parent_resource) > 1)) {
-			return false;
+		if (parent_resource.is_valid() && (!en->is_resource_internal_to_scene(parent_resource) || en->get_resource_count(parent_resource) > 1)) {
+			return !parent_resource->is_built_in();
 		} else if (!p_check_recursive) {
 			return true;
 		}

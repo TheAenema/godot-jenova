@@ -57,11 +57,11 @@
 // Gotta flush as we're doing this mess from a thread without any
 // synchronization. It's awful, I know, but the `print_*` utilities hang for
 // some reason during editor startup and I need some quick and dirty debugging.
-#define DEBUG_LOG_WAYLAND_EMBED(...)                               \
-	if (1) {                                                       \
+#define DEBUG_LOG_WAYLAND_EMBED(...) \
+	if (1) { \
 		printf("[PROXY] %s\n", vformat(__VA_ARGS__).utf8().ptr()); \
-		fflush(stdout);                                            \
-	} else                                                         \
+		fflush(stdout); \
+	} else \
 		((void)0)
 
 #else
@@ -90,6 +90,14 @@
 #define WL_POINTER_ENTER 0
 #define WL_POINTER_LEAVE 1
 #define WL_POINTER_BUTTON 3
+
+#define WL_TOUCH_DOWN 0
+#define WL_TOUCH_UP 1
+#define WL_TOUCH_MOTION 2
+#define WL_TOUCH_FRAME 3
+#define WL_TOUCH_CANCEL 4
+#define WL_TOUCH_SHAPE 5
+#define WL_TOUCH_ORIENTATION 6
 
 #define WL_SHM_FORMAT 0
 
@@ -1437,7 +1445,7 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 
 		if (p_opcode == WL_SEAT_GET_KEYBOARD) {
 			ERR_FAIL_COND_V(global_id == INVALID_ID, MessageStatus::ERROR);
-			// [Request] wl_seat::get_pointer(n);
+			// [Request] wl_seat::get_keyboard(n);
 			uint32_t new_local_id = body[0];
 
 			WaylandKeyboardData *new_data = memnew(WaylandKeyboardData);
@@ -1447,6 +1455,24 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_request(LocalObjectHandle
 			ERR_FAIL_COND_V(new_global_id == INVALID_ID, MessageStatus::HANDLED);
 
 			instance_data->wl_keyboard_id = new_global_id;
+
+			send_wayland_message(compositor_socket, global_id, p_opcode, { new_global_id });
+
+			return MessageStatus::HANDLED;
+		}
+
+		if (p_opcode == WL_SEAT_GET_TOUCH) {
+			ERR_FAIL_COND_V(global_id == INVALID_ID, MessageStatus::ERROR);
+			// [Request] wl_seat::get_touch(n);
+			uint32_t new_local_id = body[0];
+
+			WaylandTouchData *new_data = memnew(WaylandTouchData);
+			new_data->wl_seat_id = global_id;
+
+			uint32_t new_global_id = client->new_object(new_local_id, &wl_touch_interface, object->version, new_data);
+			ERR_FAIL_COND_V(new_global_id == INVALID_ID, MessageStatus::HANDLED);
+
+			instance_data->wl_touch_id = new_global_id;
 
 			send_wayland_message(compositor_socket, global_id, p_opcode, { new_global_id });
 
@@ -2279,6 +2305,63 @@ WaylandEmbedder::MessageStatus WaylandEmbedder::handle_event(uint32_t p_global_i
 		return MessageStatus::UNHANDLED;
 	}
 
+	if (object->interface == &wl_touch_interface) {
+		WaylandTouchData *data = (WaylandTouchData *)object->data;
+		ERR_FAIL_NULL_V(data, MessageStatus::ERROR);
+
+		uint32_t global_seat_name = registry_globals_names[data->wl_seat_id];
+		RegistryGlobalInfo &global_seat_info = registry_globals[global_seat_name];
+		WaylandSeatGlobalData *global_seat_data = (WaylandSeatGlobalData *)global_seat_info.data;
+		ERR_FAIL_NULL_V(global_seat_data, MessageStatus::ERROR);
+
+		WaylandSeatInstanceData *seat_data = (WaylandSeatInstanceData *)object->data;
+		ERR_FAIL_NULL_V(seat_data, MessageStatus::ERROR);
+
+		if (p_opcode == WL_TOUCH_DOWN) {
+			// uint32_t serial = body[0];
+			// uint32_t time = body[1];
+			uint32_t surface = body[2];
+			// uint32_t id = body[3];
+			// uint32_t x = body[4];
+			// uint32_t y = body[5];
+
+			++data->touch_point_count;
+
+			if (data->touch_point_count == 1) {
+				if (global_seat_data->focused_surface_id == surface) {
+					return MessageStatus::UNHANDLED;
+				}
+
+				if (!global_surface_is_window(surface)) {
+					return MessageStatus::UNHANDLED;
+				}
+
+				if (global_seat_data->focused_surface_id != INVALID_ID) {
+					seat_name_leave_surface(global_seat_name, global_seat_data->focused_surface_id);
+				}
+
+				global_seat_data->focused_surface_id = surface;
+				seat_name_enter_surface(global_seat_name, surface);
+			}
+
+			return MessageStatus::UNHANDLED;
+		}
+
+		if (p_opcode == WL_TOUCH_UP) {
+			--data->touch_point_count;
+
+			return MessageStatus::UNHANDLED;
+		}
+
+		if (p_opcode == WL_TOUCH_CANCEL) {
+			data->touch_point_count = 0;
+
+			return MessageStatus::UNHANDLED;
+		}
+
+		return MessageStatus::UNHANDLED;
+	}
+
 	if (object->interface == &xdg_popup_interface) {
 		if (p_opcode == XDG_POPUP_CONFIGURE) {
 			// [Event] xdg_popup::configure(iiii);
@@ -2351,12 +2434,9 @@ void WaylandEmbedder::shutdown() {
 	}
 }
 
-Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *info, uint32_t *buf, int *fds_requested) {
+Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *info, uint32_t *buf, LocalVector<int> &r_sent_fds) {
 	ERR_FAIL_NULL_V(info, ERR_BUG);
-	ERR_FAIL_NULL_V(fds_requested, ERR_BUG);
 	ERR_FAIL_NULL_V_MSG(info->direction == ProxyDirection::COMPOSITOR && client, ERR_BUG, "Wait, where did this message come from?");
-
-	*fds_requested = 0;
 
 	WaylandObject *object = nullptr;
 
@@ -2410,17 +2490,15 @@ Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *in
 	}
 	ERR_FAIL_NULL_V(message, ERR_BUG);
 
-	*fds_requested = String(message->signature).count("h");
-	LocalVector<int> sent_fds;
-
-	if (*fds_requested > 0) {
-		DEBUG_LOG_WAYLAND_EMBED(vformat("Requested %d FDs.", *fds_requested));
+	int fds_requested = String(message->signature).count("h");
+	if (fds_requested > 0) {
+		DEBUG_LOG_WAYLAND_EMBED(vformat("Requested %d FDs.", fds_requested));
 
 		List<int> &fd_queue = info->direction == ProxyDirection::COMPOSITOR ? client->fds : compositor_fds;
-		for (int i = 0; i < *fds_requested; ++i) {
+		for (int i = 0; i < fds_requested; ++i) {
 			ERR_FAIL_COND_V_MSG(fd_queue.is_empty(), ERR_BUG, "Out of FDs.");
 			DEBUG_LOG_WAYLAND_EMBED(vformat("Fetching FD %d.", fd_queue.front()->get()));
-			sent_fds.push_back(fd_queue.front()->get());
+			r_sent_fds.push_back(fd_queue.front()->get());
 			fd_queue.pop_front();
 		}
 
@@ -2429,6 +2507,7 @@ Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *in
 
 	if (object->destroyed) {
 		DEBUG_LOG_WAYLAND_EMBED("Ignoring message for inert object.");
+
 		// Inert object.
 		return OK;
 	}
@@ -2451,7 +2530,7 @@ Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *in
 		DEBUG_LOG_WAYLAND_EMBED("Falling back to generic handler.");
 
 		if (handle_generic_msg(client, object, message, info, buf)) {
-			send_raw_message(compositor_socket, { { buf, info->size } }, sent_fds);
+			send_raw_message(compositor_socket, { { buf, info->size } }, r_sent_fds);
 		}
 	} else {
 		uint32_t global_name = 0;
@@ -2522,7 +2601,7 @@ Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *in
 						buf[0] = instance_id;
 
 						if (handle_generic_msg(&c, local_obj.get(), message, info, buf, instance_id)) {
-							send_raw_message(c.socket, { { buf, info->size } }, sent_fds);
+							send_raw_message(c.socket, { { buf, info->size } }, r_sent_fds);
 						}
 
 						handled = true;
@@ -2558,7 +2637,7 @@ Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *in
 					DEBUG_LOG_WAYLAND_EMBED("Falling back to generic handler.");
 
 					if (handle_generic_msg(&c, local_obj.get(), message, info, buf)) {
-						send_raw_message(c.socket, { { buf, info->size } }, sent_fds);
+						send_raw_message(c.socket, { { buf, info->size } }, r_sent_fds);
 					}
 
 					handled = true;
@@ -2594,18 +2673,13 @@ Error WaylandEmbedder::handle_msg_info(Client *client, const struct msg_info *in
 				buf[0] = local_id;
 
 				if (handle_generic_msg(client, local_obj.get(), message, info, buf)) {
-					send_raw_message(client->socket, { { buf, info->size } }, sent_fds);
+					send_raw_message(client->socket, { { buf, info->size } }, r_sent_fds);
 				}
 			} else {
 				WARN_PRINT_ONCE(vformat("[Wayland Embedder] Unexpected client-less event from %s#g0x%x. Object has probably leaked.", object->interface->name, global_id));
 				handle_generic_msg(nullptr, object, message, info, buf);
 			}
 		}
-	}
-
-	for (int fd : sent_fds) {
-		DEBUG_LOG_WAYLAND_EMBED(vformat("Closing fd %d.", fd));
-		close(fd);
 	}
 
 	return OK;
@@ -2730,8 +2804,6 @@ Error WaylandEmbedder::handle_sock(int p_fd) {
 	full_msg.msg_control = nullptr;
 	full_msg.msg_controllen = 0;
 
-	int fds_requested = 0;
-
 	Client *client = nullptr;
 	if (p_fd == compositor_socket) {
 		// Let's figure out the recipient of the message.
@@ -2747,11 +2819,19 @@ Error WaylandEmbedder::handle_sock(int p_fd) {
 		client = &clients[p_fd];
 	}
 
-	if (handle_msg_info(client, &info, msg_buf.ptr(), &fds_requested) != OK) {
-		return ERR_BUG;
+	LocalVector<int> sent_fds;
+	Error err = handle_msg_info(client, &info, msg_buf.ptr(), sent_fds);
+
+	for (int fd : sent_fds) {
+		DEBUG_LOG_WAYLAND_EMBED(vformat("Closing fd %d.", fd));
+		close(fd);
 	}
 
 	DEBUG_LOG_WAYLAND_EMBED(" === END PACKET === ");
+
+	if (err != OK) {
+		return ERR_BUG;
+	}
 
 	return OK;
 }

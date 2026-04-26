@@ -31,7 +31,8 @@
 #include "editor_dock.h"
 
 #include "core/input/shortcut.h"
-#include "core/io/config_file.h"
+#include "core/object/callable_mp.h"
+#include "core/object/class_db.h"
 #include "editor/docks/dock_tab_container.h"
 #include "editor/docks/editor_dock_manager.h"
 
@@ -114,6 +115,7 @@ void EditorDock::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_available_layouts"), &EditorDock::get_available_layouts);
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "available_layouts", PROPERTY_HINT_FLAGS, "Vertical:1,Horizontal:2,Floating:4"), "set_available_layouts", "get_available_layouts");
 
+	ADD_SIGNAL(MethodInfo("opened"));
 	ADD_SIGNAL(MethodInfo("closed"));
 	ADD_SIGNAL(MethodInfo("_tab_style_changed"));
 
@@ -132,6 +134,8 @@ void EditorDock::_bind_methods() {
 	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_UR);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_BR);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_BOTTOM);
+	BIND_ENUM_CONSTANT(DOCK_SLOT_BOTTOM_L);
+	BIND_ENUM_CONSTANT(DOCK_SLOT_BOTTOM_R);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_MAX);
 
 	GDVIRTUAL_BIND(_update_layout, "layout");
@@ -295,8 +299,12 @@ void EditorDock::update_tab_style() {
 		} break;
 	}
 
-	if (shortcut.is_valid() && shortcut->has_valid_event()) {
-		tooltip += (tooltip.is_empty() ? "" : "\n") + TTR(shortcut->get_name()) + " (" + shortcut->get_as_text() + ")";
+	if (shortcut.is_valid()) {
+		tooltip += (tooltip.is_empty() ? "" : "\n") + TTR(shortcut->get_name());
+
+		if (shortcut->has_valid_event()) {
+			tooltip += " (" + shortcut->get_as_text() + ")";
+		}
 	}
 	parent_dock_container->set_tab_tooltip(index, tooltip);
 

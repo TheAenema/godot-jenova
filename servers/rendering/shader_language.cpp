@@ -30,12 +30,14 @@
 
 #include "shader_language.h"
 
+#include "core/config/engine.h"
 #include "core/os/os.h"
 #include "core/templates/local_vector.h"
+#include "core/templates/rb_set.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering/rendering_server.h"
 #include "servers/rendering/rendering_server_globals.h"
-#include "shader_types.h"
+#include "servers/rendering/shader_types.h"
 
 #define HAS_WARNING(flag) (warning_flags & flag)
 
@@ -1314,7 +1316,6 @@ void ShaderLanguage::clear() {
 	last_name = StringName();
 	last_type = IDENTIFIER_MAX;
 	current_uniform_group_name = "";
-	current_uniform_subgroup_name = "";
 	current_uniform_hint = ShaderNode::Uniform::HINT_NONE;
 	current_uniform_filter = FILTER_DEFAULT;
 	current_uniform_repeat = REPEAT_DEFAULT;
@@ -1397,8 +1398,8 @@ void ShaderLanguage::_parse_used_identifier(const StringName &p_identifier, Iden
 
 bool ShaderLanguage::_find_identifier(const BlockNode *p_block, bool p_allow_reassign, const FunctionInfo &p_function_info, const StringName &p_identifier, DataType *r_data_type, IdentifierType *r_type, bool *r_is_const, int *r_array_size, StringName *r_struct_name, Vector<Scalar> *r_constant_values) {
 	if (is_shader_inc) {
-		for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-			for (const KeyValue<StringName, FunctionInfo> &E : ShaderTypes::get_singleton()->get_functions(RenderingServer::ShaderMode(i))) {
+		for (int i = 0; i < RSE::SHADER_MAX; i++) {
+			for (const KeyValue<StringName, FunctionInfo> &E : ShaderTypes::get_singleton()->get_functions(RSE::ShaderMode(i))) {
 				if ((current_function == E.key || E.key == "global" || E.key == "constants") && E.value.built_ins.has(p_identifier)) {
 					if (r_data_type) {
 						*r_data_type = E.value.built_ins[p_identifier].type;
@@ -3311,20 +3312,20 @@ const ShaderLanguage::BuiltinFuncDef ShaderLanguage::builtin_func_defs[] = {
 
 	// textureGather
 
-	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2D, TYPE_VEC2, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2D, TYPE_VEC2, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2D, TYPE_VEC2, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2D, TYPE_VEC2, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2D, TYPE_VEC2, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2D, TYPE_VEC2, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2DARRAY, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2DARRAY, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2DARRAY, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2DARRAY, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2DARRAY, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2DARRAY, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLERCUBE, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, false },
-	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLERCUBE, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, false },
+	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2D, TYPE_VEC2, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2D, TYPE_VEC2, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2D, TYPE_VEC2, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2D, TYPE_VEC2, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2D, TYPE_VEC2, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2D, TYPE_VEC2, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2DARRAY, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2DARRAY, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2DARRAY, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLER2DARRAY, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_IVEC4, { TYPE_ISAMPLER2DARRAY, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_UVEC4, { TYPE_USAMPLER2DARRAY, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLERCUBE, TYPE_VEC3, TYPE_VOID }, { "sampler", "coords" }, TAG_GLOBAL, true },
+	{ "textureGather", TYPE_VEC4, { TYPE_SAMPLERCUBE, TYPE_VEC3, TYPE_INT, TYPE_VOID }, { "sampler", "coords", "comp" }, TAG_GLOBAL, true },
 
 	// textureQueryLod
 
@@ -3646,8 +3647,36 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 	int builtin_idx = 0;
 
 	if (argcount <= 4) {
-		// test builtins
+		// Test builtins.
 		int idx = 0;
+		int full_match_index = 0;
+
+		while (builtin_func_defs[idx].name) {
+			if (completion_class != builtin_func_defs[idx].tag) {
+				idx++;
+				continue;
+			}
+
+			if (name == builtin_func_defs[idx].name) {
+				bool fail = false;
+
+				for (int i = 0; i < argcount; i++) {
+					if (args[i] != builtin_func_defs[idx].args[i]) {
+						fail = true;
+						break;
+					}
+				}
+
+				if (!fail) {
+					// Full match.
+					full_match_index = idx;
+					break;
+				}
+			}
+
+			idx++;
+		}
+		idx = full_match_index;
 
 		while (builtin_func_defs[idx].name) {
 			if (completion_class != builtin_func_defs[idx].tag) {
@@ -3667,7 +3696,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 						}
 					}
 					if (get_scalar_type(args[i]) == args[i] && p_func->arguments[i + 1]->type == Node::NODE_TYPE_CONSTANT && convert_constant(static_cast<ConstantNode *>(p_func->arguments[i + 1]), builtin_func_defs[idx].args[i])) {
-						//all good, but needs implicit conversion later
+						// All good, but needs implicit conversion later.
 					} else if (args[i] != builtin_func_defs[idx].args[i]) {
 						fail = true;
 						break;
@@ -3685,7 +3714,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 				}
 
 				if (!fail && argcount < 4 && builtin_func_defs[idx].args[argcount] != TYPE_VOID) {
-					fail = true; //make sure the number of arguments matches
+					fail = true; // Make sure the number of arguments matches.
 				}
 
 				if (!fail) {
@@ -3720,7 +3749,7 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 						}
 					}
 
-					//make sure its not an out argument used in the wrong way
+					// Make sure it's not an out argument used in the wrong way.
 					int outarg_idx = 0;
 					while (builtin_func_out_args[outarg_idx].name) {
 						if (String(name) == builtin_func_out_args[outarg_idx].name) {
@@ -3819,14 +3848,14 @@ bool ShaderLanguage::_validate_function_call(BlockNode *p_block, const FunctionI
 						}
 						outarg_idx++;
 					}
-					//implicitly convert values if possible
+					// Implicitly convert values if possible.
 					for (int i = 0; i < argcount; i++) {
 						if (get_scalar_type(args[i]) != args[i] || args[i] == builtin_func_defs[idx].args[i] || p_func->arguments[i + 1]->type != Node::NODE_TYPE_CONSTANT) {
-							//can't do implicit conversion here
+							// Can't do implicit conversion here.
 							continue;
 						}
 
-						//this is an implicit conversion
+						// This is an implicit conversion.
 						ConstantNode *constant = static_cast<ConstantNode *>(p_func->arguments[i + 1]);
 						ConstantNode *conversion = alloc_node<ConstantNode>();
 
@@ -7993,7 +8022,7 @@ Error ShaderLanguage::_parse_block(BlockNode *p_block, const FunctionInfo &p_fun
 			}
 		}
 
-		bool is_struct = shader->structs.has(tk.text);
+		bool is_struct = shader->structs.has(tk.text) && !(p_block && _find_identifier(p_block, false, p_function_info, tk.text));
 		bool is_var_init = false;
 		bool is_condition = false;
 
@@ -9737,7 +9766,6 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 					uniform.precision = precision;
 					uniform.array_size = array_size;
 					uniform.group = current_uniform_group_name;
-					uniform.subgroup = current_uniform_subgroup_name;
 
 					tk = _get_token();
 					if (tk.type == TK_BRACKET_OPEN) {
@@ -10271,22 +10299,22 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 				tk = _get_token();
 				if (tk.type == TK_IDENTIFIER) {
 					current_uniform_group_name = tk.text;
-					current_uniform_subgroup_name = "";
+
 					tk = _get_token();
-					if (tk.type == TK_PERIOD) {
+					while (tk.type == TK_PERIOD) {
 						tk = _get_token();
+
 						if (tk.type == TK_IDENTIFIER) {
-							current_uniform_subgroup_name = tk.text;
-							tk = _get_token();
-							if (tk.type != TK_SEMICOLON) {
-								_set_expected_error(";");
-								return ERR_PARSE_ERROR;
-							}
+							current_uniform_group_name += "/" + tk.text;
 						} else {
 							_set_error(RTR("Expected an uniform subgroup identifier."));
 							return ERR_PARSE_ERROR;
 						}
-					} else if (tk.type != TK_SEMICOLON) {
+
+						tk = _get_token();
+					}
+
+					if (tk.type != TK_SEMICOLON) {
 						_set_expected_error(";", ".");
 						return ERR_PARSE_ERROR;
 					}
@@ -10303,7 +10331,6 @@ Error ShaderLanguage::_parse_shader(const HashMap<StringName, FunctionInfo> &p_f
 						return ERR_PARSE_ERROR;
 					} else {
 						current_uniform_group_name = "";
-						current_uniform_subgroup_name = "";
 					}
 				}
 			} break;
@@ -11201,8 +11228,8 @@ Error ShaderLanguage::_parse_shader_mode(bool p_is_stencil, const Vector<ModeInf
 	bool found = false;
 
 	if (is_shader_inc) {
-		for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-			const Vector<ModeInfo> modes = p_is_stencil ? ShaderTypes::get_singleton()->get_stencil_modes(RenderingServer::ShaderMode(i)) : ShaderTypes::get_singleton()->get_modes(RenderingServer::ShaderMode(i));
+		for (int i = 0; i < RSE::SHADER_MAX; i++) {
+			const Vector<ModeInfo> modes = p_is_stencil ? ShaderTypes::get_singleton()->get_stencil_modes(RSE::ShaderMode(i)) : ShaderTypes::get_singleton()->get_modes(RSE::ShaderMode(i));
 
 			for (const ModeInfo &info : modes) {
 				const String name = String(info.name);
@@ -11465,7 +11492,7 @@ Error ShaderLanguage::complete(const String &p_code, const ShaderCompileInfo &p_
 				if (keyword_list[i].excluded_shader_types.has(shader_type_identifier) || keyword_list[i].excluded_functions.has(current_function)) {
 					continue;
 				}
-				ScriptLanguage::CodeCompletionOption option(keyword_list[i].text, ScriptLanguage::CODE_COMPLETION_KIND_PLAIN_TEXT);
+				ScriptLanguage::CodeCompletionOption option(keyword_list[i].text, ScriptLanguage::CODE_COMPLETION_KIND_KEYWORD);
 				r_options->push_back(option);
 			}
 		}
@@ -11486,8 +11513,8 @@ Error ShaderLanguage::complete(const String &p_code, const ShaderCompileInfo &p_
 		} break;
 		case COMPLETION_RENDER_MODE: {
 			if (is_shader_inc) {
-				for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-					const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_modes(RenderingServer::ShaderMode(i));
+				for (int i = 0; i < RSE::SHADER_MAX; i++) {
+					const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_modes(RSE::ShaderMode(i));
 
 					for (int j = 0; j < modes.size(); j++) {
 						const ModeInfo &info = modes[j];
@@ -11551,8 +11578,8 @@ Error ShaderLanguage::complete(const String &p_code, const ShaderCompileInfo &p_
 		} break;
 		case COMPLETION_STENCIL_MODE: {
 			if (is_shader_inc) {
-				for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-					const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_stencil_modes(RenderingServer::ShaderMode(i));
+				for (int i = 0; i < RSE::SHADER_MAX; i++) {
+					const Vector<ModeInfo> modes = ShaderTypes::get_singleton()->get_stencil_modes(RSE::ShaderMode(i));
 
 					for (const ModeInfo &info : modes) {
 						if (!info.options.is_empty()) {
@@ -11672,8 +11699,8 @@ Error ShaderLanguage::complete(const String &p_code, const ShaderCompileInfo &p_
 
 				if (comp_ident) {
 					if (is_shader_inc) {
-						for (int i = 0; i < RenderingServer::SHADER_MAX; i++) {
-							const HashMap<StringName, ShaderLanguage::FunctionInfo> &info = ShaderTypes::get_singleton()->get_functions(RenderingServer::ShaderMode(i));
+						for (int i = 0; i < RSE::SHADER_MAX; i++) {
+							const HashMap<StringName, ShaderLanguage::FunctionInfo> &info = ShaderTypes::get_singleton()->get_functions(RSE::ShaderMode(i));
 
 							if (info.has("global")) {
 								for (const KeyValue<StringName, BuiltInInfo> &E : info["global"].built_ins) {
