@@ -61,6 +61,7 @@ private:
 	struct Light {
 		RSE::LightType type;
 		float param[RSE::LIGHT_PARAM_MAX];
+		uint32_t light_id = 0;
 		Color color = Color(1, 1, 1, 1);
 		RID projector;
 		bool shadow = false;
@@ -166,6 +167,11 @@ private:
 		float volumetric_fog_energy;
 		uint32_t bake_mode;
 		float projector_rect[4];
+
+		uint32_t light_id;
+		float reserved1;
+		float reserved2;
+		float reserved3;
 	};
 
 	struct LightInstanceDepthSort {
@@ -222,6 +228,11 @@ private:
 		float uv_scale2[2];
 		float uv_scale3[2];
 		float uv_scale4[2];
+
+		uint32_t light_id;
+		float reserved1;
+		float reserved2;
+		float reserved3;
 	};
 
 	uint32_t max_directional_lights;
@@ -501,6 +512,7 @@ public:
 
 	virtual void light_free(RID p_rid) override;
 
+	virtual void light_set_uid(RID p_light, uint32_t p_id) override;
 	virtual void light_set_color(RID p_light, const Color &p_color) override;
 	virtual void light_set_param(RID p_light, RSE::LightParam p_param, float p_value) override;
 	virtual void light_set_shadow(RID p_light, bool p_enabled) override;

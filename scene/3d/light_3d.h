@@ -68,6 +68,7 @@ public:
 	};
 
 private:
+	uint32_t uid = 0;
 	Color color;
 	real_t param[PARAM_MAX] = {};
 	bool shadow = false;
@@ -104,6 +105,9 @@ public:
 
 	void set_editor_only(bool p_editor_only);
 	bool is_editor_only() const;
+
+	void set_light_uid(uint32_t p_uid);
+	uint32_t get_light_uid() const;
 
 	void set_param(Param p_param, real_t p_value);
 	real_t get_param(Param p_param) const;

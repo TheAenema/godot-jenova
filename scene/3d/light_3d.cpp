@@ -37,6 +37,17 @@
 #include "scene/main/scene_tree.h"
 #include "servers/rendering/rendering_server.h"
 
+void Light3D::set_light_uid(uint32_t p_uid) {
+	uid = p_uid;
+
+	// Set Light UID (Based on Path)
+	RS::get_singleton()->light_set_uid(light, p_uid);
+}
+
+uint32_t Light3D::get_light_uid() const {
+	return uid;
+}
+
 void Light3D::set_param(Param p_param, real_t p_value) {
 	ERR_FAIL_INDEX(p_param, PARAM_MAX);
 	param[p_param] = p_value;
@@ -351,6 +362,9 @@ void Light3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_editor_only", "editor_only"), &Light3D::set_editor_only);
 	ClassDB::bind_method(D_METHOD("is_editor_only"), &Light3D::is_editor_only);
 
+	ClassDB::bind_method(D_METHOD("set_light_uid", "uid"), &Light3D::set_light_uid);
+	ClassDB::bind_method(D_METHOD("get_light_uid"), &Light3D::get_light_uid);
+
 	ClassDB::bind_method(D_METHOD("set_param", "param", "value"), &Light3D::set_param);
 	ClassDB::bind_method(D_METHOD("get_param", "param"), &Light3D::get_param);
 
@@ -395,6 +409,7 @@ void Light3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_correlated_color"), &Light3D::get_correlated_color);
 
 	ADD_GROUP("Light", "light_");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "light_uid", PROPERTY_HINT_RANGE, "0,2500"), "set_light_uid", "get_light_uid");
 	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "light_intensity_lumens", PROPERTY_HINT_RANGE, "0,100000.0,0.01,or_greater,suffix:lm"), "set_param", "get_param", PARAM_INTENSITY);
 	ADD_PROPERTYI(PropertyInfo(Variant::FLOAT, "light_intensity_lux", PROPERTY_HINT_RANGE, "0,150000.0,0.01,or_greater,suffix:lx"), "set_param", "get_param", PARAM_INTENSITY);
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "light_temperature", PROPERTY_HINT_RANGE, "1000,15000.0,1.0,suffix:k"), "set_temperature", "get_temperature");

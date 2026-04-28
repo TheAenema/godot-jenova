@@ -2519,6 +2519,7 @@ void RenderingServer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("spot_light_create"), &RenderingServer::spot_light_create);
 	ClassDB::bind_method(D_METHOD("area_light_create"), &RenderingServer::area_light_create);
 
+	ClassDB::bind_method(D_METHOD("light_set_uid", "light", "id"), &RenderingServer::light_set_uid);
 	ClassDB::bind_method(D_METHOD("light_set_color", "light", "color"), &RenderingServer::light_set_color);
 	ClassDB::bind_method(D_METHOD("light_set_param", "light", "param", "value"), &RenderingServer::light_set_param);
 	ClassDB::bind_method(D_METHOD("light_set_shadow", "light", "enabled"), &RenderingServer::light_set_shadow);

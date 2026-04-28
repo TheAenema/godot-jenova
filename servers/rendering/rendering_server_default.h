@@ -483,6 +483,7 @@ public:
 	FUNCRIDSPLIT(spot_light)
 	FUNCRIDSPLIT(area_light)
 
+	FUNC2(light_set_uid, RID, uint32_t)
 	FUNC2(light_set_color, RID, const Color &)
 	FUNC3(light_set_param, RID, RSE::LightParam, float)
 	FUNC2(light_set_shadow, RID, bool)

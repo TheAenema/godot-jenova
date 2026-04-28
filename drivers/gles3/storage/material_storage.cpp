@@ -1222,6 +1222,8 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["LIGHT_DIRECTION"] = "light_direction";
 		actions.renames["LIGHT_IS_DIRECTIONAL"] = "is_directional";
 		actions.renames["LIGHT_COLOR"] = "light_color";
+		actions.renames["LIGHT_ID"] = "light_id";
+		actions.renames["LIGHT_SHADOW"] = "light_shadow";
 		actions.renames["LIGHT_ENERGY"] = "light_energy";
 		actions.renames["LIGHT"] = "light";
 		actions.renames["SHADOW_MODULATE"] = "shadow_modulate";

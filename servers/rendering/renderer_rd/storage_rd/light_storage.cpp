@@ -209,6 +209,13 @@ void LightStorage::light_free(RID p_rid) {
 	light_owner.free(p_rid);
 }
 
+void LightStorage::light_set_uid(RID p_light, uint32_t p_id) {
+	Light *light = light_owner.get_or_null(p_light);
+	ERR_FAIL_NULL(light);
+
+	light->light_id = p_id;
+}
+
 void LightStorage::light_set_color(RID p_light, const Color &p_color) {
 	Light *light = light_owner.get_or_null(p_light);
 	ERR_FAIL_NULL(light);
@@ -860,6 +867,7 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 					float fade_start = light->param[RSE::LIGHT_PARAM_SHADOW_FADE_START];
 					light_data.fade_from = -light_data.shadow_split_offsets[3] * MIN(fade_start, 0.999); //using 1.0 would break smoothstep
 					light_data.fade_to = -light_data.shadow_split_offsets[3];
+					light_data.light_id = light->light_id;
 				}
 
 				r_directional_light_count++;
@@ -1235,6 +1243,7 @@ void LightStorage::update_light_buffers(RenderDataRD *p_render_data, const Paged
 			light_data.shadow_opacity = 0.0;
 		}
 
+		light_data.light_id = light->light_id;
 		light_instance->cull_mask = light->cull_mask;
 
 		// hook for subclass to do further processing.
