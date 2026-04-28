@@ -33,6 +33,11 @@ struct LightData { //this structure needs to be as packed as possible
 	float volumetric_fog_energy;
 	uint bake_mode;
 	vec4 projector_rect; //projector rect in srgb decal atlas
+
+	uint light_id;
+	float reserved1;
+	float reserved2;
+	float reserved3;
 };
 
 #define REFLECTION_AMBIENT_DISABLED 0
@@ -89,4 +94,9 @@ struct DirectionalLightData {
 	vec2 uv_scale2;
 	vec2 uv_scale3;
 	vec2 uv_scale4;
+
+	uint light_id;
+	float reserved1;
+	float reserved2;
+	float reserved3;
 };
