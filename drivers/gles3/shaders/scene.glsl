@@ -1775,7 +1775,7 @@ void light_process_omni(uint idx, vec3 vertex, vec3 eye_vec, vec3 normal, vec3 f
 #include "area_lights_inc.glsl"
 
 // implementation of area lights with Linearly Transformed Cosines (LTC): https://eheitzresearch.wordpress.com/415-2/
-void light_process_area(uint idx, vec3 vertex, vec3 eye_vec, vec3 normal, vec3 f0, float roughness, float metallic, float shadow, vec3 albedo, inout float alpha, vec2 screen_uv,
+void light_process_area(uint idx, vec3 vertex, vec3 eye_vec, uint light_id, vec3 normal, vec3 f0, float roughness, float metallic, float shadow, vec3 albedo, inout float alpha, vec2 screen_uv,
 #ifdef LIGHT_BACKLIGHT_USED
 		vec3 backlight,
 #endif
@@ -2694,7 +2694,7 @@ void main() {
 			break;
 		}
 
-		light_process_area(area_light_indices[i], vertex, view, normal, f0, roughness, metallic, 1.0, albedo, alpha, screen_uv,
+		light_process_area(area_light_indices[i], vertex, view, uint(0), normal, f0, roughness, metallic, 1.0, albedo, alpha, screen_uv,
 #ifdef LIGHT_BACKLIGHT_USED
 				backlight,
 #endif
