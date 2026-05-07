@@ -387,7 +387,7 @@ private:
 	AcceptDialog *warning = nullptr;
 	EditorPlugin *plugin_to_save = nullptr;
 
-	int overridden_default_layout = -1;
+	bool overridden_default_layout = false;
 	Ref<ConfigFile> default_layout;
 	PopupMenu *editor_layouts = nullptr;
 	EditorLayoutsDialog *layout_dialog = nullptr;
@@ -560,7 +560,7 @@ private:
 	void _palette_quick_open_dialog();
 
 	void _remove_plugin_from_enabled(const String &p_name);
-	void _plugin_over_edit(EditorPlugin *p_plugin, Object *p_object);
+	void _plugin_over_edit(EditorPlugin *p_plugin, Object *p_object, bool p_set_current = true);
 	void _plugin_over_self_own(EditorPlugin *p_plugin);
 
 	void _fs_changed();
@@ -826,7 +826,7 @@ public:
 	void save_resource(const Ref<Resource> &p_resource);
 	void save_resource_as(const Ref<Resource> &p_resource, const String &p_at_path = String());
 	bool is_resource_internal_to_scene(Ref<Resource> p_resource);
-	void gather_resources(const Variant &p_variant, List<Ref<Resource>> &r_list, bool p_subresources = false, bool p_allow_external = false);
+	void gather_resources(const Variant &p_variant, List<Ref<Resource>> &r_list, HashSet<Object *> &r_scanned_objects, bool p_subresources = false, bool p_allow_external = false);
 	void update_resource_count(Node *p_node, bool p_remove = false);
 	void update_node_reference(const Variant &p_value, Node *p_node, bool p_remove = false);
 	void clear_node_reference(Ref<Resource> p_res);
@@ -838,7 +838,7 @@ public:
 	void push_item(Object *p_object, const String &p_property = "", bool p_inspector_only = false);
 	void push_item_no_inspector(Object *p_object);
 	void edit_previous_item();
-	void edit_item(Object *p_object, Object *p_editing_owner);
+	void edit_item(Object *p_object, Object *p_editing_owner, bool p_set_current = true);
 	void push_node_item(Node *p_node);
 	void hide_unused_editors(const Object *p_editing_owner = nullptr);
 
