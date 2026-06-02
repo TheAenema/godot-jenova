@@ -69,6 +69,7 @@
 #include "scene/gui/box_container.h"
 #include "scene/gui/check_box.h"
 #include "scene/gui/panel_container.h"
+#include "scene/main/missing_node.h"
 #include "scene/main/scene_tree.h"
 #include "scene/property_utils.h"
 #include "scene/resources/packed_scene.h"
@@ -1910,7 +1911,7 @@ void SceneTreeDock::_node_strip_signal_inheritance(Node *p_node) {
 }
 
 void SceneTreeDock::_load_request(const String &p_path) {
-	EditorNode::get_singleton()->load_scene(p_path);
+	EditorNode::get_singleton()->open_scene(p_path);
 	_local_tree_selected();
 }
 
@@ -2663,7 +2664,7 @@ void SceneTreeDock::_script_created(Ref<Script> p_script) {
 	}
 
 	if (p_script->is_built_in()) {
-		p_script->set_path(edited_scene->get_scene_file_path() + "::" + p_script->generate_scene_unique_id());
+		EditorNode::setup_built_in_resource(p_script, edited_scene->get_scene_file_path());
 	}
 
 	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
@@ -3177,6 +3178,9 @@ void SceneTreeDock::_create() {
 				} else if (smaller_path_to_top == path_length) {
 					if (only_one_top_node && top_node->get_parent() != n->get_parent()) {
 						only_one_top_node = false;
+					}
+					if (only_one_top_node && n->get_index(false) < top_node->get_index(false)) {
+						top_node = n;
 					}
 					if (center_parent) {
 						top_level_nodes.append(n);
@@ -3957,20 +3961,26 @@ void SceneTreeDock::_tree_rmb(const Vector2 &p_menu_pos) {
 		BEGIN_SECTION()
 		menu->add_icon_shortcut(get_editor_theme_icon(SNAME("ActionCut")), ED_GET_SHORTCUT("scene_tree/cut_node"), TOOL_CUT);
 		menu->add_icon_shortcut(get_editor_theme_icon(SNAME("ActionCopy")), ED_GET_SHORTCUT("scene_tree/copy_node"), TOOL_COPY);
+
 		if (!node_clipboard.is_empty()) {
+			bool is_paste_icon_added = false; // Only add an icon to the first "paste" option.
+
 			if (selection.size() == 1) {
 				menu->add_icon_shortcut(get_editor_theme_icon(SNAME("ActionPaste")), ED_GET_SHORTCUT("scene_tree/paste_node"), TOOL_PASTE);
-				menu->add_shortcut(ED_GET_SHORTCUT("scene_tree/paste_node_as_sibling"), TOOL_PASTE_AS_SIBLING);
-				if (selection.front()->get() == edited_scene) {
-					menu->set_item_disabled(-1, true);
+				is_paste_icon_added = true;
+
+				if (selection.front()->get() != edited_scene) {
+					menu->add_shortcut(ED_GET_SHORTCUT("scene_tree/paste_node_as_sibling"), TOOL_PASTE_AS_SIBLING);
 				}
 			}
+
 			if (selection.size() >= 1) {
-				if (can_rename || can_replace) {
+				if ((selection.front()->get() != edited_scene) && (can_rename || can_replace)) {
 					menu->add_shortcut(ED_GET_SHORTCUT("scene_tree/paste_node_as_replacement"), TOOL_PASTE_AS_REPLACEMENT);
-				}
-				if (selection.front()->get() == edited_scene) {
-					menu->set_item_disabled(-1, true);
+					if (!is_paste_icon_added) {
+						menu->set_item_icon(-1, get_editor_theme_icon(SNAME("ActionPaste")));
+						is_paste_icon_added = true;
+					}
 				}
 			}
 		}
@@ -4117,11 +4127,10 @@ void SceneTreeDock::_tree_rmb(const Vector2 &p_menu_pos) {
 	// Group "open_in_editor" with "show_in_file_system", if it is available.
 	if (is_tool_scene_open_inherited_available) {
 		menu->add_icon_item(get_editor_theme_icon(SNAME("Load")), TTR("Open in Editor"), TOOL_SCENE_OPEN_INHERITED);
-		// TODO: Missing shortcut?
+		menu->set_item_shortcut(-1, ED_GET_SHORTCUT("scene_tree/open_scene_in_editor"));
 	} else if (is_tool_scene_open_available) {
 		menu->add_icon_item(get_editor_theme_icon(SNAME("Load")), TTR("Open in Editor"), TOOL_SCENE_OPEN);
 		menu->set_item_shortcut(-1, ED_GET_SHORTCUT("scene_tree/open_scene_in_editor"));
-		// TODO: Use add_icon_shortcut() instead?
 	}
 
 	if (full_selection.size() == 1 && selection.front()->get()->is_instance()) {
@@ -4137,7 +4146,7 @@ void SceneTreeDock::_tree_rmb(const Vector2 &p_menu_pos) {
 	END_SECTION()
 
 #undef BEGIN_SECTION
-#undef END_SECTIOn
+#undef END_SECTION
 
 	Vector<String> p_paths;
 	Node *root = EditorNode::get_singleton()->get_edited_scene();
@@ -4572,15 +4581,35 @@ void SceneTreeDock::paste_node_as_replacement() {
 			}
 		}
 
-		Variant selected_pos;
-		if (selected->has_method("get_position")) {
-			selected_pos = selected->call("get_position");
+		const bool is_missing_node_selected = Object::cast_to<MissingNode>(selected) != nullptr;
+		const CanvasItem *selected_canvas_item = Object::cast_to<CanvasItem>(selected);
+		const Node3D *selected_node_3d = Object::cast_to<Node3D>(selected);
+		Transform2D selected_transform_2d;
+		Transform3D selected_transform_3d;
+		if (selected_canvas_item) {
+			selected_transform_2d = selected_canvas_item->get_transform();
+		} else if (selected_node_3d) {
+			selected_transform_3d = selected_node_3d->get_transform();
 		}
-		_replace_node(selected, new_node, false);
+
+		_replace_node(selected, new_node, is_missing_node_selected);
 		new_node->set_scene_file_path(new_scene_file_path);
 
-		if (new_node->has_method("set_position")) {
-			new_node->call("set_position", selected_pos);
+		if (selected_canvas_item) {
+			Node2D *new_node_2d = Object::cast_to<Node2D>(new_node);
+			Control *new_control = Object::cast_to<Control>(new_node);
+			if (new_node_2d) {
+				new_node_2d->set_transform(selected_transform_2d);
+			} else if (new_control) {
+				new_control->set_position(selected_transform_2d.get_origin());
+				new_control->set_rotation(selected_transform_2d.get_rotation());
+				new_control->set_scale(selected_transform_2d.get_scale());
+			}
+		} else if (selected_node_3d) {
+			Node3D *new_node_3d = Object::cast_to<Node3D>(new_node);
+			if (new_node_3d) {
+				new_node_3d->set_transform(selected_transform_3d);
+			}
 		}
 
 		if (new_is_scene) {

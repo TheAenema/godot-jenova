@@ -3638,7 +3638,9 @@ int RichTextLabel::_find_margin(Item *p_item, const Ref<Font> &p_base_font, int 
 			if (font_size_it && font_size_it->font_size > 0) {
 				font_size = font_size_it->font_size;
 			}
-			margin += MAX(1, tab_size * (font->get_char_size(' ', font_size).width + font->get_spacing(TextServer::SPACING_SPACE)));
+			if (tab_size > 0) {
+				margin += MAX(1, tab_size * (font->get_char_size(' ', font_size).width + font->get_spacing(TextServer::SPACING_SPACE)));
+			}
 
 		} else if (item->type == ITEM_LIST) {
 			Ref<Font> font = p_base_font;
@@ -3657,7 +3659,9 @@ int RichTextLabel::_find_margin(Item *p_item, const Ref<Font> &p_base_font, int 
 			if (font_size_it && font_size_it->font_size > 0) {
 				font_size = font_size_it->font_size;
 			}
-			margin += MAX(1, tab_size * (font->get_char_size(' ', font_size).width + font->get_spacing(TextServer::SPACING_SPACE)));
+			if (tab_size > 0) {
+				margin += MAX(1, tab_size * (font->get_char_size(' ', font_size).width + font->get_spacing(TextServer::SPACING_SPACE)));
+			}
 		}
 
 		item = item->parent;
@@ -4629,6 +4633,16 @@ bool RichTextLabel::remove_paragraph(int p_paragraph, bool p_no_invalidate) {
 				_remove_frame(erase_list, main, i, true, off, 0);
 			} else {
 				_remove_frame(erase_list, main, i, false, off, 1);
+
+				Item *it_to = (i + 1 < (int)main->lines.size()) ? main->lines[i + 1].from : nullptr;
+				Line &nl = main->lines[i];
+				while (erase_list.has(nl.from)) {
+					nl.from = _get_next_item(nl.from);
+					if (nl.from == it_to) {
+						nl.from = nullptr;
+						break;
+					}
+				}
 			}
 		}
 		for (HashSet<Item *>::Iterator E = erase_list.begin(); E; ++E) {
@@ -8419,7 +8433,7 @@ RichTextLabel::RichTextLabel(const String &p_text) {
 	main->index = 0;
 	current = main;
 	main->lines.resize(1);
-	main->lines[0].from = main;
+	main->lines[0].from = nullptr;
 	main->first_invalid_line.store(0);
 	main->first_resized_line.store(0);
 	main->first_invalid_font_line.store(0);
