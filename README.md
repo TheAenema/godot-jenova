@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://jenova-framework.github.io/docs/">
-    <img src="logo_outlined.svg" width="400" alt="Godot Engine logo">
+    <img src="misc/logo/logo_outlined.svg" width="400" alt="Godot Engine logo">
   </a>
 </p>
 
