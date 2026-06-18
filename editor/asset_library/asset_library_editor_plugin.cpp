@@ -349,6 +349,14 @@ void EditorAssetLibraryItemDescription::_notification(int p_what) {
 			next_preview->set_button_icon(get_editor_theme_icon(SNAME("Forward")));
 			previews_bg->add_theme_style_override(SceneStringName(panel), previews->get_theme_stylebox(CoreStringName(normal), SNAME("TextEdit")));
 			zoom_button->set_button_icon(get_editor_theme_icon(SNAME("DistractionFree")));
+
+			Ref<StyleBox> sb = get_theme_stylebox(CoreStringName(normal), SNAME("OptionButton"));
+			Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("OptionButton"));
+			int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("OptionButton"));
+
+			int height = sb->get_minimum_size().height;
+			height += font->get_height(font_size);
+			version->set_custom_minimum_size(Size2(0, height));
 		} break;
 
 		case NOTIFICATION_READY: {
@@ -615,9 +623,11 @@ EditorAssetLibraryItemDescription::EditorAssetLibraryItemDescription() {
 	contents->add_child(version_label);
 
 	version = memnew(Label);
+	version->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
 	version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
 	version->set_custom_minimum_size(Size2(100 * EDSCALE, 0));
 	version->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+	version->set_theme_type_variation("LabelNoMargin");
 	contents->add_child(version);
 
 	version_list = memnew(OptionButton);
@@ -1945,11 +1955,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code, const
 			}
 
 			LocalVector<int> engine_version = { GODOT_VERSION_MAJOR, GODOT_VERSION_MINOR, GODOT_VERSION_PATCH };
-			Array arr = dt;
-			// Iterate backwards, so the newer releases are added first.
-			for (int i = arr.size() - 1; i >= 0; i--) {
-				Dictionary d = arr[i];
-
+			for (const Dictionary d : (Array)dt) {
 				ERR_FAIL_COND(!d.has("download_url"));
 				ERR_FAIL_COND(!d.has("version"));
 				ERR_FAIL_COND(!d.has("stable"));
