@@ -2358,7 +2358,7 @@ void RendererSceneCull::_light_instance_setup_directional_shadow(int p_shadow_in
 			cull.shadows[p_shadow_index].cascades[i].split = distances[i + 1];
 			cull.shadows[p_shadow_index].cascades[i].shadow_texel_size = radius * 2.0 / texture_size;
 			cull.shadows[p_shadow_index].cascades[i].bias_scale = (z_max - z_min_cam);
-			cull.shadows[p_shadow_index].cascades[i].range_begin = z_max;
+			cull.shadows[p_shadow_index].cascades[i].range_begin = z_max - z_vec.dot(p_cam_transform.origin);
 			cull.shadows[p_shadow_index].cascades[i].uv_scale = uv_scale;
 		}
 	}
@@ -4548,9 +4548,7 @@ RendererSceneCull::~RendererSceneCull() {
 	}
 	scene_cull_result_threads.clear();
 
-	if (dummy_occlusion_culling) {
-		memdelete(dummy_occlusion_culling);
-	}
+	memdelete(dummy_occlusion_culling);
 
 	if (light_culler) {
 		memdelete(light_culler);

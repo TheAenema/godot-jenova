@@ -44,6 +44,7 @@
 #include "editor/editor_string_names.h"
 #include "editor/file_system/editor_paths.h"
 #include "editor/gui/editor_file_dialog.h"
+#include "editor/project_manager/project_manager.h"
 #include "editor/settings/editor_settings.h"
 #include "editor/settings/project_settings_editor.h"
 #include "editor/themes/editor_scale.h"
@@ -173,10 +174,20 @@ EditorAssetLibraryItem::EditorAssetLibraryItem(bool p_clickable) {
 	icon->set_mouse_filter(MOUSE_FILTER_IGNORE);
 	hb->add_child(icon);
 
+	text_margin = memnew(MarginContainer);
+	text_margin->add_theme_constant_override(SNAME("margin_left"), margin_size);
+	text_margin->add_theme_constant_override(SNAME("margin_right"), margin_size);
+	text_margin->add_theme_constant_override(SNAME("margin_top"), margin_size);
+	text_margin->add_theme_constant_override(SNAME("margin_bottom"), margin_size);
+	text_margin->set_h_size_flags(SIZE_EXPAND_FILL);
+	text_margin->set_mouse_filter(MOUSE_FILTER_IGNORE);
+	text_margin->set_clip_contents(true);
+	hb->add_child(text_margin);
+
 	VBoxContainer *vb = memnew(VBoxContainer);
 	vb->set_mouse_filter(MOUSE_FILTER_IGNORE);
 	vb->set_h_size_flags(SIZE_EXPAND_FILL);
-	hb->add_child(vb);
+	text_margin->add_child(vb);
 
 	Ref<StyleBoxEmpty> label_margin;
 	label_margin.instantiate();
@@ -224,7 +235,9 @@ EditorAssetLibraryItem::EditorAssetLibraryItem(bool p_clickable) {
 	author_license_hbox->add_child(license);
 	license->connect(SceneStringName(pressed), callable_mp(this, &EditorAssetLibraryItem::_license_clicked));
 
-	vb->add_spacer();
+	// Ensure the entire asset card can be clicked.
+	Control *spacer = vb->add_spacer();
+	spacer->set_mouse_filter(MOUSE_FILTER_IGNORE);
 
 	HBoxContainer *rating_hbox = memnew(HBoxContainer);
 	rating_hbox->set_mouse_filter(MOUSE_FILTER_IGNORE);
@@ -236,9 +249,7 @@ EditorAssetLibraryItem::EditorAssetLibraryItem(bool p_clickable) {
 	rating_hbox->add_child(rating_icon);
 
 	rating_count = memnew(Label);
-	rating_count->set_mouse_filter(MOUSE_FILTER_STOP);
 	rating_count->set_theme_type_variation("LabelNoMargin");
-	rating_count->set_tooltip_text(TTRC("Review Score"));
 	rating_count->set_accessibility_name(TTRC("Review Score"));
 	rating_hbox->add_child(rating_count);
 
@@ -274,8 +285,17 @@ EditorAssetLibraryZoomMode::EditorAssetLibraryZoomMode(Control *p_previews) {
 	ERR_FAIL_NULL(p_previews);
 	ERR_FAIL_COND(p_previews->get_parent());
 
+	Ref<Theme> theme;
+	if (EditorNode::get_singleton()) {
+		theme = EditorNode::get_singleton()->get_editor_theme();
+	} else if (ProjectManager::get_singleton()) {
+		theme = ProjectManager::get_singleton()->get_theme();
+	} else {
+		return;
+	}
+
 	ColorRect *dim = memnew(ColorRect);
-	dim->set_color(EditorNode::get_singleton()->get_editor_theme()->get_color(SNAME("base_color"), EditorStringName(Editor)));
+	dim->set_color(theme->get_color(SNAME("base_color"), EditorStringName(Editor)));
 	dim->set_anchors_preset(Control::PRESET_FULL_RECT);
 	add_child(dim);
 
@@ -1251,8 +1271,6 @@ void EditorAssetLibrary::_image_update(void *p_image_queue) {
 			parsed_image = Image::_webp_mem_loader_func(r, len);
 		} else if ((memcmp(&r[0], &bmp_signature[0], 2) == 0) && Image::_bmp_mem_loader_func) {
 			parsed_image = Image::_bmp_mem_loader_func(r, len);
-		} else if (Image::_svg_scalable_mem_loader_func) {
-			parsed_image = Image::_svg_scalable_mem_loader_func(r, len, 1.0);
 		}
 
 		if (parsed_image.is_null()) {
@@ -1805,8 +1823,8 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code, const
 
 			asset_items = memnew(GridContainer);
 			_update_asset_items_columns();
-			asset_items->add_theme_constant_override("h_separation", 10 * EDSCALE);
-			asset_items->add_theme_constant_override("v_separation", 10 * EDSCALE);
+			asset_items->add_theme_constant_override("h_separation", 0);
+			asset_items->add_theme_constant_override("v_separation", 0);
 
 			library_vb->add_child(asset_items);
 
@@ -1896,9 +1914,7 @@ void EditorAssetLibrary::_http_request_completed(int p_status, int p_code, const
 				}
 			}
 
-			if (description) {
-				memdelete(description);
-			}
+			memdelete(description);
 
 			description = memnew(EditorAssetLibraryItemDescription);
 			add_child(description);
@@ -2081,6 +2097,17 @@ void EditorAssetLibrary::_set_library_message(const String &p_message) {
 	library_message_button->hide();
 
 	library_message_box->show();
+
+	// Remove pagination, as an error message is being shown and there are no assets to list.
+	// Pagination is recreated when the next search is performed.
+	if (asset_top_page) {
+		memdelete(asset_top_page);
+		asset_top_page = nullptr;
+	}
+	if (asset_bottom_page) {
+		memdelete(asset_bottom_page);
+		asset_bottom_page = nullptr;
+	}
 }
 
 void EditorAssetLibrary::_set_library_message_with_action(const String &p_message, const String &p_action_text, const Callable &p_action) {
@@ -2167,10 +2194,14 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only) {
 		sort->add_item(sort_text[i]);
 	}
 
+	// TODO: Remove this once "Relevance" sorting is fixed.
+	sort->select(SORT_REVIEWS);
+
 	search_hb2->add_child(sort);
 
 	sort->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	sort->set_clip_text(true);
+	sort->set_fit_to_longest_item(false);
 	sort->connect(SceneStringName(item_selected), callable_mp(this, &EditorAssetLibrary::_search).bind(1).unbind(1));
 
 	search_hb2->add_child(memnew(Label(TTRC("Category:"))));
@@ -2182,6 +2213,7 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only) {
 	}
 	categories->set_disabled(true);
 	categories->set_clip_text(true);
+	categories->set_fit_to_longest_item(false);
 	categories->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	search_hb2->add_child(categories);
 	categories->connect(SceneStringName(item_selected), callable_mp(this, &EditorAssetLibrary::_search).bind(1).unbind(1));
@@ -2190,6 +2222,7 @@ EditorAssetLibrary::EditorAssetLibrary(bool p_templates_only) {
 	repository = memnew(OptionButton);
 	repository->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	repository->set_clip_text(true);
+	repository->set_fit_to_longest_item(false);
 	search_hb2->add_child(repository);
 	repository->connect(SceneStringName(item_selected), callable_mp(this, &EditorAssetLibrary::_repository_changed));
 	_update_repository_options();

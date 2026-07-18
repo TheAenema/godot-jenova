@@ -2027,11 +2027,11 @@ RID RenderingDevice::texture_create_shared_from_slice(const TextureView &p_view,
 	return id;
 }
 
-static _ALWAYS_INLINE_ void _copy_region(uint8_t const *__restrict p_src, uint8_t *__restrict p_dst, uint32_t p_src_x, uint32_t p_src_y, uint32_t p_src_w, uint32_t p_src_h, uint32_t p_src_full_w, uint32_t p_dst_pitch, uint32_t p_unit_size) {
+static _ALWAYS_INLINE_ void _copy_region(const uint8_t *__restrict p_src, uint8_t *__restrict p_dst, uint32_t p_src_x, uint32_t p_src_y, uint32_t p_src_w, uint32_t p_src_h, uint32_t p_src_full_w, uint32_t p_dst_pitch, uint32_t p_unit_size) {
 	uint32_t src_offset = (p_src_y * p_src_full_w + p_src_x) * p_unit_size;
 	uint32_t dst_offset = 0;
 	for (uint32_t y = p_src_h; y > 0; y--) {
-		uint8_t const *__restrict src = p_src + src_offset;
+		const uint8_t *__restrict src = p_src + src_offset;
 		uint8_t *__restrict dst = p_dst + dst_offset;
 		for (uint32_t x = p_src_w * p_unit_size; x > 0; x--) {
 			*dst = *src;
@@ -2122,7 +2122,6 @@ Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, cons
 	get_compressed_image_format_block_dimensions(texture->format, block_w, block_h);
 
 	uint32_t pixel_size = get_image_format_pixel_size(texture->format);
-	uint32_t pixel_rshift = get_compressed_image_format_pixel_rshift(texture->format);
 	uint32_t block_size = get_compressed_image_format_block_byte_size(texture->format);
 
 	// The algorithm operates on two passes, one to figure out the total size the staging buffer will require to allocate and another one where the copy is actually performed.
@@ -2180,11 +2179,10 @@ Error RenderingDevice::_texture_initialize(RID p_texture, uint32_t p_layer, cons
 					}
 				}
 
-				uint32_t pitch = (width * pixel_size * block_w) >> pixel_rshift;
+				uint32_t pitch = get_compressed_image_format_pixels_shifted(texture->format, width * pixel_size * block_w);
 				uint32_t pitch_step = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
 				pitch = STEPIFY(pitch, pitch_step);
-				uint32_t to_allocate = pitch * height;
-				to_allocate >>= pixel_rshift;
+				uint32_t to_allocate = get_compressed_image_format_pixels_shifted(texture->format, pitch * height);
 
 				if (copy_pass) {
 					const uint8_t *read_ptr_mipmap_layer = read_ptr_mipmap + (tight_mip_size / depth) * z;
@@ -2282,7 +2280,6 @@ Error RenderingDevice::texture_update(RID p_texture, uint32_t p_layer, const Vec
 	get_compressed_image_format_block_dimensions(texture->format, block_w, block_h);
 
 	uint32_t pixel_size = get_image_format_pixel_size(texture->format);
-	uint32_t pixel_rshift = get_compressed_image_format_pixel_rshift(texture->format);
 	uint32_t block_size = get_compressed_image_format_block_byte_size(texture->format);
 
 	uint32_t region_size = texture_upload_region_size_px;
@@ -2317,7 +2314,7 @@ Error RenderingDevice::texture_update(RID p_texture, uint32_t p_layer, const Vec
 					uint32_t region_logic_w = MIN(region_size, logic_width - x);
 					uint32_t region_logic_h = MIN(region_size, logic_height - y);
 
-					uint32_t region_pitch = (region_w * pixel_size * block_w) >> pixel_rshift;
+					uint32_t region_pitch = get_compressed_image_format_pixels_shifted(texture->format, region_w * pixel_size * block_w);
 					uint32_t pitch_step = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
 					region_pitch = STEPIFY(region_pitch, pitch_step);
 					uint32_t to_allocate = region_pitch * region_h;
@@ -2811,10 +2808,8 @@ Error RenderingDevice::texture_get_data_async(RID p_texture, uint32_t p_layer, c
 	uint32_t block_w, block_h;
 	get_compressed_image_format_block_dimensions(tex->format, block_w, block_h);
 
-	uint32_t pixel_size = get_image_format_pixel_size(tex->format);
-	uint32_t pixel_rshift = get_compressed_image_format_pixel_rshift(tex->format);
-
 	uint32_t w, h, d;
+	uint32_t pixel_size = get_image_format_pixel_size(tex->format);
 	uint32_t required_align = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_TRANSFER_ALIGNMENT);
 	uint32_t pitch_step = driver->api_trait_get(RDD::API_TRAIT_TEXTURE_DATA_ROW_PITCH_STEP);
 	uint32_t region_size = texture_download_region_size_px;
@@ -2837,7 +2832,7 @@ Error RenderingDevice::texture_get_data_async(RID p_texture, uint32_t p_layer, c
 
 					uint32_t region_logic_w = MIN(region_size, logic_w - x);
 					uint32_t region_logic_h = MIN(region_size, logic_h - y);
-					uint32_t region_pitch = (region_w * pixel_size * block_w) >> pixel_rshift;
+					uint32_t region_pitch = get_compressed_image_format_pixels_shifted(tex->format, region_w * pixel_size * block_w);
 					region_pitch = STEPIFY(region_pitch, pitch_step);
 
 					uint32_t to_allocate = region_pitch * region_h;
@@ -3902,7 +3897,7 @@ RenderingDevice::VertexFormatID RenderingDevice::vertex_format_create(const Vect
 	}
 
 	RDD::VertexFormatID driver_id = driver->vertex_format_create(vertex_descriptions, bindings);
-	ERR_FAIL_COND_V(!driver_id, 0);
+	ERR_FAIL_COND_V(!driver_id, INVALID_ID);
 
 	VertexFormatID id = (vertex_format_cache.size() | ((int64_t)ID_TYPE_VERTEX_FORMAT << ID_BASE_SHIFT));
 	vertex_format_cache[key] = id;
@@ -4114,6 +4109,7 @@ static const char *SHADER_UNIFORM_NAMES[RenderingDevice::UNIFORM_TYPE_MAX] = {
 	"InputAttachment",
 	"UniformBufferDynamic",
 	"StorageBufferDynamic",
+	"AccelerationStructure",
 };
 
 String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set) {
@@ -4130,6 +4126,16 @@ String RenderingDevice::_shader_uniform_debug(RID p_shader, int p_set) {
 				ret += "\n";
 			}
 			ret += "Set: " + itos(i) + " Binding: " + itos(ui.binding) + " Type: " + SHADER_UNIFORM_NAMES[ui.type] + " Writable: " + (ui.writable ? "Y" : "N") + " Length: " + itos(ui.length);
+
+			if (ui.texture_type != TEXTURE_TYPE_MAX) {
+				ret += " Texture Type: ";
+				ret += TEXTURE_TYPE_NAMES[ui.texture_type];
+			}
+
+			if (ui.texture_format != DATA_FORMAT_MAX) {
+				ret += " Texture Format: ";
+				ret += FORMAT_NAMES[ui.texture_format];
+			}
 		}
 	}
 	return ret;
@@ -4156,8 +4162,6 @@ RID RenderingDevice::shader_create_from_bytecode(const Vector<uint8_t> &p_shader
 }
 
 RID RenderingDevice::shader_create_from_bytecode_with_samplers(const Vector<uint8_t> &p_shader_binary, RID p_placeholder, const Vector<PipelineImmutableSampler> &p_immutable_samplers) {
-	_THREAD_SAFE_METHOD_
-
 	Ref<RenderingShaderContainer> shader_container = driver->get_shader_container_format().create_container();
 	ERR_FAIL_COND_V(shader_container.is_null(), RID());
 
@@ -4180,6 +4184,8 @@ RID RenderingDevice::shader_create_from_bytecode_with_samplers(const Vector<uint
 
 	RDD::ShaderID shader_id = driver->shader_create_from_container(shader_container, driver_immutable_samplers);
 	ERR_FAIL_COND_V(!shader_id, RID());
+
+	_THREAD_SAFE_METHOD_
 
 	// All good, let's create modules.
 
@@ -4684,6 +4690,10 @@ RID RenderingDevice::uniform_set_create(const VectorView<RD::Uniform> &p_uniform
 					buffer = vertex_buffer_owner.get_or_null(buffer_id);
 
 					ERR_FAIL_COND_V_MSG(!(buffer->usage.has_flag(RDD::BUFFER_USAGE_STORAGE_BIT)), RID(), "Vertex buffer supplied (binding: " + itos(uniform.binding) + ") was not created with storage flag.");
+				} else if (index_buffer_owner.owns(buffer_id)) {
+					buffer = index_buffer_owner.get_or_null(buffer_id);
+
+					ERR_FAIL_COND_V_MSG(!(buffer->usage.has_flag(RDD::BUFFER_USAGE_STORAGE_BIT)), RID(), "Index buffer supplied (binding: " + itos(uniform.binding) + ") was not created with storage flag.");
 				}
 				ERR_FAIL_NULL_V_MSG(buffer, RID(), "Storage buffer supplied (binding: " + itos(uniform.binding) + ") is invalid.");
 

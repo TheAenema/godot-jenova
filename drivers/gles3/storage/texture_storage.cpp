@@ -941,6 +941,26 @@ Ref<Image> TextureStorage::_get_gl_image_and_format(const Ref<Image> &p_image, I
 				need_decompress = true;
 			}
 		} break;
+		case Image::FORMAT_ASTC_6x6: {
+			if (config->astc_supported) {
+				r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR;
+				r_gl_format = GL_RGBA;
+				r_gl_type = GL_UNSIGNED_BYTE;
+				r_compressed = true;
+			} else {
+				need_decompress = true;
+			}
+		} break;
+		case Image::FORMAT_ASTC_6x6_HDR: {
+			if (config->astc_hdr_supported) {
+				r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_6x6_KHR;
+				r_gl_format = GL_RGBA;
+				r_gl_type = GL_UNSIGNED_BYTE;
+				r_compressed = true;
+			} else {
+				need_decompress = true;
+			}
+		} break;
 		case Image::FORMAT_ASTC_8x8: {
 			if (config->astc_supported) {
 				r_gl_internal_format = _EXT_COMPRESSED_RGBA_ASTC_8x8_KHR;
@@ -1003,9 +1023,7 @@ void TextureStorage::texture_free(RID p_texture) {
 	ERR_FAIL_NULL(t);
 	ERR_FAIL_COND(t->is_render_target);
 
-	if (t->canvas_texture) {
-		memdelete(t->canvas_texture);
-	}
+	memdelete(t->canvas_texture);
 
 	bool must_free_data = false;
 	if (t->is_proxy) {
@@ -3305,7 +3323,7 @@ void TextureStorage::render_target_do_clear_request(RID p_render_target) {
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, rt->fbo);
 
-	glClearBufferfv(GL_COLOR, 0, rt->clear_color.components);
+	glClearBufferfv(GL_COLOR, 0, rt->clear_color.as_float4_buffer());
 	rt->clear_requested = false;
 	glBindFramebuffer(GL_FRAMEBUFFER, system_fbo);
 }

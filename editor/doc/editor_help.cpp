@@ -1041,7 +1041,7 @@ void EditorHelp::_update_doc() {
 
 		String inherits = cd.inherits;
 		while (!inherits.is_empty()) {
-			_add_type_icon(inherits, theme_cache.doc_font_size, "ArrowRight");
+			_add_type_icon(inherits, theme_cache.doc_font_size, "Object");
 			class_desc->add_text(nbsp); // Otherwise icon borrows hyperlink from `_add_type()`.
 			_add_type(inherits);
 
@@ -1070,7 +1070,7 @@ void EditorHelp::_update_doc() {
 				class_desc->add_text(" , ");
 			}
 
-			_add_type_icon(itr->get(), theme_cache.doc_font_size, "ArrowRight");
+			_add_type_icon(itr->get(), theme_cache.doc_font_size, "Object");
 			class_desc->add_text(nbsp); // Otherwise icon borrows hyperlink from `_add_type()`.
 			_add_type(itr->get());
 		}
@@ -1688,18 +1688,17 @@ void EditorHelp::_update_doc() {
 		Vector<DocData::ConstantDoc> constants;
 
 		for (const DocData::ConstantDoc &constant : cd.constants) {
+			// Ignore undocumented private.
+			const bool is_documented = constant.is_deprecated || constant.is_experimental || !constant.description.strip_edges().is_empty();
+			if (!is_documented && constant.name.begins_with("_")) {
+				continue;
+			}
 			if (!constant.enumeration.is_empty()) {
 				if (!enums.has(constant.enumeration)) {
 					enums[constant.enumeration] = Vector<DocData::ConstantDoc>();
 				}
-
 				enums[constant.enumeration].push_back(constant);
 			} else {
-				// Ignore undocumented private.
-				const bool is_documented = constant.is_deprecated || constant.is_experimental || !constant.description.strip_edges().is_empty();
-				if (!is_documented && constant.name.begins_with("_")) {
-					continue;
-				}
 				constants.push_back(constant);
 			}
 		}
@@ -3737,7 +3736,7 @@ EditorHelpBit::HelpData EditorHelpBit::_get_property_help_data(const StringName 
 							if (item_descr.is_empty()) {
 								item_descr = "[color=<EditorHelpBitCommentColor>][i]" + TTR("No description available.") + "[/i][/color]";
 							}
-							current.description += vformat("\n[b]%s:[/b] %s", item_name, item_descr);
+							current.description += vformat("\n[b]%s[/b] [color=<EditorHelpBitCommentColor>]=[/color] %s[color=<EditorHelpBitCommentColor>]:[/color] %s", item_name, constant.value, item_descr);
 						}
 					}
 					current.description = current.description.lstrip("\n");

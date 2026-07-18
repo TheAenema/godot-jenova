@@ -416,8 +416,6 @@ void EditorFileSystem::_scan_filesystem() {
 	sources_changed.clear();
 	file_cache.clear();
 
-	String project = ProjectSettings::get_singleton()->get_resource_path();
-
 	String fscache = EditorPaths::get_singleton()->get_project_settings_dir().path_join(CACHE_FILE_NAME);
 	{
 		Ref<FileAccess> f = FileAccess::open(fscache, FileAccess::READ);
@@ -457,11 +455,7 @@ void EditorFileSystem::_scan_filesystem() {
 					// The last section (deps) may contain the same splitter, so limit the maxsplit to 8 to get the complete deps.
 					Vector<String> split = l.split("::", true, 8);
 					ERR_CONTINUE(split.size() < 9);
-					String name = split[0];
-					String file;
-
-					file = name;
-					name = cpath.path_join(name);
+					const String name = cpath.path_join(split[0]);
 
 					FileCache fc;
 					fc.type = split[1].get_slicec('/', 0);
@@ -1031,7 +1025,7 @@ bool EditorFileSystem::_update_scan_actions() {
 		}
 	}
 
-	memdelete_notnull(ep);
+	memdelete(ep);
 
 	if (_scan_extensions()) {
 		//needs editor restart
@@ -1122,9 +1116,7 @@ void EditorFileSystem::scan() {
 		scanning = true;
 		scan_total = 0;
 		_scan_filesystem();
-		if (filesystem) {
-			memdelete(filesystem);
-		}
+		memdelete(filesystem);
 		//file_type_cache.clear();
 		filesystem = new_filesystem;
 		new_filesystem = nullptr;
@@ -1758,12 +1750,8 @@ void EditorFileSystem::_notification(int p_what) {
 				set_process(false);
 			}
 
-			if (filesystem) {
-				memdelete(filesystem);
-			}
-			if (new_filesystem) {
-				memdelete(new_filesystem);
-			}
+			memdelete(filesystem);
+			memdelete(new_filesystem);
 			filesystem = nullptr;
 			new_filesystem = nullptr;
 		} break;
@@ -1807,9 +1795,7 @@ void EditorFileSystem::_notification(int p_what) {
 				} else if (!scanning && thread.is_started()) {
 					set_process(false);
 
-					if (filesystem) {
-						memdelete(filesystem);
-					}
+					memdelete(filesystem);
 					filesystem = new_filesystem;
 					new_filesystem = nullptr;
 					thread.wait_to_finish();
@@ -2187,7 +2173,7 @@ void EditorFileSystem::_update_script_classes() {
 			}
 		}
 
-		memdelete_notnull(ep);
+		memdelete(ep);
 
 		update_script_paths.clear();
 	}
@@ -2284,7 +2270,7 @@ void EditorFileSystem::_update_script_documentation() {
 		}
 	}
 
-	memdelete_notnull(ep);
+	memdelete(ep);
 
 	update_script_paths_documentation.clear();
 }
@@ -2359,7 +2345,7 @@ void EditorFileSystem::_update_scene_groups() {
 			}
 		}
 
-		memdelete_notnull(ep);
+		memdelete(ep);
 		update_scene_paths.clear();
 	}
 
@@ -2552,16 +2538,16 @@ void EditorFileSystem::update_files(const Vector<String> &p_script_paths) {
 		if (!is_scanning()) {
 			_process_update_pending();
 		}
-		if (!filesystem_changed_queued) {
-			filesystem_changed_queued = true;
+		if (!filesystem_changed_queued.is_set()) {
+			filesystem_changed_queued.set();
 			callable_mp(this, &EditorFileSystem::_notify_filesystem_changed).call_deferred();
 		}
 	}
 }
 
 void EditorFileSystem::_notify_filesystem_changed() {
-	emit_signal("filesystem_changed");
-	filesystem_changed_queued = false;
+	emit_signal(SNAME("filesystem_changed"));
+	filesystem_changed_queued.clear();
 }
 
 HashSet<String> EditorFileSystem::get_valid_extensions() const {
@@ -2599,6 +2585,18 @@ void EditorFileSystem::register_global_class_script(const String &p_search_path,
 		EditorFileSystem::get_singleton()->_register_global_class_script(p_search_path, p_target_path, ScriptClassInfoUpdate::from_file_info(fi));
 	} else {
 		ScriptServer::remove_global_class_by_path(p_search_path);
+	}
+}
+
+void EditorFileSystem::filesystem_changed() {
+	if (Thread::is_main_thread()) {
+		_notify_filesystem_changed();
+		return;
+	}
+	// If not already queued, queue a deferred call to notify about filesystem changes.
+	if (!filesystem_changed_queued.is_set()) {
+		filesystem_changed_queued.set();
+		callable_mp(this, &EditorFileSystem::_notify_filesystem_changed).call_deferred();
 	}
 }
 
@@ -3410,7 +3408,7 @@ void EditorFileSystem::reimport_files(const Vector<String> &p_files) {
 	ResourceUID::get_singleton()->update_cache(); // After reimporting, update the cache.
 	_save_filesystem_cache();
 
-	memdelete_notnull(ep);
+	memdelete(ep);
 
 	_process_update_pending();
 
@@ -3426,7 +3424,7 @@ void EditorFileSystem::reimport_files(const Vector<String> &p_files) {
 		emit_signal(SNAME("filesystem_changed"));
 	}
 	emit_signal(SNAME("resources_reimported"), reloads);
-	memdelete_notnull(ep);
+	memdelete(ep);
 }
 
 Error EditorFileSystem::reimport_append(const String &p_file, const HashMap<StringName, Variant> &p_custom_options, const String &p_custom_importer, Variant p_generator_parameters) {
@@ -3622,7 +3620,7 @@ Error EditorFileSystem::copy_directory(const String &p_from, const String &p_to)
 				ep->step(tuple.key.get_file(), i++, false);
 			}
 		}
-		memdelete_notnull(ep);
+		memdelete(ep);
 	}
 
 	// Now remap any internal dependencies (within the folder) to use the new files.
@@ -3641,7 +3639,7 @@ Error EditorFileSystem::copy_directory(const String &p_from, const String &p_to)
 				ep->step(tuple.key.get_file(), i++, false);
 			}
 		}
-		memdelete_notnull(ep);
+		memdelete(ep);
 	}
 
 	EditorFileSystemDirectory *efd = get_filesystem_path(p_to);
@@ -3720,7 +3718,7 @@ void EditorFileSystem::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_file_type", "path"), &EditorFileSystem::get_file_type);
 	ClassDB::bind_method(D_METHOD("reimport_files", "files"), &EditorFileSystem::reimport_files);
 
-	ADD_SIGNAL(MethodInfo("filesystem_changed"));
+	ADD_SIGNAL(MethodInfo("filesystem_changed")); // May only be emitted on the main thread.
 	ADD_SIGNAL(MethodInfo("script_classes_updated"));
 	ADD_SIGNAL(MethodInfo("sources_changed", PropertyInfo(Variant::BOOL, "exist")));
 	ADD_SIGNAL(MethodInfo("resources_reimporting", PropertyInfo(Variant::PACKED_STRING_ARRAY, "resources")));
@@ -3813,9 +3811,7 @@ EditorFileSystem::EditorFileSystem() {
 }
 
 EditorFileSystem::~EditorFileSystem() {
-	if (filesystem) {
-		memdelete(filesystem);
-	}
+	memdelete(filesystem);
 	filesystem = nullptr;
 	ResourceSaver::set_get_resource_id_for_path(nullptr);
 }
