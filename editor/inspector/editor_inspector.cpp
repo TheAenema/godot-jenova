@@ -230,7 +230,7 @@ Size2 EditorProperty::get_minimum_size() const {
 		return Vector2();
 	}
 
-	Size2 ms = Size2(0, theme_cache.inspector_property_height);
+	Size2 ms;
 	for (int i = 0; i < get_child_count(); i++) {
 		Control *c = as_sortable_control(get_child(i));
 		if (!c) {
@@ -250,7 +250,8 @@ Size2 EditorProperty::get_minimum_size() const {
 		ms = ms.max(minsize);
 	}
 
-	if (!label.is_empty()) {
+	bool label_empty = label.is_empty();
+	if (!label_empty) {
 		ms.width += theme_cache.font_offset + theme_cache.horizontal_separation;
 	}
 
@@ -285,11 +286,18 @@ Size2 EditorProperty::get_minimum_size() const {
 	ms.height = MAX(ms.height, rs.y);
 
 	if (bottom_editor != nullptr && bottom_editor->is_visible()) {
-		ms.height += label.is_empty() ? 0 : _get_v_separation();
+		// If the label area is empty, leave the height alone before calculating the bottom editor.
+		if (ms.height > 0 || !label_empty) {
+			ms.height = MAX(ms.height, theme_cache.inspector_property_height);
+		}
+
+		ms.height += label_empty ? 0 : _get_v_separation();
 		Size2 bems = bottom_editor->get_combined_minimum_size();
 		ms.height += bems.height;
 		ms.width = MAX(ms.width, bems.width);
 	}
+
+	ms.height = MAX(ms.height, theme_cache.inspector_property_height);
 
 	return ms;
 }
@@ -407,7 +415,12 @@ void EditorProperty::_notification(int p_what) {
 
 				if (bottom_editor) {
 					int v_offset = label.is_empty() ? 0 : _get_v_separation();
-					bottom_rect = Rect2(0, rect.size.height + v_offset, size.width, bottom_editor->get_combined_minimum_size().height);
+					bottom_rect.size = Size2(size.width, bottom_editor->get_combined_minimum_size().height);
+
+					// If the label area is empty, don't take it into account for the bottom editor position.
+					if (!no_children || !label.is_empty() || left_container->get_child_count() > 0 || right_container->get_child_count() > 0) {
+						bottom_rect.position = Point2(0, rect.size.height + v_offset);
+					}
 				}
 
 				if (keying) {
@@ -542,7 +555,7 @@ void EditorProperty::_notification(int p_what) {
 			Color color;
 			if (draw_warning || draw_prop_warning) {
 				color = is_read_only() ? theme_cache.readonly_warning_color : theme_cache.warning_color;
-			} else if (is_read_only()) {
+			} else if (is_deprecated || is_read_only()) {
 				color = (sub_inspector_color_level >= 0) ? theme_cache.sub_inspector_property_color : theme_cache.readonly_property_color;
 			} else {
 				color = (sub_inspector_color_level >= 0) ? theme_cache.sub_inspector_property_color : theme_cache.property_color;
@@ -852,6 +865,10 @@ void EditorProperty::set_internal(bool p_internal) {
 	internal = p_internal;
 }
 
+void EditorProperty::make_passthrough(bool p_passthrough) {
+	set_mouse_behavior_recursive(p_passthrough ? MOUSE_BEHAVIOR_DISABLED : MOUSE_BEHAVIOR_INHERITED);
+}
+
 void EditorProperty::update_property() {
 	GDVIRTUAL_CALL(_update_property);
 }
@@ -949,6 +966,24 @@ void EditorProperty::update_editor_property_status() {
 	bool new_warning = false;
 	if (object->has_method("_get_property_warning")) {
 		new_warning = !String(object->call("_get_property_warning", property)).is_empty();
+	}
+
+	// Check if the property is deprecated.
+	if (!new_warning && !doc_path.is_empty()) {
+		EditorInspector *inspector = get_parent_inspector();
+		if (inspector) {
+			const String classname = doc_path.get_slicec(':', 1);
+			const String propname = doc_path.get_slicec(':', 2);
+			DocData::ClassDoc *cd = EditorHelp::get_doc(classname);
+			if (cd) {
+				for (const DocData::PropertyDoc &prop : cd->properties) {
+					if (prop.name == propname) {
+						is_deprecated = prop.is_deprecated;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	Variant current = object->get(_get_revert_property());
@@ -1320,6 +1355,10 @@ HBoxContainer *EditorProperty::get_inline_container(InlineControlSide p_side) {
 }
 
 void EditorProperty::set_bottom_editor(Control *p_control) {
+	if (bottom_editor == p_control) {
+		return;
+	}
+
 	bottom_editor = p_control;
 	if (has_borders) {
 		_update_property_bg();

@@ -383,6 +383,10 @@ void EditorPropertyArray::set_preview_value(bool p_preview_value) {
 	preview_value = p_preview_value;
 }
 
+void EditorPropertyArray::make_passthrough(bool p_passthrough) {
+	edit->set_mouse_filter(p_passthrough ? MOUSE_FILTER_PASS : MOUSE_FILTER_STOP);
+}
+
 void EditorPropertyArray::update_property() {
 	Variant array = get_edited_property_value();
 
@@ -562,6 +566,10 @@ void EditorPropertyArray::update_property() {
 				} else if (slot.remove_button) {
 					new_prop->add_inline_control(slot.remove_button, INLINE_CONTROL_RIGHT);
 				}
+
+				// Move the right container to be the last child, so that focusing on the next Control behaves in the expected order.
+				Control *right_cont = new_prop->get_inline_container(INLINE_CONTROL_RIGHT);
+				right_cont->get_parent()->move_child(right_cont, new_prop->get_child_count() - 1);
 
 				slot.prop->add_sibling(new_prop, false);
 				slot.prop->queue_free();
@@ -1252,6 +1260,10 @@ void EditorPropertyDictionary::set_preview_value(bool p_preview_value) {
 	preview_value = p_preview_value;
 }
 
+void EditorPropertyDictionary::make_passthrough(bool p_passthrough) {
+	edit->set_mouse_filter(p_passthrough ? Control::MOUSE_FILTER_PASS : Control::MOUSE_FILTER_STOP);
+}
+
 void EditorPropertyDictionary::update_property() {
 	Variant updated_val = get_edited_property_value();
 
@@ -1414,9 +1426,8 @@ void EditorPropertyDictionary::update_property() {
 					new_prop->set_draw_background(false);
 					new_prop->set_use_folding(is_using_folding());
 					new_prop->set_h_size_flags(SIZE_EXPAND_FILL);
+					new_prop->make_passthrough(true);
 					new_prop->set_draw_label(false);
-					new_prop->set_mouse_filter(MOUSE_FILTER_PASS);
-					new_prop->set_mouse_behavior_recursive(MOUSE_BEHAVIOR_DISABLED);
 					EditorPropertyArray *arr_prop = Object::cast_to<EditorPropertyArray>(new_prop);
 					if (arr_prop) {
 						arr_prop->set_preview_value(true);
@@ -1480,6 +1491,10 @@ void EditorPropertyDictionary::update_property() {
 				if (slot.prop_key) {
 					new_prop->add_inline_control(slot.prop_key, INLINE_CONTROL_LEFT);
 				}
+
+				// Move the right container to be the last child, so that focusing on the next Control behaves in the expected order.
+				Control *right_cont = new_prop->get_inline_container(INLINE_CONTROL_RIGHT);
+				right_cont->get_parent()->move_child(right_cont, new_prop->get_child_count() - 1);
 
 				slot.set_prop(new_prop);
 
