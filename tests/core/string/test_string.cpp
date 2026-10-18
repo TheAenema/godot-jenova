@@ -94,7 +94,17 @@ TEST_CASE("[String] UTF8") {
 	CHECK(parsed == u32str);
 
 	parsed.clear();
+	err = parsed.append_utf8(expected.utf8().span());
+	CHECK(err == OK);
+	CHECK(parsed == u32str);
+
+	parsed.clear();
 	err = parsed.append_utf8((const char *)u8str);
+	CHECK(err == OK);
+	CHECK(parsed == u32str);
+
+	parsed.clear();
+	err = parsed.append_utf8(Span(u8str).reinterpret<char>());
 	CHECK(err == OK);
 	CHECK(parsed == u32str);
 
@@ -113,7 +123,17 @@ TEST_CASE("[String] UTF16") {
 	CHECK(parsed == u32str);
 
 	parsed.clear();
+	err = parsed.append_utf16(expected.utf16().span());
+	CHECK(err == OK);
+	CHECK(parsed == u32str);
+
+	parsed.clear();
 	err = parsed.append_utf16(u16str);
+	CHECK(err == OK);
+	CHECK(parsed == u32str);
+
+	parsed.clear();
+	err = parsed.append_utf16(Span(u16str));
 	CHECK(err == OK);
 	CHECK(parsed == u32str);
 
@@ -1881,6 +1901,7 @@ TEST_CASE("[String] uri_encode/unescape") {
 	String x2 = String::utf8((const char *)u8str);
 	String x3 = U"Tēšt";
 	String x4 = U"file+name";
+	String x5 = U"%5B%5b+%5d%5D";
 
 	CHECK(x1.uri_decode() == x2);
 	CHECK(x1.uri_decode() == x3);
@@ -1892,6 +1913,8 @@ TEST_CASE("[String] uri_encode/unescape") {
 	CHECK(t.uri_decode() == s);
 	CHECK(x4.uri_file_decode() == x4);
 	CHECK(x4.uri_decode() == U"file name");
+	CHECK(x5.uri_file_decode() == U"[[+]]");
+	CHECK(x5.uri_decode() == U"[[ ]]");
 }
 
 TEST_CASE("[String] xml_escape/unescape") {

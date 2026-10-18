@@ -52,6 +52,7 @@
 #include "scene/gui/button.h"
 #include "scene/gui/texture_rect.h"
 #include "scene/property_utils.h"
+#include "scene/resources/3d/sky_material.h"
 #include "scene/resources/gradient_texture.h"
 #include "scene/resources/image_texture.h"
 #include "servers/audio/audio_server.h"
@@ -671,8 +672,17 @@ void EditorResourcePicker::set_create_options(Object *p_menu_node) {
 		for (const StringName &E : allowed_types) {
 			const String &t = E;
 
-			if (!ClassDB::can_instantiate(t)) {
-				continue;
+			if (ClassDB::class_exists(t)) {
+				if (!ClassDB::can_instantiate(t)) {
+					continue;
+				}
+			} else if (ScriptServer::is_global_class(t)) {
+				Ref<Script> scr = ResourceLoader::load(ScriptServer::get_global_class_path(t));
+				if (!scr.is_valid() || !scr->is_script_valid() || scr->is_abstract()) {
+					continue;
+				}
+			} else {
+				ERR_CONTINUE_MSG(true, vformat(R"(Invalid class "%s")", t));
 			}
 
 			inheritors_array.push_back(t);
@@ -789,7 +799,6 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource> &p_resource)
 		return res_type;
 	}
 
-	// TODO: Replace with EditorFileSystem when PR #60606 is merged to use cached resource type.
 	String script_type = EditorNode::get_editor_data().script_class_get_name(res_script->get_path());
 	if (!script_type.is_empty()) {
 		res_type = script_type;
@@ -798,8 +807,12 @@ String EditorResourcePicker::_get_resource_type(const Ref<Resource> &p_resource)
 }
 
 static bool _should_hide_type(const StringName &p_type) {
-	if (ClassDB::is_virtual(p_type)) {
+	if (ClassDB::class_exists(p_type) && ClassDB::is_virtual(p_type)) {
 		return true;
+	}
+	if (ScriptServer::is_global_class(p_type)) {
+		Ref<Script> scr = ResourceLoader::load(ScriptServer::get_global_class_path(p_type));
+		return scr.is_null() || !scr->is_script_valid() || scr->is_abstract();
 	}
 
 	if (p_type == SNAME("MissingResource")) {
@@ -867,6 +880,8 @@ void EditorResourcePicker::_ensure_allowed_types() const {
 	for (int i = 0; i < size; i++) {
 		const String base = allowed_types[i].strip_edges();
 		if (base == "BaseMaterial3D") {
+			allowed_types_with_convert.insert("Texture2D");
+		} else if (base == "PanoramaSkyMaterial") {
 			allowed_types_with_convert.insert("Texture2D");
 		} else if (ClassDB::is_parent_class("ShaderMaterial", base)) {
 			allowed_types_with_convert.insert("Shader");
@@ -1005,6 +1020,16 @@ void EditorResourcePicker::drop_data_fw(const Point2 &p_point, const Variant &p_
 						mat.instantiate();
 					}
 					mat->set_texture(StandardMaterial3D::TextureParam::TEXTURE_ALBEDO, dropped_resource);
+					dropped_resource = mat;
+					break;
+				}
+
+				if (at == "PanoramaSkyMaterial" && Ref<Texture2D>(dropped_resource).is_valid()) {
+					Ref<PanoramaSkyMaterial> mat = edited_resource;
+					if (mat.is_null()) {
+						mat.instantiate();
+					}
+					mat->set_panorama(dropped_resource);
 					dropped_resource = mat;
 					break;
 				}

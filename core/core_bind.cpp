@@ -94,14 +94,14 @@ Vector<String> ResourceLoader::get_recognized_extensions_for_type(const String &
 	return ret;
 }
 
-void ResourceLoader::add_resource_format_loader(RequiredParam<ResourceFormatLoader> rp_format_loader, bool p_at_front) {
-	EXTRACT_PARAM_OR_FAIL(p_format_loader, rp_format_loader);
-	::ResourceLoader::add_resource_format_loader(p_format_loader, p_at_front);
+void ResourceLoader::add_resource_format_loader(RequiredParam<ResourceFormatLoader> p_format_loader, bool p_at_front) {
+	EXTRACT_PARAM_OR_FAIL(format_loader, p_format_loader);
+	::ResourceLoader::add_resource_format_loader(format_loader, p_at_front);
 }
 
-void ResourceLoader::remove_resource_format_loader(RequiredParam<ResourceFormatLoader> rp_format_loader) {
-	EXTRACT_PARAM_OR_FAIL(p_format_loader, rp_format_loader);
-	::ResourceLoader::remove_resource_format_loader(p_format_loader);
+void ResourceLoader::remove_resource_format_loader(RequiredParam<ResourceFormatLoader> p_format_loader) {
+	EXTRACT_PARAM_OR_FAIL(format_loader, p_format_loader);
+	::ResourceLoader::remove_resource_format_loader(format_loader);
 }
 
 void ResourceLoader::set_abort_on_missing_resources(bool p_abort) {
@@ -186,10 +186,10 @@ Error ResourceSaver::set_uid(const String &p_path, ResourceUID::ID p_uid) {
 	return ::ResourceSaver::set_uid(p_path, p_uid);
 }
 
-Vector<String> ResourceSaver::get_recognized_extensions(RequiredParam<Resource> rp_resource) {
-	EXTRACT_PARAM_OR_FAIL_V(p_resource, rp_resource, Vector<String>());
+Vector<String> ResourceSaver::get_recognized_extensions(RequiredParam<Resource> p_resource) {
+	EXTRACT_PARAM_OR_FAIL_V(resource, p_resource, Vector<String>());
 	List<String> exts;
-	::ResourceSaver::get_recognized_extensions(p_resource, &exts);
+	::ResourceSaver::get_recognized_extensions(resource, &exts);
 	Vector<String> ret;
 	for (const String &E : exts) {
 		ret.push_back(E);
@@ -197,14 +197,14 @@ Vector<String> ResourceSaver::get_recognized_extensions(RequiredParam<Resource> 
 	return ret;
 }
 
-void ResourceSaver::add_resource_format_saver(RequiredParam<ResourceFormatSaver> rp_format_saver, bool p_at_front) {
-	EXTRACT_PARAM_OR_FAIL(p_format_saver, rp_format_saver);
-	::ResourceSaver::add_resource_format_saver(p_format_saver, p_at_front);
+void ResourceSaver::add_resource_format_saver(RequiredParam<ResourceFormatSaver> p_format_saver, bool p_at_front) {
+	EXTRACT_PARAM_OR_FAIL(format_saver, p_format_saver);
+	::ResourceSaver::add_resource_format_saver(format_saver, p_at_front);
 }
 
-void ResourceSaver::remove_resource_format_saver(RequiredParam<ResourceFormatSaver> rp_format_saver) {
-	EXTRACT_PARAM_OR_FAIL(p_format_saver, rp_format_saver);
-	::ResourceSaver::remove_resource_format_saver(p_format_saver);
+void ResourceSaver::remove_resource_format_saver(RequiredParam<ResourceFormatSaver> p_format_saver) {
+	EXTRACT_PARAM_OR_FAIL(format_saver, p_format_saver);
+	::ResourceSaver::remove_resource_format_saver(format_saver);
 }
 
 ResourceUID::ID ResourceSaver::get_resource_id_for_path(const String &p_path, bool p_generate) {
@@ -722,22 +722,22 @@ String OS::get_unique_id() const {
 	return ::OS::get_singleton()->get_unique_id();
 }
 
-void OS::add_logger(RequiredParam<Logger> rp_logger) {
-	EXTRACT_PARAM_OR_FAIL(p_logger, rp_logger);
+void OS::add_logger(RequiredParam<Logger> p_logger) {
+	EXTRACT_PARAM_OR_FAIL(logger, p_logger);
 
 	if (!logger_bind) {
 		logger_bind = memnew(LoggerBind);
 		::OS::get_singleton()->add_logger(logger_bind);
 	}
 
-	ERR_FAIL_COND_MSG(logger_bind->loggers.find(p_logger) != -1, "Could not add logger, as it has already been added.");
-	logger_bind->loggers.push_back(p_logger);
+	ERR_FAIL_COND_MSG(logger_bind->loggers.find(logger) != -1, "Could not add logger, as it has already been added.");
+	logger_bind->loggers.push_back(logger);
 }
 
-void OS::remove_logger(RequiredParam<Logger> rp_logger) {
-	EXTRACT_PARAM_OR_FAIL(p_logger, rp_logger);
-	ERR_FAIL_COND_MSG(!logger_bind || logger_bind->loggers.find(p_logger) == -1, "Could not remove logger, as it hasn't been added.");
-	logger_bind->loggers.erase(p_logger);
+void OS::remove_logger(RequiredParam<Logger> p_logger) {
+	EXTRACT_PARAM_OR_FAIL(logger, p_logger);
+	ERR_FAIL_COND_MSG(!logger_bind || logger_bind->loggers.find(logger) == -1, "Could not remove logger, as it hasn't been added.");
+	logger_bind->loggers.erase(logger);
 }
 
 void OS::remove_script_loggers(const ScriptLanguage *p_script) {
@@ -1696,17 +1696,17 @@ StringName ClassDB::class_get_property_setter(const StringName &p_class, const S
 	return ::ClassDB::get_property_setter(p_class, p_property);
 }
 
-Variant ClassDB::class_get_property(RequiredParam<Object> rp_object, const StringName &p_property) const {
-	EXTRACT_PARAM_OR_FAIL_V(p_object, rp_object, Variant());
+Variant ClassDB::class_get_property(RequiredParam<Object> p_object, const StringName &p_property) const {
+	EXTRACT_PARAM_OR_FAIL_V(object, p_object, Variant());
 	Variant ret;
-	::ClassDB::get_property(p_object, p_property, ret);
+	::ClassDB::get_property(object, p_property, ret);
 	return ret;
 }
 
-Error ClassDB::class_set_property(RequiredParam<Object> rp_object, const StringName &p_property, const Variant &p_value) const {
-	EXTRACT_PARAM_OR_FAIL_V(p_object, rp_object, ERR_INVALID_PARAMETER);
+Error ClassDB::class_set_property(RequiredParam<Object> p_object, const StringName &p_property, const Variant &p_value) const {
+	EXTRACT_PARAM_OR_FAIL_V(object, p_object, ERR_INVALID_PARAMETER);
 	bool valid;
-	if (!::ClassDB::set_property(p_object, p_property, p_value, &valid)) {
+	if (!::ClassDB::set_property(object, p_property, p_value, &valid)) {
 		return ERR_UNAVAILABLE;
 	} else if (!valid) {
 		return ERR_INVALID_DATA;
@@ -1831,6 +1831,10 @@ bool ClassDB::is_class_enabled(const StringName &p_class) const {
 	return ::ClassDB::is_class_enabled(p_class);
 }
 
+bool ClassDB::is_class_exposed(const StringName &p_class) const {
+	return ::ClassDB::is_class_exposed(p_class);
+}
+
 #ifdef TOOLS_ENABLED
 void ClassDB::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
 	const String pf = p_function;
@@ -1843,7 +1847,7 @@ void ClassDB::get_argument_options(const StringName &p_function, int p_idx, List
 				pf == "class_has_method" || pf == "class_get_method_list" ||
 				pf == "class_get_integer_constant_list" || pf == "class_has_integer_constant" || pf == "class_get_integer_constant" ||
 				pf == "class_has_enum" || pf == "class_get_enum_list" || pf == "class_get_enum_constants" || pf == "class_get_integer_constant_enum" ||
-				pf == "is_class_enabled" || pf == "is_class_enum_bitfield" || pf == "class_get_api_type" || pf == "get_current_api");
+				pf == "is_class_enabled" || pf == "is_class_exposed" || pf == "is_class_enum_bitfield" || pf == "class_get_api_type" || pf == "get_current_api");
 	}
 	if (first_argument_is_class || pf == "is_parent_class") {
 		LocalVector<StringName> classes;
@@ -1906,6 +1910,7 @@ void ClassDB::_bind_methods() {
 	::ClassDB::bind_method(D_METHOD("is_class_enum_bitfield", "class", "enum", "no_inheritance"), &ClassDB::is_class_enum_bitfield, DEFVAL(false));
 
 	::ClassDB::bind_method(D_METHOD("is_class_enabled", "class"), &ClassDB::is_class_enabled);
+	::ClassDB::bind_method(D_METHOD("is_class_exposed", "class"), &ClassDB::is_class_exposed);
 
 	BIND_ENUM_CONSTANT(API_CORE);
 	BIND_ENUM_CONSTANT(API_EDITOR);
@@ -2023,14 +2028,14 @@ Object *Engine::get_singleton_object(const StringName &p_name) const {
 	return ::Engine::get_singleton()->get_singleton_object(p_name);
 }
 
-void Engine::register_singleton(const StringName &p_name, RequiredParam<Object> rp_instance) {
-	EXTRACT_PARAM_OR_FAIL(p_object, rp_instance);
+void Engine::register_singleton(const StringName &p_name, RequiredParam<Object> p_instance) {
+	EXTRACT_PARAM_OR_FAIL(object, p_instance);
 	ERR_FAIL_COND_MSG(has_singleton(p_name), vformat("Singleton already registered: '%s'.", String(p_name)));
 	ERR_FAIL_COND_MSG(!String(p_name).is_valid_ascii_identifier(), vformat("Singleton name is not a valid identifier: '%s'.", p_name));
 	::Engine::Singleton s;
 	s.class_name = p_name;
 	s.name = p_name;
-	s.ptr = p_object;
+	s.ptr = object;
 	s.user_created = true;
 	::Engine::get_singleton()->add_singleton(s);
 }
@@ -2051,14 +2056,14 @@ Vector<String> Engine::get_singleton_list() const {
 	return ret;
 }
 
-Error Engine::register_script_language(RequiredParam<ScriptLanguage> rp_language) {
-	EXTRACT_PARAM_OR_FAIL_V(p_language, rp_language, ERR_INVALID_PARAMETER);
-	return ScriptServer::register_language(p_language);
+Error Engine::register_script_language(RequiredParam<ScriptLanguage> p_language) {
+	EXTRACT_PARAM_OR_FAIL_V(language, p_language, ERR_INVALID_PARAMETER);
+	return ScriptServer::register_language(language);
 }
 
-Error Engine::unregister_script_language(RequiredParam<const ScriptLanguage> rp_language) {
-	EXTRACT_PARAM_OR_FAIL_V(p_language, rp_language, ERR_INVALID_PARAMETER);
-	return ScriptServer::unregister_language(p_language);
+Error Engine::unregister_script_language(RequiredParam<const ScriptLanguage> p_language) {
+	EXTRACT_PARAM_OR_FAIL_V(language, p_language, ERR_INVALID_PARAMETER);
+	return ScriptServer::unregister_language(language);
 }
 
 int Engine::get_script_language_count() {
@@ -2370,6 +2375,35 @@ void EngineDebugger::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("insert_breakpoint", "line", "source"), &EngineDebugger::insert_breakpoint);
 	ClassDB::bind_method(D_METHOD("remove_breakpoint", "line", "source"), &EngineDebugger::remove_breakpoint);
 	ClassDB::bind_method(D_METHOD("clear_breakpoints"), &EngineDebugger::clear_breakpoints);
+}
+
+Variant WeakRef::get_ref() const {
+	if (ref.is_null()) {
+		return Variant();
+	}
+
+	Object *obj = ObjectDB::get_instance(ref);
+	if (!obj) {
+		return Variant();
+	}
+	RefCounted *r = cast_to<RefCounted>(obj);
+	if (r) {
+		return Ref<RefCounted>(r);
+	}
+
+	return obj;
+}
+
+void WeakRef::set_obj(Object *p_object) {
+	ref = p_object ? p_object->get_instance_id() : ObjectID();
+}
+
+void WeakRef::set_ref(const Ref<RefCounted> &p_ref) {
+	ref = p_ref.is_valid() ? p_ref->get_instance_id() : ObjectID();
+}
+
+void WeakRef::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_ref"), &WeakRef::get_ref);
 }
 
 } // namespace CoreBind

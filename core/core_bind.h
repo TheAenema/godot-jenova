@@ -565,6 +565,7 @@ public:
 	bool is_class_enum_bitfield(const StringName &p_class, const StringName &p_enum, bool p_no_inheritance = false) const;
 
 	bool is_class_enabled(const StringName &p_class) const;
+	bool is_class_exposed(const StringName &p_class) const;
 
 #ifdef TOOLS_ENABLED
 	virtual void get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const override;
@@ -698,6 +699,20 @@ public:
 
 	EngineDebugger() { singleton = this; }
 	~EngineDebugger();
+};
+
+class WeakRef : public RefCounted {
+	GDCLASS(WeakRef, RefCounted);
+
+	ObjectID ref;
+
+protected:
+	static void _bind_methods();
+
+public:
+	Variant get_ref() const;
+	void set_obj(Object *p_object);
+	void set_ref(const Ref<RefCounted> &p_ref);
 };
 
 } // namespace CoreBind

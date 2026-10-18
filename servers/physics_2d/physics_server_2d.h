@@ -44,7 +44,7 @@ class PhysicsServer2D : public Object {
 
 	static PhysicsServer2D *singleton;
 
-	virtual bool _body_test_motion(RID p_body, RequiredParam<PhysicsTestMotionParameters2D> rp_parameters, const Ref<PhysicsTestMotionResult2D> &p_result = Ref<PhysicsTestMotionResult2D>());
+	virtual bool _body_test_motion(RID p_body, RequiredParam<PhysicsTestMotionParameters2D> p_parameters, const Ref<PhysicsTestMotionResult2D> &p_result = Ref<PhysicsTestMotionResult2D>());
 
 protected:
 	static void _bind_methods();
@@ -54,8 +54,15 @@ protected:
 	static void _bind_compatibility_methods();
 #endif
 
+#ifdef DEBUG_ENABLED
+	bool debug_enabled = false;
+#endif
+
 public:
 	static PhysicsServer2D *get_singleton();
+
+	void debug_set_enabled(bool p_enabled);
+	bool debug_is_enabled() const;
 
 	virtual RID world_boundary_shape_create() = 0;
 	virtual RID separation_ray_shape_create() = 0;

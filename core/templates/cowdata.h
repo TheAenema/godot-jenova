@@ -56,6 +56,15 @@ GODOT_GCC_PRAGMA(GCC diagnostic warning "-Wstringop-overflow=0") // Can't "ignor
 GODOT_GCC_PRAGMA(GCC diagnostic warning "-Wdangling-pointer=0") // Can't "ignore" this for some reason.
 #endif
 
+/**
+ * Array-like container with copy-on-write semantics.
+ * Not intended for direct use. Consider using Vector or String instead.
+ *
+ * Elements are relocated by naive memory moves; they must not store their own address (see GH-100509).
+ *
+ * Core container guidance:
+ * https://docs.godotengine.org/en/latest/engine_details/architecture/core_types.html#containers
+ */
 template <typename T>
 class CowData {
 public:
@@ -221,7 +230,7 @@ public:
 	_FORCE_INLINE_ operator Span<T>() const _LIFETIME_BOUND_ { return Span<T>(ptr(), size()); }
 	_FORCE_INLINE_ Span<T> span() const _LIFETIME_BOUND_ { return operator Span<T>(); }
 
-	_FORCE_INLINE_ CowData() {}
+	_FORCE_INLINE_ constexpr CowData() {}
 	_FORCE_INLINE_ ~CowData() { _unref(); }
 	_FORCE_INLINE_ CowData(std::initializer_list<T> p_init);
 	_FORCE_INLINE_ explicit CowData(Span<T> p_span);
@@ -286,10 +295,7 @@ Error CowData<T>::insert(Size p_pos, T &&p_val) {
 	const Size new_size = size() + 1;
 	ERR_FAIL_INDEX_V(p_pos, new_size, ERR_INVALID_PARAMETER);
 
-	Error error = _insert_uninitialized(p_pos, 1);
-	if (error) {
-		return error;
-	}
+	RETURN_IF_ERROR(_insert_uninitialized(p_pos, 1));
 
 	// Create the new element at the given index.
 	memnew_placement(_ptr + p_pos, T(std::move(p_val)));
@@ -300,10 +306,7 @@ Error CowData<T>::insert(Size p_pos, T &&p_val) {
 
 template <typename T>
 Error CowData<T>::push_back(T &&p_val) {
-	Error error = _insert_uninitialized(size(), 1);
-	if (error) {
-		return error;
-	}
+	RETURN_IF_ERROR(_insert_uninitialized(size(), 1));
 
 	memnew_placement(_ptr + size(), T(std::move(p_val)));
 	*_get_size() = size() + 1;
@@ -331,10 +334,7 @@ Error CowData<T>::append(Span<T> p_span) {
 	const bool span_in_self = _ptr && p_span.ptr() >= _ptr && p_span.ptr() < _ptr + size();
 	const Size idx_in_self = span_in_self ? (p_span.ptr() - _ptr) : -1;
 
-	const Error error = _insert_uninitialized(size(), p_span.size());
-	if (error) {
-		return error;
-	}
+	RETURN_IF_ERROR(_insert_uninitialized(size(), p_span.size()));
 	const T *span_ptr = span_in_self ? (_ptr + idx_in_self) : p_span.ptr();
 	copy_arr_placement(_ptr + size(), span_ptr, p_span.size());
 	*_get_size() = size() + p_span.size();
@@ -350,13 +350,10 @@ Error CowData<T>::_insert_uninitialized(USize p_index, USize p_count, USize p_ca
 	} else if (_get_refcount()->get() == 1) {
 		if (capacity() < p_capacity) {
 			// Need to grow.
-			const Error error = _realloc_exact(p_capacity);
-			if (error) {
-				return error;
-			}
+			RETURN_IF_ERROR(_realloc_exact(p_capacity));
 		}
 
-		// Relocate elements up.
+		// Relocate elements up (assumes trivial relocatability; see GH-100509).
 		if (p_index != (USize)size()) {
 			memmove((void *)(_ptr + p_index + p_count), (void *)(_ptr + p_index), (size() - p_index) * sizeof(T));
 		}
@@ -365,10 +362,7 @@ Error CowData<T>::_insert_uninitialized(USize p_index, USize p_count, USize p_ca
 		// Initialize the data elsewhere first and only swap when it's ready.
 		CowData new_data;
 
-		const Error error = new_data._alloc_exact(p_capacity);
-		if (error) {
-			return error;
-		}
+		RETURN_IF_ERROR(new_data._alloc_exact(p_capacity));
 
 		// Copy over elements.
 		copy_arr_placement(new_data._ptr, _ptr, p_index);
@@ -417,10 +411,7 @@ Error CowData<T>::_remove(USize p_index, USize p_count) {
 		// Remove by forking.
 		CowData new_data;
 
-		const Error error = new_data._alloc_exact(smaller_capacity(capacity(), new_size));
-		if (error) {
-			return error;
-		}
+		RETURN_IF_ERROR(new_data._alloc_exact(smaller_capacity(capacity(), new_size)));
 
 		// Copy over elements.
 		copy_arr_placement(new_data._ptr, _ptr, p_index);
@@ -466,10 +457,7 @@ Error CowData<T>::resize(Size p_size) {
 	if (p_size > prev_size) {
 		// Caller wants to grow.
 
-		const Error error = _insert_uninitialized(prev_size, p_size - prev_size);
-		if (error) {
-			return error;
-		}
+		RETURN_IF_ERROR(_insert_uninitialized(prev_size, p_size - prev_size));
 
 		// Construct new elements.
 		if constexpr (p_initialize) {

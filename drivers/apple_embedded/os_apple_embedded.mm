@@ -40,15 +40,17 @@
 #include "core/os/os.h"
 #include "core/profiling/profiling.h"
 #import "drivers/apple/os_log_logger.h"
-#import "drivers/apple_embedded/app_delegate_service.h"
 #import "drivers/apple_embedded/display_server_apple_embedded.h"
+#import "drivers/apple_embedded/godot_app_delegate_service_apple_embedded.h"
 #import "drivers/apple_embedded/godot_view_apple_embedded.h"
 #import "drivers/apple_embedded/godot_view_controller.h"
 #ifdef SDL_ENABLED
 #include "drivers/sdl/joypad_sdl.h"
 #endif
 #include "main/main.h"
+#include "servers/audio/audio_driver.h"
 #include "servers/camera/camera_server.h"
+#include "servers/display/accessibility_server.h"
 
 #import <AVFoundation/AVFAudio.h>
 #import <AudioToolbox/AudioServices.h>
@@ -783,6 +785,19 @@ Error OS_AppleEmbedded::setup_remote_filesystem(const String &p_server_host, int
 	return err;
 }
 
+void OS_AppleEmbedded::audio_driver_start() {
+	// Dummy is the singleton when Core Audio init failed. Starting this unit would run a second mix thread.
+	if (AudioDriver::get_singleton() == &audio_driver) {
+		audio_driver.start();
+	}
+}
+
+void OS_AppleEmbedded::audio_driver_stop() {
+	if (AudioDriver::get_singleton() == &audio_driver) {
+		audio_driver.stop();
+	}
+}
+
 void OS_AppleEmbedded::on_focus_out() {
 	if (is_focused) {
 		is_focused = false;
@@ -791,13 +806,17 @@ void OS_AppleEmbedded::on_focus_out() {
 			DisplayServerAppleEmbedded::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_OUT);
 		}
 
+		if (AccessibilityServer::get_singleton()) {
+			AccessibilityServer::get_singleton()->set_window_focused(DisplayServerEnums::MAIN_WINDOW_ID, false);
+		}
+
 		if (OS::get_singleton()->get_main_loop()) {
 			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_OUT);
 		}
 
 		[GDTAppDelegateService.viewController.godotView stopRendering];
 
-		audio_driver.stop();
+		audio_driver_stop();
 	}
 }
 
@@ -809,13 +828,17 @@ void OS_AppleEmbedded::on_focus_in() {
 			DisplayServerAppleEmbedded::get_singleton()->send_window_event(DisplayServerEnums::WINDOW_EVENT_FOCUS_IN);
 		}
 
+		if (AccessibilityServer::get_singleton()) {
+			AccessibilityServer::get_singleton()->set_window_focused(DisplayServerEnums::MAIN_WINDOW_ID, true);
+		}
+
 		if (OS::get_singleton()->get_main_loop()) {
 			OS::get_singleton()->get_main_loop()->notification(MainLoop::NOTIFICATION_APPLICATION_FOCUS_IN);
 		}
 
 		[GDTAppDelegateService.viewController.godotView startRendering];
 
-		audio_driver.start();
+		audio_driver_start();
 	}
 }
 

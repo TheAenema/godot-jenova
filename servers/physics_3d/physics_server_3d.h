@@ -53,13 +53,20 @@ class PhysicsServer3D : public Object {
 
 	static PhysicsServer3D *singleton;
 
-	virtual bool _body_test_motion(RID p_body, RequiredParam<PhysicsTestMotionParameters3D> rp_parameters, const Ref<PhysicsTestMotionResult3D> &p_result = Ref<PhysicsTestMotionResult3D>());
+	virtual bool _body_test_motion(RID p_body, RequiredParam<PhysicsTestMotionParameters3D> p_parameters, const Ref<PhysicsTestMotionResult3D> &p_result = Ref<PhysicsTestMotionResult3D>());
+
+#ifdef DEBUG_ENABLED
+	bool debug_enabled = false;
+#endif
 
 protected:
 	static void _bind_methods();
 
 public:
 	static PhysicsServer3D *get_singleton();
+
+	void debug_set_enabled(bool p_enabled);
+	bool debug_is_enabled() const;
 
 	RID shape_create(PS3DE::ShapeType p_shape);
 
@@ -254,7 +261,7 @@ public:
 
 	virtual RID soft_body_create() = 0;
 
-	virtual void soft_body_update_rendering_server(RID p_body, RequiredParam<PhysicsServer3DRenderingServerHandler> rp_rendering_server_handler) = 0;
+	virtual void soft_body_update_rendering_server(RID p_body, RequiredParam<PhysicsServer3DRenderingServerHandler> p_rendering_server_handler) = 0;
 
 	virtual void soft_body_set_space(RID p_body, RID p_space) = 0;
 	virtual RID soft_body_get_space(RID p_body) const = 0;

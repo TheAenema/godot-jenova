@@ -305,6 +305,8 @@ class [[nodiscard]] _WARN_UNUSED_ String {
 	String _separate_compound_words() const;
 
 public:
+	static const String EMPTY;
+
 	enum {
 		npos = -1 ///<for "some" compatibility with std::string (npos is a huge value in std::string)
 	};
@@ -562,8 +564,8 @@ public:
 
 	Char16String utf16() const;
 	Error append_utf16(const char16_t *p_utf16, int p_len = -1, bool p_default_little_endian = true);
-	Error append_utf16(const Span<char16_t> p_range, bool p_skip_cr = false) {
-		return append_utf16(p_range.ptr(), p_range.size(), p_skip_cr);
+	Error append_utf16(const Span<char16_t> p_range, bool p_default_little_endian = true) {
+		return append_utf16(p_range.ptr(), p_range.size(), p_default_little_endian);
 	}
 	static String utf16(const char16_t *p_utf16, int p_len = -1) {
 		String ret;
@@ -673,7 +675,7 @@ public:
 	 * The constructors must not depend on other overloads
 	 */
 
-	_FORCE_INLINE_ String() {}
+	_FORCE_INLINE_ constexpr String() {}
 	_FORCE_INLINE_ String(const String &p_str) = default;
 	_FORCE_INLINE_ String(String &&p_str) = default;
 #ifdef SIZE_EXTRA
@@ -761,15 +763,12 @@ String TTR(const String &p_text, const String &p_context = "");
 String TTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context = "");
 String DTR(const String &p_text, const String &p_context = "");
 String DTRN(const String &p_text, const String &p_text_plural, int p_n, const String &p_context = "");
+#endif
 // Use for C strings.
 #define TTRC(m_value) (m_value)
-// Use to avoid parsing (for use later with C strings).
-#define TTRGET(m_value) TTR(m_value)
 
-#else
-#define TTRC(m_value) (m_value)
-#define TTRGET(m_value) (m_value)
-#endif
+// Use for simple plural messages, i.e. with no counter in the message.
+#define TPL(m_count, m_singular, m_plural) ((m_count == 1) ? (m_singular) : (m_plural))
 
 // Use this to mark property names for editor translation.
 // Often for dynamic properties defined in _get_property_list().

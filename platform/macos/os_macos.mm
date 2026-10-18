@@ -41,6 +41,7 @@
 
 #include "core/config/engine.h"
 #include "core/crypto/crypto_core.h"
+#include "core/debugger/engine_debugger.h"
 #include "core/input/input.h"
 #include "core/io/file_access.h"
 #include "core/os/main_loop.h"
@@ -456,6 +457,20 @@ String OS_MacOS::get_bundle_resource_dir() const {
 	if (main) {
 		NSString *resource_path = [main resourcePath];
 		ret.append_utf8([resource_path UTF8String]);
+	}
+	return ret;
+}
+
+String OS_MacOS::get_bundle_or_executable_path() const {
+	String ret;
+
+	NSBundle *main = [NSBundle mainBundle];
+	if (main) {
+		NSString *resource_path = [main bundlePath];
+		ret.append_utf8([resource_path UTF8String]);
+	}
+	if (ret.is_empty()) {
+		ret = get_executable_path();
 	}
 	return ret;
 }
@@ -932,7 +947,7 @@ String OS_MacOS::get_unique_id() const {
 	static String serial_number;
 
 	if (serial_number.is_empty()) {
-#if defined(__x86_64) || defined(__x86_64__)
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 120000
 		io_service_t platform_expert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
 #else
 		io_service_t platform_expert = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"));
@@ -1192,6 +1207,10 @@ OS_MacOS_NSApp::OS_MacOS_NSApp(const char *p_execpath, int p_argc, char **p_argv
 
 // MARK: - OS_MacOS_Headless
 
+void OS_MacOS_Headless::alert(const String &p_alert, const String &p_title) {
+	WARN_PRINT(p_alert);
+}
+
 void OS_MacOS_Headless::run() {
 	CFRunLoopGetCurrent();
 
@@ -1246,6 +1265,15 @@ OS_MacOS_Headless::OS_MacOS_Headless(const char *p_execpath, int p_argc, char **
 // MARK: - OS_MacOS_Embedded
 
 #ifdef TOOLS_ENABLED
+
+void OS_MacOS_Embedded::alert(const String &p_alert, const String &p_title) {
+	if (EngineDebugger::get_singleton()) {
+		Array arr = { p_alert, p_title };
+		EngineDebugger::get_singleton()->send_message("game_view:alert", arr);
+	} else {
+		WARN_PRINT(p_alert);
+	}
+}
 
 void OS_MacOS_Embedded::run() {
 	CFRunLoopGetCurrent();

@@ -131,10 +131,7 @@ Error AudioDriverWeb::init() {
 	mix_rate = audio_context.mix_rate;
 	channel_count = audio_context.channel_count;
 	buffer_length = Math::closest_power_of_2(uint32_t(latency * mix_rate / 1000));
-	Error err = create(buffer_length, channel_count);
-	if (err != OK) {
-		return err;
-	}
+	RETURN_IF_ERROR(create(buffer_length, channel_count));
 	if (output_rb) {
 		memdelete_arr(output_rb);
 	}
@@ -449,8 +446,10 @@ void AudioDriverWorklet::unlock() {
 }
 
 void AudioDriverWorklet::finish_driver() {
-	quit = true; // Ask thread to quit.
-	thread.wait_to_finish();
+	if (thread.is_started()) {
+		quit = true; // Ask thread to quit.
+		thread.wait_to_finish();
+	}
 }
 
 #else // No threads.

@@ -350,7 +350,7 @@ PackedStringArray GPUParticles3D::get_configuration_warnings() const {
 			for (int j = 0; j < draw_passes[i]->get_surface_count(); j++) {
 				anim_material_found = Object::cast_to<ShaderMaterial>(draw_passes[i]->surface_get_material(j).ptr()) != nullptr;
 				BaseMaterial3D *spat = Object::cast_to<BaseMaterial3D>(draw_passes[i]->surface_get_material(j).ptr());
-				anim_material_found = anim_material_found || (spat && spat->get_billboard_mode() == StandardMaterial3D::BILLBOARD_PARTICLES);
+				anim_material_found = anim_material_found || (spat && (spat->get_billboard_mode() == StandardMaterial3D::BILLBOARD_PARTICLES || spat->get_feature(BaseMaterial3D::FEATURE_PARTICLES_ANIMATION)));
 			}
 			if (anim_material_found) {
 				break;
@@ -375,7 +375,7 @@ PackedStringArray GPUParticles3D::get_configuration_warnings() const {
 		if (!anim_material_found && process &&
 				(process->get_param_max(ParticleProcessMaterial::PARAM_ANIM_SPEED) != 0.0 || process->get_param_max(ParticleProcessMaterial::PARAM_ANIM_OFFSET) != 0.0 ||
 						process->get_param_texture(ParticleProcessMaterial::PARAM_ANIM_SPEED).is_valid() || process->get_param_texture(ParticleProcessMaterial::PARAM_ANIM_OFFSET).is_valid())) {
-			warnings.push_back(RTR("Particles animation requires the usage of a BaseMaterial3D whose Billboard Mode is set to \"Particle Billboard\"."));
+			warnings.push_back(RTR("Particles animation requires the usage of a BaseMaterial3D whose Billboard Mode is set to \"Particle Billboard\", or has \"Particles Anim\" enabled."));
 		}
 	}
 
@@ -544,13 +544,13 @@ void GPUParticles3D::_notification(int p_what) {
 
 			if (one_shot) {
 				time += get_process_delta_time();
-				if (time > emission_time) {
+				if ((time * speed_scale) > emission_time) {
 					emitting = false;
 					if (!active) {
 						set_process_internal(false);
 					}
 				}
-				if (time > active_time) {
+				if ((time * speed_scale) > active_time) {
 					if (active && !signal_canceled) {
 						emit_signal(SceneStringName(finished));
 					}
